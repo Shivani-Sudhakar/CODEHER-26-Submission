@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget RPG</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#fbbf24;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#a855f7;
+  --dark:#0f0c1a;--dark2:#1a1528;--dark3:#241e38;--border:#2e2750;
+  --text:#f1f5f9;--muted:#94a3b8;
+}
+body { background: var(--dark); color: var(--text); }
+#rg{font-family:'Nunito',sans-serif;background:var(--dark);height:100vh;overflow-y:auto;position:relative;color:var(--text);scrollbar-width:none;-ms-overflow-style:none}
+#rg::-webkit-scrollbar{display:none;width:0;height:0}
+.pixel{font-family:'Press Start 2P',monospace}
+.screen{display:none;position:absolute;inset:0;flex-direction:column;align-items:center;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none}
+.screen::-webkit-scrollbar{display:none;width:0;height:0}
+.screen.on{display:flex}
+
+/* ===== TITLE ===== */
+#ts{background:var(--dark);justify-content:center;align-items:center;padding:24px}
+.ts-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle 2s infinite alternate}
+@keyframes twinkle{from{opacity:.2}to{opacity:1}}
+.title-card{background:var(--dark2);border:3px solid var(--purple);border-radius:16px;padding:32px 28px;text-align:center;max-width:480px;width:100%;position:relative;z-index:2}
+.game-title{font-family:'Press Start 2P',monospace;font-size:22px;color:var(--gold);line-height:1.5;text-shadow:0 0 20px #fbbf2466;margin-bottom:4px}
+.game-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.hero-sprite{font-size:64px;margin:12px 0;animation:bounce .8s ease-in-out infinite alternate}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.char-row{display:flex;gap:12px;justify-content:center;margin:16px 0}
+.char-box{background:var(--dark3);border:2px solid var(--border);border-radius:12px;padding:14px 10px;cursor:pointer;transition:border-color .2s,transform .15s;width:120px;text-align:center}
+.char-box:hover,.char-box.sel{border-color:var(--purple);transform:translateY(-4px)}
+.char-box.sel{background:#2a1f4a}
+.char-ico{font-size:36px;margin-bottom:6px}
+.char-nm{font-size:11px;font-weight:800;color:#c4b5fd}
+.char-st{font-size:10px;color:var(--muted);margin-top:2px}
+.rbtn{display:inline-block;background:var(--purple);color:#fff;border:none;border-radius:10px;padding:13px 32px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.5px;transition:opacity .15s,transform .1s;font-family:'Nunito',sans-serif}
+.rbtn:hover{opacity:.88;transform:scale(1.04)}
+.rbtn.gold{background:var(--gold);color:#1c1917}
+.rbtn.green{background:var(--green);color:#052e16}
+.rbtn.red{background:var(--red)}
+.rbtn.sm{padding:8px 18px;font-size:12px}
+.rbtn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.tip-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.tip{background:var(--dark3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--muted)}
+
+/* ===== HUD ===== */
+#hud{position:absolute;top:0;left:0;right:0;z-index:20;background:#0f0c1aee;border-bottom:2px solid var(--border);padding:8px 14px;display:none}
+.hud-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hstat{display:flex;flex-direction:column;align-items:center}
+.hstat-l{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'Press Start 2P',monospace}
+.hstat-v{font-size:14px;font-weight:900}
+.hbar-wrap{flex:1;min-width:60px}
+.hbar{height:10px;border-radius:5px;overflow:hidden;background:#1e1535}
+.hbar-fill{height:100%;border-radius:5px;transition:width .4s}
+.hbar-label{font-size:9px;color:var(--muted);display:flex;justify-content:space-between}
+.lives{display:flex;gap:3px}
+.life-icon{font-size:16px;transition:filter .3s}
+.life-icon.lost{filter:grayscale(1);opacity:.3}
+
+/* ===== WORLD MAP ===== */
+#ms{background:var(--dark);padding-top:70px;justify-content:flex-start;padding-bottom:20px;min-height: 100vh;}
+.map-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--gold);text-align:center;margin:12px 0 4px}
+.map-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px}
+.world-grid{display:flex;flex-direction:column;gap:10px;width:100%;max-width:500px;padding:0 16px;margin: 0 auto;}
+.world-node{background:var(--dark3);border:2px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;transition:border-color .2s,transform .1s,background .15s;display:flex;align-items:center;gap:14px;position:relative}
+.world-node:hover:not(.locked):not(.done){border-color:var(--purple);transform:translateX(6px);background:#1e1535}
+.world-node.locked{opacity:.45;cursor:not-allowed}
+.world-node.done{border-color:var(--green)}
+.world-node.active{border-color:var(--gold);background:#1c1a10}
+.wn-ico{font-size:32px;min-width:40px;text-align:center}
+.wn-info{flex:1}
+.wn-name{font-size:14px;font-weight:800}
+.wn-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.wn-badge{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:20px}
+.world-connector{width:2px;height:16px;background:var(--border);margin:0 auto;border-radius:2px}
+
+/* ===== BATTLE ===== */
+#bs{padding-top:68px;justify-content:flex-start;overflow-y:auto;padding-bottom:16px;min-height: 100vh;scrollbar-width:none;-ms-overflow-style:none}
+#bs::-webkit-scrollbar{display:none;width:0;height:0}
+.battle-wrap{width:100%;max-width:540px;margin: 0 auto;padding:0 14px;display:flex;flex-direction:column;gap:10px}
+.scenario-card{background:var(--dark3);border:2px solid var(--purple);border-radius:14px;padding:16px;position:relative}
+.sc-tag{display:inline-block;background:#2a1f4a;color:#c4b5fd;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:800;margin-bottom:8px}
+.sc-text{font-size:15px;font-weight:700;line-height:1.5;color:var(--text)}
+.sc-sprite{font-size:40px;position:absolute;right:14px;top:14px;animation:bounce .8s ease-in-out infinite alternate}
+.enemy-hpbar{margin-top:10px}
+.choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice-btn{background:var(--dark3);border:2px solid var(--border);border-radius:10px;padding:12px 10px;cursor:pointer;transition:all .15s;text-align:left;position:relative;overflow:hidden}
+.choice-btn:hover:not(:disabled){border-color:var(--blue);background:#1a2a45;transform:scale(1.02)}
+.choice-btn:disabled{opacity:.5;cursor:not-allowed}
+.choice-btn.correct{border-color:var(--green);background:#052e16}
+.choice-btn.wrong{border-color:var(--red);background:#450a0a}
+.choice-btn.neutral{border-color:#f59e0b;background:#451a03}
+.cb-label{font-size:13px;font-weight:700;color:var(--text)}
+.cb-amount{font-size:11px;font-weight:600;margin-top:3px}
+.cb-amount.pos{color:var(--green)}
+.cb-amount.neg{color:var(--red)}
+.cb-amount.neutral{color:#fbbf24}
+.result-card{background:var(--dark3);border:2px solid var(--border);border-radius:12px;padding:14px;text-align:center}
+.result-card.win{border-color:var(--green)}
+.result-card.lose{border-color:var(--red)}
+.result-title{font-family:'Press Start 2P',monospace;font-size:12px;margin-bottom:6px}
+.learn-box{background:#1a1f35;border:1px solid var(--blue);border-radius:8px;padding:10px 12px;font-size:12px;color:#bfdbfe;line-height:1.6;text-align:left;margin:8px 0}
+.learn-box strong{color:#60a5fa}
+.budget-meter{background:var(--dark3);border:2px solid var(--border);border-radius:12px;padding:12px 14px}
+.bm-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.bm-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin:4px 0}
+.bm-row .bm-cat{color:var(--muted);font-size:11px}
+.bm-row .bm-val{font-weight:800}
+.bm-sep{border:none;border-top:1px solid var(--border);margin:6px 0}
+.budget-fill-bar{height:12px;border-radius:6px;overflow:hidden;background:#1e1535;margin-top:4px}
+.budget-fill{height:100%;border-radius:6px;transition:width .5s}
+.shop-row{display:flex;gap:8px;overflow-x:auto;padding:4px 0;scrollbar-width:none;-ms-overflow-style:none}
+.shop-row::-webkit-scrollbar{display:none;width:0;height:0}
+.shop-item{background:var(--dark3);border:2px solid var(--border);border-radius:10px;padding:8px 10px;cursor:pointer;transition:border-color .15s,transform .1s;min-width:100px;text-align:center;flex-shrink:0}
+.shop-item:hover:not(:disabled){border-color:var(--gold);transform:scale(1.04)}
+.shop-item:disabled,.shop-item.bought{opacity:.4;cursor:not-allowed;border-color:var(--green)}
+.si-ico{font-size:22px}
+.si-name{font-size:10px;font-weight:700;margin-top:2px}
+.si-cost{font-size:10px;color:var(--gold)}
+
+/* ===== END ===== */
+#es{justify-content:center;align-items:center;padding:24px;background:var(--dark)}
+.end-card{background:var(--dark2);border:3px solid var(--gold);border-radius:16px;padding:28px;max-width:440px;width:100%;text-align:center}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.sg-cell{background:var(--dark3);border-radius:10px;padding:12px;text-align:center}
+.sg-val{font-size:22px;font-weight:900}
+.sg-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+
+/* ===== TOAST ===== */
+#toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);background:var(--gold);color:#1c1917;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:800;display:none;z-index:100;white-space:nowrap;pointer-events:none}
+#xp-pop{position:fixed;font-size:16px;font-weight:900;color:var(--gold);pointer-events:none;display:none;z-index:100;font-family:'Press Start 2P',monospace;font-size:11px}
+#coin-pop{position:fixed;font-size:14px;font-weight:900;pointer-events:none;display:none;z-index:100}
+</style>
+</head>
+<body>
+<div id="rg">
+<div id="toast"></div>
+<div id="xp-pop"></div>
+<div id="coin-pop"></div>
+
+<!-- STARS BG (title) -->
+<div id="ts" class="screen on">
+  <div class="ts-bg" id="star-bg"></div>
+  <div class="title-card">
+    <div class="game-title">BUDGET<br>RPG</div>
+    <div class="game-sub">Balance the budget or bust!</div>
+    <div class="hero-sprite" id="hero-display">💳</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Choose your hero</div>
+    <div class="char-row">
+      <div class="char-box sel" data-c="0" onclick="pickChar(0)">
+        <div class="char-ico">🧑💼</div>
+        <div class="char-nm">Alex</div>
+        <div class="char-st">Saver Pro<br>+Savings XP</div>
+      </div>
+      <div class="char-box" data-c="1" onclick="pickChar(1)">
+        <div class="char-ico">👩🎓</div>
+        <div class="char-nm">Maya</div>
+        <div class="char-st">Smart Spender<br>+Shopping XP</div>
+      </div>
+      <div class="char-box" data-c="2" onclick="pickChar(2)">
+        <div class="char-ico">🧑💻</div>
+        <div class="char-nm">Dev</div>
+        <div class="char-st">Investor<br>+Invest XP</div>
+      </div>
+    </div>
+    <div class="tip-row">
+      <span class="tip">5 worlds</span>
+      <span class="tip">Real budget skills</span>
+      <span class="tip">Earn coins &amp; XP</span>
+      <span class="tip">Boss fights</span>
+    </div>
+    <button class="rbtn gold" onclick="goMap()" style="margin-top:12px">⚔ START QUEST</button>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-row">
+    <div class="hstat">
+      <span class="hstat-l">HP</span>
+      <div class="hbar-wrap" style="width:80px">
+        <div class="hbar"><div class="hbar-fill" id="hp-bar" style="background:#ef4444;width:100%"></div></div>
+        <div class="hbar-label"><span id="hp-val">100</span><span>100</span></div>
+      </div>
+    </div>
+    <div class="hstat">
+      <span class="hstat-l">XP</span>
+      <div class="hbar-wrap" style="width:70px">
+        <div class="hbar"><div class="hbar-fill" id="xp-bar" style="background:#a855f7;width:0%"></div></div>
+        <div class="hbar-label"><span id="xp-val">0</span><span id="xp-max">100</span></div>
+      </div>
+    </div>
+    <div class="hstat">
+      <span class="hstat-l">Coins</span>
+      <span class="hstat-v" style="color:var(--gold)" id="h-coins">💰 0</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-l">Budget</span>
+      <span class="hstat-v" style="color:var(--green)" id="h-budget">$1,000</span>
+    </div>
+    <div class="hstat">
+      <div class="lives" id="lives-row"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WORLD MAP -->
+<div id="ms" class="screen">
+  <div class="map-title">📍 WORLD MAP</div>
+  <div class="map-sub" id="map-sub">Choose your next challenge!</div>
+  <div class="world-grid" id="world-grid"></div>
+</div>
+
+<!-- BATTLE -->
+<div id="bs" class="screen">
+  <div class="battle-wrap" id="battle-wrap"></div>
+</div>
+
+<!-- END SCREEN -->
+<div id="es" class="screen">
+  <div class="end-card">
+    <div style="font-size:52px" id="end-emoji">🏆</div>
+    <div class="result-title" style="margin:10px 0 4px;font-size:14px" id="end-title">BUDGET MASTER!</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:4px" id="end-sub">You balanced every budget</div>
+    <div class="stat-grid">
+      <div class="sg-cell"><div class="sg-val" style="color:var(--gold)" id="ef-xp">0</div><div class="sg-lbl">Total XP</div></div>
+      <div class="sg-cell"><div class="sg-val" style="color:var(--green)" id="ef-coins">0</div><div class="sg-lbl">Coins earned</div></div>
+      <div class="sg-cell"><div class="sg-val" style="color:var(--blue)" id="ef-correct">0</div><div class="sg-lbl">Good decisions</div></div>
+      <div class="sg-cell"><div class="sg-val" style="color:var(--red)" id="ef-wrong">0</div><div class="sg-lbl">Mistakes</div></div>
+    </div>
+    <div class="learn-box" id="ef-tip" style="text-align:center;font-size:12px"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+      <button class="rbtn green" onclick="goMap()">Play again 🗺</button>
+      <button class="rbtn sm" onclick="goTitle()">Title screen</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const CHARS=[
+  {name:'Alex',emoji:'🧑💼',bonus:'savings'},
+  {name:'Maya',emoji:'👩🎓',bonus:'shopping'},
+  {name:'Dev',emoji:'🧑💻',bonus:'investing'},
+];
+
+const WORLDS=[
+  {id:'allowance',name:'Allowance Adventure',icon:'🪙',desc:'Learn to manage your weekly money',color:'#a855f7',
+   scenarios:[
+    {text:"You get $20 allowance. Your friend wants to split pizza for $8. Should you?",enemy:'🍕 Hunger Monster',hp:80,
+     choices:[
+      {label:"Split the cost — $4 each!",detail:"Smart! Sharing costs = more money left.",effect:'good',delta:4,xp:20,learn:"Sharing costs is a great way to get more for less. This is called 'cost splitting'!"},
+      {label:"Pay for the whole pizza yourself",detail:"-$8 from budget",effect:'neutral',delta:-8,xp:5,learn:"You bought it solo. That's fine, but splitting saves $4. Always look for ways to share costs!"},
+      {label:"Skip eating to save money",detail:"Free but unhealthy!",effect:'neutral',delta:0,xp:8,learn:"Saving is good, but basic needs like food come first. Budget for necessities before extras."},
+      {label:"Buy a $15 fancy meal instead",detail:"-$15 — big hit!",effect:'bad',delta:-15,xp:2,learn:"Spending 75% of your allowance on one meal leaves nothing for the week. Ouch!"},
+     ]},
+    {text:"You have $12 left this week. A game costs $10. But your friend's birthday is in 3 days...",enemy:'🎮 Impulse Boss',hp:100,
+     choices:[
+      {label:"Wait and save for the gift",detail:"Gift budget: safe!",effect:'good',delta:0,xp:25,learn:"Delaying purchases = delayed gratification. It's a key money skill that helps you avoid regret-spending!"},
+      {label:"Buy the game now — you'll figure it out",detail:"-$10 now, stressed later",effect:'bad',delta:-10,xp:5,learn:"Impulse buying ignores future needs. Always ask: 'Do I have upcoming expenses?'"},
+      {label:"Ask for an advance on next allowance",detail:"Debt is debt, even from parents!",effect:'neutral',delta:5,xp:10,learn:"Borrowing against future income is how debt works. It feels like a solution but you'll have LESS next week."},
+      {label:"Make a handmade card instead",detail:"Free + thoughtful!",effect:'good',delta:12,xp:22,learn:"Creative gifts cost little money but show care. Not every expense needs to be money!"},
+     ]},
+   ]},
+  {id:'grocery',name:'Grocery Gauntlet',icon:'🛒',desc:'Shop smart, feed the family, defeat waste!',color:'#22c55e',
+   scenarios:[
+    {text:"The family needs groceries. Name-brand cereal is $5. Store brand is $2.50. Both taste the same in tests.",enemy:'🥣 Brand Trap',hp:90,
+     choices:[
+      {label:"Store brand — save $2.50!",detail:"Same quality, half price!",effect:'good',delta:2.5,xp:22,learn:"Store brands (also called 'generic') are often made by the same factories as name brands. You're paying for marketing, not quality!"},
+      {label:"Name brand because it looks nicer",detail:"-$2.50 extra for the box",effect:'bad',delta:-2.5,xp:4,learn:"Brand loyalty costs money. Marketers spend billions making you feel that name brands are better. Don't fall for it!"},
+      {label:"Buy both to compare",detail:"-$7.50 total — wasteful",effect:'bad',delta:-7.5,xp:2,learn:"Buying both wastes money. Research first (read reviews!), then decide."},
+      {label:"Skip cereal — buy oats instead",detail:"-$1.50 — even cheaper!",effect:'good',delta:3.5,xp:20,learn:"Sometimes the cheapest option is substituting ingredients entirely. Oats = cheaper AND healthier!"},
+     ]},
+    {text:"You have a $60 grocery budget. You built a list for $55. At checkout you spot a 'BOGO FREE' chips deal.",enemy:'🎯 Sale Trap Monster',hp:100,
+     choices:[
+      {label:"Skip it — not on the list",detail:"Stay on budget!",effect:'good',delta:5,xp:25,learn:"Sales are only a deal if you needed the item. Unplanned 'deals' often bust your budget. Stick to the list!"},
+      {label:"Buy it! It's basically free!",detail:"-$6 (BOGO isn't free...)",effect:'bad',delta:-6,xp:5,learn:"BOGO means you buy one to get one. It's only valuable if you'd buy two anyway. Otherwise it's a trick!"},
+      {label:"Replace something on the list with chips",detail:"Trade food for snacks",effect:'neutral',delta:0,xp:10,learn:"Substituting for a sale is okay IF the replacement is equivalent value. Chips vs vegetables? Not a fair trade!"},
+      {label:"Get them AND stay under budget",detail:"$55 list + $6 = $61, over!",effect:'bad',delta:-6,xp:6,learn:"Going $1 over budget seems small, but it adds up. Budgets only work if you actually stick to them!"},
+     ]},
+   ]},
+  {id:'school',name:'Back-to-School Battle',icon:'🎒',desc:'Gear up smart! Needs vs wants showdown.',color:'#3b82f6',
+   scenarios:[
+    {text:"School starts Monday. You need: notebook ($2), pencils ($1), folder ($1.50). You also want new $60 sneakers.",enemy:'👟 Wants Dragon',hp:120,
+     choices:[
+      {label:"Buy needs only — $4.50 total",detail:"Needs first, always!",effect:'good',delta:55.5,xp:30,learn:"Needs are things you must have; wants are nice-to-haves. Budget for NEEDS first, then see what's left for wants!"},
+      {label:"Buy sneakers + supplies = $64.50",detail:"Way over budget!",effect:'bad',delta:-64.5,xp:3,learn:"Mixing needs and wants without a budget causes overspending. Separate them first!"},
+      {label:"Skip supplies and buy sneakers",detail:"You'll fail without supplies",effect:'bad',delta:-60,xp:2,learn:"Cool sneakers don't help you take notes. Wants never replace needs — don't sacrifice necessities for luxuries!"},
+      {label:"Buy supplies, save up for sneakers",detail:"Patience pays off!",effect:'good',delta:55.5,xp:28,learn:"Saving up for wants over time is called 'delayed gratification.' You'll appreciate the sneakers way more!"},
+     ]},
+    {text:"Your friend paid $80 for a graphing calculator. You found the same model refurbished for $35.",enemy:'💸 Price Trap',hp:80,
+     choices:[
+      {label:"Buy the refurbished one — save $45!",detail:"Same tool, huge savings!",effect:'good',delta:45,xp:28,learn:"Refurbished = professionally repaired and tested. Often works perfectly. This is called 'value shopping'!"},
+      {label:"Buy new to match your friend",detail:"$80 for peer pressure",effect:'bad',delta:-80,xp:3,learn:"Spending to match others is called 'keeping up with the Joneses.' It's one of the biggest money traps!"},
+      {label:"Borrow one from the library",detail:"FREE! Check resources first.",effect:'good',delta:80,xp:30,learn:"Many schools and libraries loan calculators for free. Always check what FREE resources exist before buying!"},
+      {label:"Use a phone app instead",detail:"Free, but check if allowed",effect:'neutral',delta:80,xp:15,learn:"Free alternatives exist for many purchases. Always ask: 'Is there a free version of this?'"},
+     ]},
+   ]},
+  {id:'savings',name:'Savings Sanctuary',icon:'🏦',desc:'Defeat the Spend-It-All Specter!',color:'#fbbf24',
+   scenarios:[
+    {text:"You earned $200 from babysitting. The 50/30/20 rule says: 50% needs, 30% wants, 20% savings. What's your savings amount?",enemy:'💨 Spend-It-All Specter',hp:100,
+     choices:[
+      {label:"$40 to savings (20%)!",detail:"Exactly right!",effect:'good',delta:40,xp:35,learn:"The 50/30/20 rule is a classic budgeting framework. 20% of $200 = $40. Even small savings add up over time!"},
+      {label:"$100 — save half!",detail:"Even better actually!",effect:'good',delta:100,xp:30,learn:"Saving MORE than 20% is great! The 50/30/20 rule is a minimum guide, not a cap. Save as much as you can!"},
+      {label:"$20 — just 10%",detail:"Under the 20% target",effect:'neutral',delta:20,xp:12,learn:"10% is better than 0%, but the recommended minimum is 20%. Try to increase your savings rate over time!"},
+      {label:"$0 — spend it all, you earned it!",detail:"Future-you will be sad",effect:'bad',delta:0,xp:2,learn:"Spending everything now means nothing for emergencies or future goals. 'Pay yourself first' by saving before spending!"},
+     ]},
+    {text:"You saved $300! A savings account offers 4% interest per year. How much will you have after 1 year?",enemy:'🧮 Math Goblin',hp:90,
+     choices:[
+      {label:"$312 — $300 + 4% ($12)",detail:"Correct math!",effect:'good',delta:12,xp:35,learn:"Interest = principal × rate. $300 × 4% = $12 earned FREE just for keeping your money in a bank! This is compound interest starting!"},
+      {label:"$340 — I think it's more?",detail:"Nope — recheck the math",effect:'bad',delta:0,xp:5,learn:"4% of $300 = $12, not $40. Always calculate: amount × percentage ÷ 100. Financial literacy means checking math!"},
+      {label:"Still $300 — banks don't pay you",detail:"Actually they do!",effect:'bad',delta:0,xp:5,learn:"Banks DO pay you interest on savings accounts because they use your money to make loans. Always put savings in an interest-earning account!"},
+      {label:"$304 — just a little bit",detail:"Close but not right",effect:'neutral',delta:4,xp:10,learn:"The answer is $312. 4% = 0.04. $300 × 0.04 = $12. Practice percentage math — it's used in every financial decision!"},
+     ]},
+   ]},
+  {id:'emergency',name:'Emergency Fund Quest',icon:'🆘',desc:'Final boss: The Budget Destroyer!',color:'#ef4444',boss:true,
+   scenarios:[
+    {text:"BOSS BATTLE! The Budget Destroyer attacks! Your phone breaks — $150 to fix. You have $50 saved. What do you do?",enemy:'💀 Budget Destroyer',hp:160,
+     choices:[
+      {label:"Use emergency fund + ask for help with rest",detail:"Planned for this!",effect:'good',delta:50,xp:40,learn:"Emergency funds exist for exactly this! Financial experts say 3-6 months of expenses is ideal. Even $50 helps!"},
+      {label:"Put it on a credit card — deal with it later",detail:"Debt grows with interest!",effect:'bad',delta:-150,xp:5,learn:"Credit card debt with 20%+ interest means you'll pay way more. A $150 emergency becomes $180+ if not paid quickly!"},
+      {label:"Go without a phone for now",detail:"Tough but debt-free!",effect:'neutral',delta:50,xp:20,learn:"Living without a luxury temporarily to avoid debt is a valid strategy. It's called 'making do' and builds financial resilience!"},
+      {label:"Sell some stuff to cover the cost",detail:"Liquidate assets!",effect:'good',delta:100,xp:30,learn:"Selling items you don't need is a great way to raise emergency cash. It's called 'liquidating assets' — a real finance skill!"},
+     ]},
+    {text:"FINAL BOSS! You get a surprise $500 bonus. The Budget Destroyer offers you one last choice...",enemy:'💀 Budget Destroyer',hp:200,
+     choices:[
+      {label:"Split: $200 emergency fund, $200 savings, $100 fun",detail:"Balanced and wise!",effect:'good',delta:500,xp:50,learn:"Splitting windfalls between savings, emergency fund, and enjoyment is the PERFECT move. You're a budget master!"},
+      {label:"Invest all $500 in stocks",detail:"Risky without an emergency fund!",effect:'neutral',delta:300,xp:20,learn:"Investing is great, but you need an emergency fund FIRST. Without it, one car repair forces you to sell investments at a loss!"},
+      {label:"Spend it all — it's a bonus!",detail:"Budget Destroyer wins...",effect:'bad',delta:-200,xp:3,learn:"Windfalls (unexpected money) should be saved or invested, not spent. Use the 'rule': save at least 50% of any bonus!"},
+      {label:"Pay off any debts first",detail:"Eliminate debt = free money!",effect:'good',delta:500,xp:45,learn:"Paying off debt (especially high-interest) is often the BEST investment. Eliminating 20% credit card interest beats most investments!"},
+     ]},
+   ]},
+];
+
+let G={charIdx:0};
+
+function pickChar(i){
+  document.querySelectorAll('.char-box').forEach(b=>b.classList.remove('sel'));
+  document.querySelector(`[data-c="${i}"]`).classList.add('sel');
+  G.charIdx=i;
+  document.getElementById('hero-display').textContent=CHARS[i].emoji;
+}
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on')}
+
+function goTitle(){G={charIdx:0};document.getElementById('hero-display').textContent='💳';document.getElementById('hud').style.display='none';show('ts')}
+
+function goMap(){
+  if(!G.charIdx) G.charIdx=0;
+  if(G.hp === undefined){
+    G.hp=100;G.xp=0;G.xpMax=100;G.level=1;G.coins=0;G.lives=3;
+    G.budget=1000;G.correct=0;G.wrong=0;G.worldsDone=[];G.totalXP=0;G.totalCoins=0;
+  }
+  buildMap();
+  document.getElementById('hud').style.display='block';
+  updateHUD();
+  show('ms');
+}
+
+function buildMap(){
+  const grid=document.getElementById('world-grid');
+  grid.innerHTML='';
+  WORLDS.forEach((w,i)=>{
+    if(i>0){const conn=document.createElement('div');conn.className='world-connector';grid.appendChild(conn);}
+    const done=G.worldsDone.includes(w.id);
+    const locked=i>0&&!G.worldsDone.includes(WORLDS[i-1].id);
+    const active=!done&&!locked;
+    const node=document.createElement('div');
+    node.className='world-node'+(locked?' locked':'')+(done?' done':'')+(active?' active':'');
+    node.innerHTML=`<div class="wn-ico">${w.icon}</div><div class="wn-info"><div class="wn-name" style="color:${w.color}">${w.name}${w.boss?' 👑':''}</div><div class="wn-desc">${w.desc}</div></div><div class="wn-badge">${done?'✅':locked?'🔒':active?'▶':''}</div>`;
+    if(!locked&&!done) node.onclick=()=>startWorld(w);
+    grid.appendChild(node);
+  });
+  const char=CHARS[G.charIdx||0];
+  document.getElementById('map-sub').textContent=`${char.emoji} ${char.name} — Level ${G.level} Budget Hero`;
+}
+
+function startWorld(world){
+  G.currentWorld=world;
+  G.currentScenarioIdx=0;
+  G.currentScenarios=[...world.scenarios];
+  runScenario();
+  show('bs');
+}
+
+function runScenario(){
+  const world=G.currentWorld;
+  const sc=G.currentScenarios[G.currentScenarioIdx];
+  if(!sc){worldComplete();return;}
+  G.currentSC=sc;
+  G.enemyHP=sc.hp;
+  G.enemyMaxHP=sc.hp;
+  G.answeredThis=false;
+  renderBattle(sc,world);
+}
+
+function renderBattle(sc,world){
+  const wrap=document.getElementById('battle-wrap');
+  const char=CHARS[G.charIdx||0];
+  const pct=Math.round((G.enemyHP/G.enemyMaxHP)*100);
+  wrap.innerHTML=`
+  <div class="scenario-card">
+    <span class="sc-tag">${world.name}</span>
+    <div class="sc-sprite">${sc.enemy.split(' ')[0]}</div>
+    <div style="font-size:11px;font-weight:800;color:${world.color};margin-bottom:6px">${sc.enemy}</div>
+    <div class="enemy-hpbar">
+      <div class="hbar-label" style="margin-bottom:2px"><span style="font-size:10px;color:var(--muted)">Enemy HP</span><span style="font-size:10px;color:var(--red)">${G.enemyHP}/${G.enemyMaxHP}</span></div>
+      <div class="hbar"><div class="hbar-fill" id="enemy-bar" style="background:${world.color};width:${pct}%"></div></div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+    <div class="sc-text">${sc.text}</div>
+  </div>
+  <div class="budget-meter">
+    <div class="bm-title">${char.emoji} ${char.name}'s Budget Dashboard</div>
+    <div class="bm-row"><span class="bm-cat">Current Budget</span><span class="bm-val" style="color:var(--green)" id="bm-budget">$${G.budget.toLocaleString()}</span></div>
+    <div class="bm-row"><span class="bm-cat">XP to next level</span><span class="bm-val" style="color:var(--purple)">${G.xpMax-G.xp} XP</span></div>
+    <div class="bm-row"><span class="bm-cat">Coins</span><span class="bm-val" style="color:var(--gold)">💰 ${G.coins}</span></div>
+    <div class="budget-fill-bar"><div class="budget-fill" style="background:var(--green);width:${Math.min(100,(G.budget/2000)*100)}%"></div></div>
+  </div>
+  <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:4px 0">Choose your action:</div>
+  <div class="choices-grid" id="choices-grid"></div>
+  <div id="result-area"></div>
+  `;
+  const grid=document.getElementById('choices-grid');
+  sc.choices.forEach((ch,i)=>{
+    const btn=document.createElement('div');
+    btn.className='choice-btn';
+    btn.innerHTML=`<div class="cb-label">${ch.label}</div><div class="cb-amount ${ch.effect==='good'?'pos':ch.effect==='bad'?'neg':'neutral'}">${ch.detail}</div>`;
+    btn.onclick=()=>pickChoice(ch,btn,i);
+    grid.appendChild(btn);
+  });
+}
+
+function pickChoice(ch,btn,idx){
+  if(G.answeredThis)return;
+  G.answeredThis=true;
+  document.querySelectorAll('.choice-btn').forEach(b=>b.style.pointerEvents='none');
+  btn.classList.add(ch.effect==='good'?'correct':ch.effect==='bad'?'wrong':'neutral');
+  const xpGain=ch.xp;
+  const coinGain=ch.effect==='good'?Math.floor(Math.random()*10)+5:ch.effect==='neutral'?2:0;
+  const hpDelta=ch.effect==='good'?10:ch.effect==='bad'?-20:-5;
+  const enemyDmg=ch.effect==='good'?Math.floor(G.enemyMaxHP*.4)+10:ch.effect==='neutral'?Math.floor(G.enemyMaxHP*.15):0;
+  G.xp+=xpGain; G.totalXP+=xpGain;
+  G.coins+=coinGain; G.totalCoins+=coinGain;
+  G.hp=Math.min(100,Math.max(0,G.hp+hpDelta));
+  G.budget+=ch.delta;
+  G.enemyHP=Math.max(0,G.enemyHP-enemyDmg);
+  if(ch.effect==='good')G.correct++;else if(ch.effect==='bad')G.wrong++;
+  while(G.xp>=G.xpMax){G.xp-=G.xpMax;G.xpMax=Math.round(G.xpMax*1.3);G.level++;showToast('LEVEL UP! You are now Level '+G.level+' 🎉');}
+  if(G.hp<=0){G.lives--;if(G.lives<=0){setTimeout(()=>endGame(false),1200);return;}}
+  updateHUD();
+  const epct=Math.round((G.enemyHP/G.enemyMaxHP)*100);
+  const eBar=document.getElementById('enemy-bar');
+  if(eBar)eBar.style.width=epct+'%';
+  const ra=document.getElementById('result-area');
+  const isWin=G.enemyHP<=0;
+  const resultClass=ch.effect==='good'?'win':ch.effect==='bad'?'lose':'';
+  ra.innerHTML=`
+  <div class="result-card ${resultClass}">
+    <div class="result-title" style="color:${ch.effect==='good'?'var(--green)':ch.effect==='bad'?'var(--red)':'#fbbf24'}">${ch.effect==='good'?'✅ GREAT CHOICE!':ch.effect==='bad'?'❌ COSTLY MISTAKE!':'⚠ RISKY MOVE!'}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${isWin?'<strong style="color:var(--green)">ENEMY DEFEATED!</strong> '+G.currentWorld.icon:'Keep fighting...'}</div>
+    <div class="learn-box"><strong>💡 Budget Lesson:</strong> ${ch.learn}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;justify-content:center">
+      ${xpGain?`<span style="background:#2a1f4a;color:#c4b5fd;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">+${xpGain} XP</span>`:''}
+      ${coinGain?`<span style="background:#1c1a10;color:var(--gold);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">+${coinGain} coins</span>`:''}
+      ${hpDelta>0?`<span style="background:#052e16;color:var(--green);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">+${hpDelta} HP</span>`:''}
+      ${hpDelta<0?`<span style="background:#450a0a;color:var(--red);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">${hpDelta} HP</span>`:''}
+    </div>
+    <button class="rbtn sm" style="margin-top:12px" onclick="${isWin?'nextScenario()':'continueScenario()'}">${isWin?'Continue Quest ▶':'Try next challenge ▶'}</button>
+  </div>`;
+  updateHUD();
+}
+
+function nextScenario(){
+  G.currentScenarioIdx++;
+  if(G.currentScenarioIdx>=G.currentScenarios.length){worldComplete();return;}
+  runScenario();
+}
+
+function continueScenario(){
+  G.currentScenarioIdx++;
+  if(G.currentScenarioIdx>=G.currentScenarios.length){worldComplete();return;}
+  runScenario();
+}
+
+function worldComplete(){
+  G.worldsDone.push(G.currentWorld.id);
+  const bonus=50+G.level*10;
+  G.coins+=bonus; G.totalCoins+=bonus;
+  G.xp+=40; G.totalXP+=40;
+  showToast('🌟 World Complete! +'+bonus+' coins bonus!');
+  const allDone=G.worldsDone.length>=WORLDS.length;
+  setTimeout(()=>{
+    if(allDone){endGame(true);}else{goMap();}
+  },800);
+}
+
+function endGame(win){
+  document.getElementById('hud').style.display='none';
+  document.getElementById('end-emoji').textContent=win?'🏆':'💸';
+  document.getElementById('end-title').textContent=win?'BUDGET MASTER!':'BANKRUPT!';
+  document.getElementById('end-sub').textContent=win?'You conquered all 5 worlds!':'The Budget Destroyer won this time...';
+  document.getElementById('ef-xp').textContent=G.totalXP.toLocaleString();
+  document.getElementById('ef-coins').textContent=G.totalCoins;
+  document.getElementById('ef-correct').textContent=G.correct;
+  document.getElementById('ef-wrong').textContent=G.wrong;
+  const tips=['Remember: Needs first, wants second. This one rule prevents most overspending!','Save at least 20% of any money you receive. Future-you will say thank you!','An emergency fund with 3 months of expenses protects you from financial disasters.','Store brands, refurbished items, and free resources can save you hundreds each year!','Compound interest makes savings grow automatically. Start early — even $10/week adds up!'];
+  document.getElementById('ef-tip').innerHTML='<strong>Key takeaway:</strong> '+tips[Math.floor(Math.random()*tips.length)];
+  
+  if (win && window.parent && window.parent.currentUser) {
+       fetch('/api/save-gamestate', {
+           method: 'POST',
+           headers: {'Content-Type': 'application/json'},
+           body: JSON.stringify({ xp: G.totalXP, coins: G.totalCoins })
+       }).catch(e => console.log(e));
+  }
+  
+  G={charIdx:G.charIdx};
+  show('es');
+}
+
+function updateHUD(){
+  if(!G.hp&&G.hp!==0)return;
+  document.getElementById('hp-bar').style.width=G.hp+'%';
+  document.getElementById('hp-val').textContent=G.hp;
+  document.getElementById('xp-bar').style.width=Math.min(100,(G.xp/G.xpMax)*100)+'%';
+  document.getElementById('xp-val').textContent=G.xp;
+  document.getElementById('xp-max').textContent=G.xpMax;
+  document.getElementById('h-coins').textContent='💰 '+G.coins;
+  document.getElementById('h-budget').textContent='$'+Math.max(0,Math.round(G.budget)).toLocaleString();
+  const lr=document.getElementById('lives-row');
+  lr.innerHTML='';
+  for(let i=0;i<3;i++){const d=document.createElement('div');d.className='life-icon'+(i>=G.lives?' lost':'');d.textContent='❤️';lr.appendChild(d);}
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2500);
+}
+
+// Generate stars
+const sb=document.getElementById('star-bg');
+for(let i=0;i<40;i++){
+  const s=document.createElement('div');s.className='star';
+  s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()*2}s`;
+  sb.appendChild(s);
+}
+
+</script>
+</body>
+</html>

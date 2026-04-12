@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harvest Tycoon — Agri Kingdom</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0c1a06;font-family:'Segoe UI',sans-serif;overflow-x:hidden;min-height:100vh;color:#fff}
+#game{position:relative;width:100%;min-height:100vh;overflow:hidden}
+
+/* SCREENS */
+.scr{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;text-align:center}
+.scr.on{display:flex}
+
+/* TITLE */
+#title-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.field-line{position:absolute;width:100%;height:1px;background:#1a3d1a22;animation:fieldScroll 4s linear infinite}
+@keyframes fieldScroll{0%{transform:translateY(0)}100%{transform:translateY(40px)}}
+.title-icon{font-size:4rem;animation:iconFloat 3s ease-in-out infinite;filter:drop-shadow(0 0 15px rgba(74,222,128,.4))}
+@keyframes iconFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+.title-txt{font-size:2rem;font-weight:900;color:#4ade80;letter-spacing:3px;text-shadow:0 0 30px rgba(74,222,128,.3);margin:10px 0 5px;position:relative;z-index:2}
+.sub-txt{font-size:.9rem;color:#86efac;margin-bottom:16px;position:relative;z-index:2}
+.pill-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:16px;position:relative;z-index:2}
+.pill{background:#14532d44;border:1px solid #15803d44;border-radius:20px;padding:3px 10px;font-size:.68rem;color:#86efac}
+.btn{border:none;color:#fff;font-size:.9rem;font-weight:700;padding:12px 28px;border-radius:10px;cursor:pointer;margin:5px;transition:all .2s;position:relative;z-index:2}
+.btn:hover{transform:translateY(-2px)}
+.btn.green{background:linear-gradient(135deg,#15803d,#166534);box-shadow:0 4px 15px rgba(22,101,52,.4)}
+.btn.green:hover{box-shadow:0 6px 20px rgba(22,101,52,.6)}
+.btn.amber{background:linear-gradient(135deg,#b45309,#d97706);box-shadow:0 4px 15px rgba(180,83,9,.3)}
+.btn.gray{background:#1e3a1e;border:1px solid #2d5a2d}
+
+/* LEVEL SELECT */
+.lv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:380px;width:100%;margin:12px 0}
+.lv-card{background:#1a3d1a;border:1.5px solid #2d6a2d55;border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;text-align:center;position:relative;overflow:hidden}
+.lv-card:hover{transform:scale(1.04);border-color:#4ade80;box-shadow:0 0 20px rgba(74,222,128,.2)}
+.lv-card h3{color:#86efac;font-size:.95rem;margin-bottom:3px}
+.lv-card p{color:#4b7a4b;font-size:.72rem}
+.lv-card .diff{font-size:.65rem;margin-top:4px;font-weight:700}
+.lv-card .glow{position:absolute;top:-30%;right:-30%;width:60%;height:60%;background:radial-gradient(circle,rgba(74,222,128,.08) 0%,transparent 70%);pointer-events:none}
+
+/* GAMEPLAY */
+#play-scr{padding:10px 14px;justify-content:flex-start}
+
+/* Top HUD */
+#top-hud{display:flex;align-items:center;gap:8px;width:100%;background:linear-gradient(90deg,#0f2808ee,#1a3d10ee);padding:8px 12px;border-radius:10px;border:1px solid #2d5a2d;margin-bottom:8px}
+.h-pill{font-size:.75rem;display:flex;align-items:center;gap:4px;color:#86efac}
+.h-pill b{color:#4ade80}
+.h-pill.timer b{color:#fbbf24}
+.h-pill.danger b{color:#ef4444;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+#h-level{margin-left:auto;font-size:.7rem;color:#fbbf24;font-weight:700;letter-spacing:1px}
+
+/* Timer bar */
+#timer-bar{width:100%;height:6px;background:#1a3d1a;border-radius:3px;margin-bottom:8px;overflow:hidden}
+#timer-fill{height:100%;background:#4ade80;border-radius:3px;transition:width .35s linear}
+
+/* Round dots */
+#round-dots{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+.rdot{width:10px;height:10px;border-radius:50%;background:#1a3d1a;border:1.5px solid #2d5a2d;transition:all .3s}
+.rdot.done{background:#15803d;border-color:#4ade80}
+.rdot.cur{background:#4ade80;box-shadow:0 0 6px #4ade80;animation:dotPulse 1s infinite alternate}
+@keyframes dotPulse{from{box-shadow:0 0 4px #4ade8088}to{box-shadow:0 0 10px #4ade80}}
+
+/* Farm Dashboard */
+#farm-dash{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;margin-bottom:10px}
+.farm-stat{background:#1a3d1a;border:1px solid #2d5a2d55;border-radius:8px;padding:8px 6px;text-align:center}
+.farm-stat .fs-icon{font-size:1.4rem}
+.farm-stat .fs-val{font-size:1rem;font-weight:700;color:#fbbf24;margin:2px 0}
+.farm-stat .fs-label{font-size:.6rem;color:#4b7a4b;text-transform:uppercase;letter-spacing:1px}
+
+/* Question zone */
+#q-zone{background:#1a3d1a88;border:1px solid #2d5a2d44;border-radius:14px;padding:16px;width:100%;max-width:500px;margin:0 auto}
+#q-scenario{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+#q-icon{width:60px;height:60px;background:#0d2b0d;border:2px solid #2d5a2d;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0}
+#q-meta{text-align:left}
+#q-cat{font-size:.6rem;color:#4ade80;font-weight:700;letter-spacing:2px}
+#q-round{font-size:.55rem;color:#4b7a4b;margin-top:2px}
+#q-text{font-size:.88rem;color:#e2e8f0;margin-bottom:12px;line-height:1.5;text-align:center}
+#q-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qopt{background:#0d2b0d;border:1px solid #2d5a2d60;border-radius:8px;color:#e2e8f0;font-size:.78rem;padding:10px 8px;cursor:pointer;transition:all .18s;text-align:center;line-height:1.3}
+.qopt:hover{background:#15803d;border-color:#4ade80}
+.qopt.ok{background:#166534;border-color:#4ade80;color:#4ade80}
+.qopt.bad{background:#7f1d1d;border-color:#f87171;color:#f87171}
+#q-fb{font-size:.82rem;min-height:22px;margin-top:8px;font-weight:700;text-align:center}
+#q-tip{font-size:.7rem;color:#4b7a4b;margin-top:5px;font-style:italic;line-height:1.4;text-align:center;min-height:30px}
+#q-impact{font-size:.72rem;color:#fbbf24;margin-top:5px;min-height:18px;text-align:center;font-weight:600}
+
+/* Combo */
+#combo-bar{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.6rem;font-weight:700;color:#fbbf24;pointer-events:none;opacity:0;z-index:30;text-shadow:0 0 15px rgba(251,191,36,.5)}
+
+/* Results */
+.res-card{background:#1a3d1a;border:2px solid #2d6a2d;border-radius:16px;padding:24px;max-width:360px;width:100%;text-align:center}
+.res-card .res-icon{font-size:3rem;margin-bottom:8px}
+.res-card h2{color:#86efac;margin-bottom:6px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.s-box{background:#0d2b0d;border:1px solid #2d5a2d;border-radius:8px;padding:10px 6px;text-align:center}
+.s-box .sv{font-size:1.3rem;font-weight:700;color:#fbbf24}
+.s-box .sl{font-size:.6rem;color:#4b7a4b;margin-top:3px;text-transform:uppercase;letter-spacing:1px}
+.badge-wrap{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:8px 0}
+.badge{background:#14532d;color:#86efac;font-size:.65rem;padding:3px 10px;border-radius:20px}
+
+/* Animations */
+@keyframes popIn{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-130%) scale(1.4)}}
+@keyframes shakeIt{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+</style>
+</head>
+<body>
+<div id="game">
+
+<!-- TITLE -->
+<div class="scr on" id="s-title">
+  <div id="title-bg"></div>
+  <div class="title-icon">🏡</div>
+  <div class="title-txt">HARVEST TYCOON</div>
+  <div class="sub-txt">Build your farm empire through smart decisions!</div>
+  <div class="pill-row">
+    <span class="pill">🌾 Crop Management</span>
+    <span class="pill">💰 Market Trading</span>
+    <span class="pill">🌧️ Weather Strategy</span>
+    <span class="pill">🏦 Farm Finance</span>
+    <span class="pill">🚜 Equipment</span>
+    <span class="pill">📊 Business Skills</span>
+  </div>
+  <p style="color:#4b7a4b;font-size:.78rem;max-width:300px;margin-bottom:14px;position:relative;z-index:2">
+    Manage your farm across seasons! Answer questions to grow crops, trade at market, survive disasters, and build a farming empire. Your decisions affect your farm stats!
+  </p>
+  <button class="btn green" onclick="goLevels()">🌱 Start Farming</button>
+  <button class="btn gray" onclick="showGuide()">📖 How to Play</button>
+</div>
+
+<!-- LEVEL SELECT -->
+<div class="scr" id="s-levels">
+  <h2 style="color:#4ade80;margin-bottom:4px;font-size:1.4rem">🚜 Choose Your Farm</h2>
+  <p style="font-size:.82rem;color:#86efac;margin-bottom:14px">Bigger farms = harder challenges, better rewards!</p>
+  <div class="lv-grid">
+    <div class="lv-card" onclick="startGame(1)">
+      <div class="glow"></div>
+      <h3>🌱 Small Plot</h3><p>Beginner Farmer</p>
+      <div class="diff" style="color:#4ade80">20s · 8 rounds · Easy</div>
+    </div>
+    <div class="lv-card" onclick="startGame(2)">
+      <div class="glow"></div>
+      <h3>🌿 Village Farm</h3><p>Market Trader</p>
+      <div class="diff" style="color:#fbbf24">15s · 10 rounds · Medium</div>
+    </div>
+    <div class="lv-card" onclick="startGame(3)">
+      <div class="glow"></div>
+      <h3>🌾 Commercial</h3><p>Agri Expert</p>
+      <div class="diff" style="color:#f87171">12s · 12 rounds · Hard</div>
+    </div>
+    <div class="lv-card" onclick="startGame(4)">
+      <div class="glow"></div>
+      <h3>🏆 Agri Empire</h3><p>Tycoon Class</p>
+      <div class="diff" style="color:#c084fc">8s · 14 rounds · Expert</div>
+    </div>
+  </div>
+  <button class="btn gray" onclick="goTitle()">← Back</button>
+</div>
+
+<!-- GAMEPLAY -->
+<div class="scr" id="s-play">
+  <div id="top-hud">
+    <div class="h-pill">❤️ <div id="h-lives"></div></div>
+    <div class="h-pill timer" id="h-timer-wrap">⏱ <b id="h-time">20</b>s</div>
+    <div class="h-pill">💰 <b id="h-gold">0</b></div>
+    <div class="h-pill">🔥 <b id="h-combo">x1</b></div>
+    <div id="h-level">LEVEL 1</div>
+  </div>
+  <div id="timer-bar"><div id="timer-fill" style="width:100%"></div></div>
+  <div id="round-dots"></div>
+
+  <div id="farm-dash">
+    <div class="farm-stat"><div class="fs-icon">🌾</div><div class="fs-val" id="fs-crops">0</div><div class="fs-label">Crops</div></div>
+    <div class="farm-stat"><div class="fs-icon">💧</div><div class="fs-val" id="fs-water">100</div><div class="fs-label">Water</div></div>
+    <div class="farm-stat"><div class="fs-icon">🌡️</div><div class="fs-val" id="fs-health">100</div><div class="fs-label">Health</div></div>
+    <div class="farm-stat"><div class="fs-icon">⭐</div><div class="fs-val" id="fs-rep">0</div><div class="fs-label">Rep</div></div>
+  </div>
+
+  <div id="q-zone">
+    <div id="q-scenario">
+      <div id="q-icon">🌾</div>
+      <div id="q-meta">
+        <div id="q-cat">CROP MANAGEMENT</div>
+        <div id="q-round">Round 1 of 8</div>
+      </div>
+    </div>
+    <div id="q-text">Loading...</div>
+    <div id="q-opts"></div>
+    <div id="q-fb"></div>
+    <div id="q-tip"></div>
+    <div id="q-impact"></div>
+  </div>
+
+  <div id="combo-bar"></div>
+</div>
+
+<!-- GUIDE -->
+<div class="scr" id="s-guide">
+  <div style="background:#1a3d1a;border-radius:16px;padding:22px;max-width:380px;width:100%;text-align:left">
+    <h2 style="color:#4ade80;text-align:center;margin-bottom:12px">📖 How to Play</h2>
+    <p style="font-size:.82rem;color:#86efac;line-height:1.7;margin-bottom:8px">
+      <b style="color:#fbbf24">🎯 Goal:</b> Answer farming questions correctly to build your farm! Each correct answer grows your crops, earns gold, and builds reputation.
+    </p>
+    <p style="font-size:.82rem;color:#86efac;line-height:1.7;margin-bottom:8px">
+      <b style="color:#fbbf24">⏱ Timer:</b> Answer before time runs out! Wrong answers or timeouts cost you a life and damage your farm.
+    </p>
+    <p style="font-size:.82rem;color:#86efac;line-height:1.7;margin-bottom:8px">
+      <b style="color:#fbbf24">🔥 Combo:</b> Chain correct answers for multiplied rewards! Combo x3+ triggers special bonuses to your farm stats.
+    </p>
+    <p style="font-size:.82rem;color:#86efac;line-height:1.7;margin-bottom:8px">
+      <b style="color:#fbbf24">📊 Farm Stats:</b> Your Crops, Water, Health, and Reputation change based on your decisions. Keep them balanced to succeed!
+    </p>
+    <p style="font-size:.82rem;color:#86efac;line-height:1.7">
+      <b style="color:#fbbf24">🏆 Win:</b> Complete all rounds or reach maximum farm reputation to become a Harvest Tycoon!
+    </p>
+    <button class="btn gray" style="width:100%;margin-top:14px" onclick="goTitle()">← Back</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="scr" id="s-results">
+  <div class="res-card">
+    <div class="res-icon" id="r-icon">🏆</div>
+    <h2 id="r-title">Season Complete!</h2>
+    <div class="stat-grid">
+      <div class="s-box"><div class="sv" id="r-score">0</div><div class="sl">Gold</div></div>
+      <div class="s-box"><div class="sv" id="r-crops">0</div><div class="sl">Crops Grown</div></div>
+      <div class="s-box"><div class="sv" id="r-acc">0%</div><div class="sl">Accuracy</div></div>
+    </div>
+    <div class="badge-wrap" id="r-badges"></div>
+    <p id="r-msg" style="color:#4b7a4b;font-size:.8rem;margin:8px 0"></p>
+    <button class="btn green" onclick="goLevels()" style="width:100%;margin-top:8px">▶ Play Again</button>
+    <button class="btn amber" onclick="claimRewards()" style="width:100%;margin-top:5px">🏆 Claim Rewards & Exit</button>
+    <button class="btn gray" onclick="goTitle()" style="width:100%;margin-top:5px">🏠 Home</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// QUESTIONS DATABASE — farming & market management
+const QS=[
+  {cat:'Crop Management',icon:'🌾',q:'You have 5 acres. Which Rabi crop gives the best returns with minimal water?',a:'Wheat — it thrives in cool, dry conditions',w:['Rice — it needs monsoon','Jute — it needs humidity','Sugarcane — it needs 2 years'],tip:'Wheat is ideal for Rabi season (Oct-Mar). Needs less water than rice and gives reliable returns.',impact:{crops:3,water:5,rep:2}},
+  {cat:'Market Trading',icon:'💰',q:'Wheat prices are at MSP (₹2,275/quintal). A private buyer offers ₹2,400. What should you do?',a:'Sell to private buyer for higher profit',w:['Wait for prices to drop','Sell at MSP only','Store indefinitely'],tip:'When market price > MSP, sell in open market! MSP is a safety net, not a ceiling.',impact:{crops:-2,water:0,rep:3}},
+  {cat:'Weather Strategy',icon:'🌧️',q:'El Niño warning issued — weak monsoon expected. How do you prepare your Kharif crops?',a:'Switch to drought-resistant varieties & drip irrigation',w:['Do nothing and hope for rain','Plant more rice that needs floods','Stop farming until next year'],tip:'Drought-resistant millets + drip irrigation can save your Kharif season. Adaptation is key!',impact:{crops:2,water:10,rep:4}},
+  {cat:'Farm Finance',icon:'🏦',q:'You need ₹2 lakh for seeds and fertilizer. What\'s the best source of credit?',a:'Kisan Credit Card (KCC) from a bank at 4% interest',w:['Money lender at 36% interest','Sell your land','Borrow from relatives'],tip:'KCC gives subsidized credit at 4% per year. Moneylenders charge 3-5% per MONTH! Always use formal credit.',impact:{crops:4,water:0,rep:2}},
+  {cat:'Equipment',icon:'🚜',q:'You can afford either a tractor or drip irrigation system. Which investment gives better ROI?',a:'Drip irrigation — saves 40-60% water, increases yield by 30%',w:['Tractor — it looks impressive','Neither — manual labor is best','Both — take a huge loan'],tip:'Drip irrigation pays for itself in 2-3 seasons through water savings and higher yields!',impact:{crops:2,water:15,rep:3}},
+  {cat:'Business Skills',icon:'📊',q:'You harvested 50 quintals of wheat. The mandi is 100km away. How to reduce transport costs?',a:'Pool with nearby farmers to share transport (cooperative)',w:['Sell to local middleman at 40% less','Let it rot in storage','Carry it yourself on a bullock cart'],tip:'Farmer cooperatives reduce per-unit transport costs. e-NAM lets farmers sell to any mandi digitally!',impact:{crops:0,water:0,rep:5}},
+  {cat:'Crop Management',icon:'🌱',q:'Your soil test shows low Nitrogen. What\'s the most sustainable fix?',a:'Grow a legume (dal/pulses) crop to fix nitrogen naturally',w:['Pour more urea fertilizer','Add pesticides','Ignore it and plant wheat'],tip:'Legumes like moong, chickpea have root bacteria that FIX atmospheric nitrogen into soil — free natural fertilizer!',impact:{crops:3,water:5,rep:3}},
+  {cat:'Market Trading',icon:'📈',q:'Onion prices crashed to ₹5/kg after bumper harvest. How to minimize your loss?',a:'Process into onion paste/powder for longer shelf life & higher value',w:['Throw away all onions','Give them free','Wait 6 months — onions will rot'],tip:'Value addition (processing) increases shelf life and price. Onion powder sells at 5-10x the fresh price!',impact:{crops:0,water:0,rep:4}},
+  {cat:'Weather Strategy',icon:'❄️',q:'Unexpected frost in February is damaging your wheat crop. Immediate action?',a:'Light smoky fires around field edges to trap warm air',w:['Pour cold water on crops','Harvest everything immediately','Do nothing'],tip:'Smoke creates a blanket that prevents heat radiation loss. Farmers also use light irrigation — wet soil retains more heat than dry.',impact:{crops:2,water:-5,rep:2}},
+  {cat:'Farm Finance',icon:'💸',q:'Your neighbor suggests crop insurance (PMFBY). Premium is ₹2,000 for ₹1 lakh coverage. Worth it?',a:'Yes — it protects against drought, flood, and pest disasters',w:['No — insurance is a waste','Only if government forces you','Wait until disaster happens'],tip:'PMFBY (PM Fasal Bima Yojana) costs just 1.5-2% of sum insured. One bad season without insurance can bankrupt a farmer!',impact:{crops:0,water:0,rep:4}},
+  {cat:'Equipment',icon:'📡',q:'How can drone technology help monitor your 20-acre farm?',a:'Multispectral cameras detect crop stress, disease, and water needs',w:['Drones deliver food to farmers','Drones scare away all birds','Drones plant seeds everywhere automatically'],tip:'NDVI mapping from drones shows exactly which parts of your field need water or have disease — precision farming!',impact:{crops:3,water:8,rep:5}},
+  {cat:'Business Skills',icon:'🌍',q:'A foreign buyer wants 100 tonnes of organic wheat at 2x the local price. What do you need?',a:'Organic certification (3 years chemical-free) and export license',w:['Just label it organic','Spray less pesticide this season','Government permission only'],tip:'Organic certification takes 3 years of chemical-free farming. But organic exports earn 50-100% premium — worth the investment!',impact:{crops:0,water:0,rep:6}},
+  {cat:'Crop Management',icon:'🐛',q:'Aphids are attacking your mustard crop. Best biological control method?',a:'Release ladybug beetles — they eat 50 aphids per day!',w:['Spray maximum pesticide','Burn the entire field','Plant more mustard to overwhelm pests'],tip:'Biological control uses natural predators. One ladybug eats 5,000 aphids in its lifetime! IPM (Integrated Pest Management) combines multiple methods.',impact:{crops:3,water:0,rep:3}},
+  {cat:'Market Trading',icon:'🏪',q:'You registered on e-NAM (electronic trading platform). What advantage does this give?',a:'Access to buyers across India — better prices through competition',w:['Free delivery to customers','Government guarantees double price','Tax exemption for 10 years'],tip:'e-NAM connects 585+ mandis. Instead of selling to 5 local traders, you now have thousands of buyers bidding — competition raises prices!',impact:{crops:0,water:0,rep:5}},
+  {cat:'Weather Strategy',icon:'🌊',q:'Flood warning: heavy rain expected for 3 days. Your rice paddies are ready for harvest. What do you do?',a:'Emergency harvest whatever is ready — save maximum crop',w:['Wait for the flood to irrigate','Plant more seeds before the rain','Do nothing and hope'],tip:'Timely harvesting saves crops. Having a harvester on standby and quick-sell arrangements with nearby mills is disaster preparedness!',impact:{crops:4,water:0,rep:3}},
+  {cat:'Farm Finance',icon:'🧮',q:'Your farm earns ₹5 lakh/year. How should you invest profits for growth?',a:'50% soil health + irrigation, 30% equipment, 20% savings',w:['100% on a new car','All in stock market','Keep all cash at home'],tip:'Successful farmers reinvest 50%+ into soil and water. Healthy soil = higher yields = more income. It\'s a virtuous cycle!',impact:{crops:3,water:8,rep:4}},
+  {cat:'Equipment',icon:'💧',q:'Your bore well is drying up. What\'s the most sustainable water solution?',a:'Rainwater harvesting + farm ponds + drip irrigation',w:['Dig deeper bore wells','Pump from neighbor\'s well','Wait for monsoon only'],tip:'Rainwater harvesting captures 80% of rainwater that otherwise runs off. Farm ponds store it for dry months. India wastes 70% of rainwater!',impact:{crops:2,water:20,rep:4}},
+  {cat:'Business Skills',icon:'🤝',q:'5 small farmers in your village want to form a Farmer Producer Organization (FPO). Why is this smart?',a:'Collective bargaining power, shared equipment, bulk buying discounts',w:['Only big farmers need FPOs','FPOs are illegal','FPOs increase individual costs'],tip:'FPOs give small farmers the power of a corporation. Bulk buying seeds/fertilizer saves 20-30%. Collective selling gets 15-25% better prices!',impact:{crops:2,water:0,rep:6}},
+  {cat:'Crop Management',icon:'🌿',q:'What is intercropping and why do smart farmers practice it?',a:'Growing 2+ crops together — maximizes land use and reduces pest risk',w:['Growing crops on the internet','Cropping between buildings','Removing alternate rows of crops'],tip:'Maize + beans is a classic intercrop: maize provides climbing support, beans fix nitrogen for maize. Both win!',impact:{crops:4,water:3,rep:3}},
+  {cat:'Market Trading',icon:'🧊',q:'You built a cold storage unit. How does this change your market strategy?',a:'Store perishables and sell when prices peak — not during harvest glut',w:['Keep crops frozen forever','Cold storage only works for ice cream','Sell faster at lower prices'],tip:'Cold storage extends shelf life. Farmers who store tomatoes for 2-3 months often sell at 3-5x the harvest price!',impact:{crops:0,water:0,rep:5}},
+  {cat:'Weather Strategy',icon:'🌡️',q:'Climate change is making seasons unpredictable. Best long-term strategy?',a:'Diversify crops, build water reserves, adopt climate-resilient varieties',w:['Ignore climate change','Grow only one high-value crop','Move to the city'],tip:'Crop diversification is insurance against climate uncertainty. If one crop fails, others survive. Multiple income streams = financial safety.',impact:{crops:3,water:10,rep:5}},
+  {cat:'Farm Finance',icon:'📱',q:'Which digital tool helps track expenses, weather, and market prices for farmers?',a:'Kisan Suvidha / Agri market apps with real-time mandi prices',w:['Only Instagram','Gaming apps','Calculator only'],tip:'Apps like Kisan Suvidha, IFFCO Kisan, and Agmarknet give real-time mandi prices from across India — information is power!',impact:{crops:0,water:0,rep:3}},
+];
+
+const LEVELS=[
+  {label:'Small Plot',qs:8,tmax:20},
+  {label:'Village Farm',qs:10,tmax:15},
+  {label:'Commercial',qs:12,tmax:12},
+  {label:'Agri Empire',qs:14,tmax:8}
+];
+
+let G={};
+let finalScore=0,gameWon=false;
+
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function goTitle(){show('s-title');}
+function goLevels(){show('s-levels');}
+function showGuide(){show('s-guide');}
+function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
+
+function startGame(lv){
+  let cfg=LEVELS[lv-1];
+  let pool=shuffle([...QS]).slice(0,cfg.qs);
+  G={lv,label:cfg.label,lives:3,gold:0,combo:1,qi:0,qs:pool,tmax:cfg.tmax,tv:cfg.tmax,ti:null,answered:false,cor:0,wrg:0,
+     crops:0,water:100,health:100,rep:0};
+
+  document.getElementById('h-level').textContent='LEVEL '+lv;
+  updateHUD();buildDots();show('s-play');nextQ();
+}
+
+function buildDots(){
+  document.getElementById('round-dots').innerHTML=G.qs.map((_,i)=>`<div class="rdot${i===0?' cur':''}" id="rd${i}"></div>`).join('');
+}
+function updDots(){
+  G.qs.forEach((_,i)=>{
+    let d=document.getElementById('rd'+i);
+    if(d)d.className='rdot'+(i<G.qi?' done':i===G.qi?' cur':'');
+  });
+}
+
+function updateHUD(){
+  // Lives
+  let lv=document.getElementById('h-lives');lv.innerHTML='';
+  for(let i=0;i<3;i++){let h=document.createElement('span');h.style.fontSize='.85rem';h.textContent=i<G.lives?'❤️':'🖤';lv.appendChild(h);}
+  document.getElementById('h-time').textContent=G.tv;
+  document.getElementById('h-gold').textContent=G.gold;
+  document.getElementById('h-combo').textContent='x'+G.combo;
+
+  // Timer bar
+  let pct=(G.tv/G.tmax)*100;
+  let tf=document.getElementById('timer-fill');
+  tf.style.width=pct+'%';
+  tf.style.background=pct>55?'#4ade80':pct>28?'#fbbf24':'#f87171';
+
+  // Timer danger
+  let tw=document.getElementById('h-timer-wrap');
+  tw.classList.toggle('danger',G.tv<=5);
+
+  // Farm stats
+  document.getElementById('fs-crops').textContent=G.crops;
+  document.getElementById('fs-water').textContent=Math.max(0,G.water);
+  document.getElementById('fs-health').textContent=Math.max(0,G.health);
+  document.getElementById('fs-rep').textContent=G.rep;
+}
+
+function nextQ(){
+  if(G.qi>=G.qs.length){endGame(true);return;}
+  G.answered=false;
+  let q=G.qs[G.qi];
+  document.getElementById('q-icon').textContent=q.icon;
+  document.getElementById('q-cat').textContent=q.cat.toUpperCase();
+  document.getElementById('q-round').textContent=`Round ${G.qi+1} of ${G.qs.length}`;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-fb').textContent='';
+  document.getElementById('q-tip').textContent='';
+  document.getElementById('q-impact').textContent='';
+
+  let opts=shuffle([q.a,...q.w.slice(0,3)]);
+  let ch=document.getElementById('q-opts');ch.innerHTML='';
+  opts.forEach(o=>{
+    let b=document.createElement('button');b.className='qopt';b.textContent=o;
+    b.onclick=()=>answer(b,o,q);ch.appendChild(b);
+  });
+  updDots();startTimer();
+}
+
+function startTimer(){
+  clearInterval(G.ti);G.tv=G.tmax;updateHUD();
+  G.ti=setInterval(()=>{
+    G.tv--;updateHUD();
+    if(G.tv<=0){clearInterval(G.ti);timeUp();}
+  },1000);
+}
+
+function timeUp(){
+  if(G.answered)return;G.answered=true;
+  let q=G.qs[G.qi];
+  document.querySelectorAll('.qopt').forEach(b=>{if(b.textContent===q.a)b.classList.add('ok');});
+  document.getElementById('q-fb').textContent='⏰ Time\'s up!';
+  document.getElementById('q-fb').style.color='#f87171';
+  document.getElementById('q-tip').textContent='💡 '+q.tip;
+  document.getElementById('q-impact').textContent='🌧️ Farm damaged: -10 water, -5 health';
+  G.water=Math.max(0,G.water-10);G.health=Math.max(0,G.health-5);
+  G.combo=1;G.wrg++;
+  loseLife();
+  if(G.lives<=0){setTimeout(()=>endGame(false),1600);return;}
+  setTimeout(()=>{G.qi++;nextQ();},2800);
+}
+
+function answer(btn,opt,q){
+  if(G.answered)return;G.answered=true;clearInterval(G.ti);
+  let ok=opt===q.a;
+
+  if(ok){
+    btn.classList.add('ok');
+    let pts=50*G.combo+(G.tv*5);
+    G.gold+=pts;G.combo=Math.min(G.combo+1,5);G.cor++;
+
+    // Apply positive impact
+    if(q.impact){
+      G.crops+=q.impact.crops||0;
+      G.water+=q.impact.water||0;
+      G.health=Math.min(100,G.health+5);
+      G.rep+=q.impact.rep||0;
+    }
+
+    document.getElementById('q-fb').textContent='✅ Correct! +'+pts+' gold';
+    document.getElementById('q-fb').style.color='#4ade80';
+    document.getElementById('q-tip').textContent='💡 '+q.tip;
+
+    let impactMsg='📈 Farm boost: ';
+    if(q.impact.crops)impactMsg+='+'+q.impact.crops+' crops ';
+    if(q.impact.water>0)impactMsg+='+'+q.impact.water+' water ';
+    if(q.impact.rep)impactMsg+='+'+q.impact.rep+' rep ';
+    document.getElementById('q-impact').textContent=impactMsg;
+    document.getElementById('q-impact').style.color='#4ade80';
+
+    if(G.combo>=3)flashCombo('🔥 x'+G.combo+' COMBO!');
+  } else {
+    btn.classList.add('bad');
+    document.querySelectorAll('.qopt').forEach(b=>{if(b.textContent===q.a)b.classList.add('ok');});
+    G.combo=1;G.wrg++;
+
+    // Negative impact
+    G.water=Math.max(0,G.water-8);
+    G.health=Math.max(0,G.health-10);
+
+    document.getElementById('q-fb').textContent='❌ Wrong decision!';
+    document.getElementById('q-fb').style.color='#f87171';
+    document.getElementById('q-tip').textContent='💡 '+q.tip;
+    document.getElementById('q-impact').textContent='📉 Farm damage: -8 water, -10 health';
+    document.getElementById('q-impact').style.color='#f87171';
+
+    // Shake effect
+    document.getElementById('q-zone').style.animation='shakeIt .3s';
+    setTimeout(()=>document.getElementById('q-zone').style.animation='',300);
+
+    loseLife();
+    if(G.lives<=0){setTimeout(()=>endGame(false),1600);return;}
+  }
+
+  updateHUD();
+  setTimeout(()=>{G.qi++;nextQ();},2800);
+}
+
+function loseLife(){G.lives=Math.max(0,G.lives-1);updateHUD();}
+
+function flashCombo(msg){
+  let el=document.getElementById('combo-bar');
+  el.textContent=msg;el.style.animation='none';
+  void el.offsetWidth;
+  el.style.animation='popIn 1s ease forwards';
+}
+
+function endGame(won){
+  clearInterval(G.ti);
+  gameWon=won;finalScore=G.gold;
+  let tot=G.cor+G.wrg;let acc=tot>0?Math.round(G.cor/tot*100):0;
+
+  document.getElementById('r-icon').textContent=won?'🏆':'🌧️';
+  document.getElementById('r-title').textContent=won?'Season Complete! 🎉':'Farm Bankrupt!';
+  document.getElementById('r-score').textContent=G.gold;
+  document.getElementById('r-crops').textContent=G.crops;
+  document.getElementById('r-acc').textContent=acc+'%';
+  document.getElementById('r-msg').textContent=won?
+    `Amazing! Your farm has ${G.crops} crops, ${G.water} water, and ${G.rep} reputation!`:
+    'Study farming strategies and try again! Every farmer fails before they succeed.';
+
+  let badges='';
+  if(won)badges+='<span class="badge">🏆 Season Champion</span>';
+  if(acc>=80)badges+='<span class="badge">🧠 Expert Farmer</span>';
+  if(G.gold>500)badges+='<span class="badge">💰 Gold Farmer</span>';
+  if(G.crops>=20)badges+='<span class="badge">🌾 Crop King</span>';
+  if(G.rep>=20)badges+='<span class="badge">⭐ Village Hero</span>';
+  if(G.lives===3)badges+='<span class="badge">❤️ Untouchable</span>';
+  if(G.combo>=4)badges+='<span class="badge">🔥 Combo Master</span>';
+  document.getElementById('r-badges').innerHTML=badges;
+
+  show('s-results');
+}
+
+function claimRewards(){
+  let xp = gameWon ? 400 + finalScore : Math.floor(finalScore * 0.25);
+  let coins = gameWon ? 250 + Math.floor(finalScore / 5) : Math.floor(finalScore / 10);
+
+  if(window.parent && window.parent.currentUser) {
+    fetch('/api/save-gamestate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ xp: xp, coins: coins })
+    }).then(() => {
+      if(window.parent.closeGame) window.parent.closeGame(gameWon);
+    }).catch(e => console.log(e));
+  } else if (window.parent && window.parent.closeGame) {
+    window.parent.closeGame(gameWon);
+  }
+}
+
+// Background animation for title
+function initTitleBg(){
+  let bg=document.getElementById('title-bg');
+  for(let i=0;i<20;i++){
+    let line=document.createElement('div');
+    line.className='field-line';
+    line.style.top=(i*5)+'%';
+    line.style.animationDelay=(Math.random()*4)+'s';
+    line.style.opacity=Math.random()*.15+.05;
+    bg.appendChild(line);
+  }
+}
+initTitleBg();
+</script>
+</body>
+</html>

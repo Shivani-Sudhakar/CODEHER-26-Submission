@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Blaster</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+html,body{height:100%;margin:0;overflow:hidden;scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+#root{background:#0a0e1a;width:100%;height:100%;min-height:100%;max-height:100%;border-radius:12px;overflow:hidden;position:relative;color:#f1f5f9}
+canvas{display:block}
+.screen{display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.screen.on{display:flex}
+.btn{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;margin:6px}
+.btn:hover{opacity:.88;transform:scale(1.04)}
+.btn.green{background:#10b981}
+.btn.red{background:#ef4444}
+.btn.gold{background:#f59e0b;color:#1c1917}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.card{background:#1e2537;border:1px solid #2e3a55;border-radius:12px;padding:18px 22px;margin:8px 0;width:100%;max-width:520px}
+.tag{display:inline-block;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700}
+.tag.green{background:#064e3b;color:#34d399}
+.tag.red{background:#450a0a;color:#f87171}
+.tag.blue{background:#1e3a5f;color:#60a5fa}
+.tag.gold{background:#451a03;color:#fbbf24}
+#hud{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#111827;border-bottom:1px solid #1e2537;z-index:10}
+.hud-stat{display:flex;flex-direction:column;align-items:center}
+.hud-label{font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:1px}
+.hud-val{font-size:17px;font-weight:800;color:#f1f5f9}
+.hud-val.green{color:#34d399}
+.hud-val.red{color:#f87171}
+#quiz-popup{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;z-index:50}
+#quiz-popup.on{display:flex}
+.qcard{background:#1e2537;border:2px solid #3b82f6;border-radius:16px;padding:24px;width:100%;max-width:480px;text-align:center}
+.qcard h2{font-size:18px;font-weight:700;color:#f1f5f9;margin-bottom:6px;line-height:1.4}
+.qcard .hint{font-size:12px;color:#6b7280;margin-bottom:16px}
+.ans-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.ans-btn{background:#111827;border:1.5px solid #374151;border-radius:8px;color:#f1f5f9;font-size:13px;font-weight:600;padding:12px 8px;cursor:pointer;transition:background .15s,border-color .15s,transform .1s;text-align:center}
+.ans-btn:hover{background:#1e2537;border-color:#60a5fa}
+.ans-btn.correct{background:#064e3b;border-color:#34d399;color:#34d399}
+.ans-btn.wrong{background:#450a0a;border-color:#f87171;color:#f87171}
+.fact-box{background:#1e3a5f;border:1px solid #3b82f6;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:13px;color:#bfdbfe;line-height:1.5;text-align:left}
+.fact-box strong{color:#60a5fa}
+#toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:#fbbf24;color:#1c1917;border-radius:8px;padding:7px 20px;font-size:13px;font-weight:700;display:none;z-index:60;white-space:nowrap}
+.progress-bar{width:100%;height:6px;background:#1e2537;border-radius:3px;overflow:hidden;margin:4px 0}
+.progress-fill{height:100%;border-radius:3px;transition:width .3s}
+</style>
+</head>
+<body>
+<div id="root">
+<div id="toast"></div>
+
+<div class="screen on" id="title-screen">
+  <div style="font-size:40px;margin-bottom:4px">📈</div>
+  <div style="font-size:28px;font-weight:900;color:#60a5fa;letter-spacing:-1px">Market Blaster</div>
+  <div style="font-size:13px;color:#6b7280;margin-bottom:20px">Learn the stock market — arcade style!</div>
+  <div class="card" style="text-align:center;max-width:420px">
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:12px">Answer questions to power up your rocket and reach the top! Wrong answers crash the market.</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <span class="tag green">5 Levels</span>
+      <span class="tag blue">Stock Market Facts</span>
+      <span class="tag gold">Earn coins</span>
+      <span class="tag red">3 Lives</span>
+    </div>
+  </div>
+  <div style="margin-top:8px">
+    <div style="font-size:13px;color:#6b7280;margin-bottom:8px;text-align:center">Pick your difficulty</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn green" onclick="startGame('easy')">Easy</button>
+      <button class="btn" onclick="startGame('medium')">Medium</button>
+      <button class="btn red" onclick="startGame('hard')">Hard</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="game-screen">
+  <div id="hud">
+    <div class="hud-stat">
+      <span class="hud-label">Level</span>
+      <span class="hud-val" id="h-level">1</span>
+    </div>
+    <div class="hud-stat">
+      <span class="hud-label">Score</span>
+      <span class="hud-val green" id="h-score">0</span>
+    </div>
+    <div class="hud-stat">
+      <span class="hud-label">Portfolio</span>
+      <span class="hud-val gold" id="h-portfolio" style="color:#fbbf24">$1,000</span>
+    </div>
+    <div class="hud-stat">
+      <span class="hud-label">Lives</span>
+      <span class="hud-val red" id="h-lives">❤️❤️❤️</span>
+    </div>
+    <div class="hud-stat">
+      <span class="hud-label">Streak</span>
+      <span class="hud-val" id="h-streak">0🔥</span>
+    </div>
+  </div>
+  <canvas id="gc" style="width:100%;height:100%"></canvas>
+  <div id="quiz-popup">
+    <div class="qcard">
+      <div class="tag blue" style="margin-bottom:10px" id="q-category">Finance</div>
+      <h2 id="q-text">Question?</h2>
+      <div class="hint" id="q-hint"></div>
+      <div class="progress-bar"><div class="progress-fill" id="q-timer-bar" style="background:#3b82f6;width:100%"></div></div>
+      <div class="ans-grid" id="ans-grid"></div>
+      <div class="fact-box" id="q-fact" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="end-screen">
+  <div style="font-size:48px" id="end-emoji">🏆</div>
+  <div style="font-size:26px;font-weight:900;margin:8px 0" id="end-title">You crushed it!</div>
+  <div style="font-size:13px;color:#6b7280;margin-bottom:16px" id="end-sub">Here's your report card</div>
+  <div class="card" style="max-width:400px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:center">
+      <div><div style="font-size:24px;font-weight:800;color:#60a5fa" id="es-score">0</div><div style="font-size:11px;color:#6b7280">Final score</div></div>
+      <div><div style="font-size:24px;font-weight:800;color:#fbbf24" id="es-port">$1,000</div><div style="font-size:11px;color:#6b7280">Portfolio value</div></div>
+      <div><div style="font-size:24px;font-weight:800;color:#34d399" id="es-correct">0</div><div style="font-size:11px;color:#6b7280">Correct answers</div></div>
+      <div><div style="font-size:24px;font-weight:800;color:#f87171" id="es-wrong">0</div><div style="font-size:11px;color:#6b7280">Wrong answers</div></div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #2e3a55">
+      <div style="font-size:12px;color:#94a3b8;text-align:center" id="es-tip"></div>
+    </div>
+  </div>
+  <button class="btn" onclick="goTitle()" style="margin-top:16px">Play again</button>
+</div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {q:"What does a stock represent?",a:"Ownership in a company",w:["A bank loan","A government bond","A type of currency"],fact:"When you buy stock, you become a partial owner (shareholder) of that company. If the company grows, your stock is worth more!",cat:"Basics",level:1},
+  {q:"What is a dividend?",a:"Cash paid to shareholders from profits",w:["A stock price drop","A broker's fee","A type of tax"],fact:"Many companies pay dividends — like getting a 'thank you' payment just for owning their stock!",cat:"Basics",level:1},
+  {q:"What does 'bull market' mean?",a:"Prices are rising overall",w:["Prices are falling","The market is closed","A farming investment"],fact:"A bull market is when stock prices keep going up, often for months or years. Bulls charge upward — just like prices!",cat:"Market Terms",level:1},
+  {q:"What is the S&P 500?",a:"An index of 500 large US companies",w:["A savings account","A type of bond","A bank in New York"],fact:"The S&P 500 tracks 500 of America's biggest companies. It's used to measure how the overall US stock market is doing.",cat:"Indexes",level:1},
+  {q:"What does 'bear market' mean?",a:"Prices have fallen 20% or more",w:["Prices are rising fast","A market for animal products","Trading only on weekends"],fact:"Bear markets are when stocks drop sharply. Bears swipe downward — just like falling prices. They're scary but normal!",cat:"Market Terms",level:2},
+  {q:"What is a stock exchange?",a:"A marketplace to buy and sell stocks",w:["A place to trade currencies only","A government treasury","A type of savings account"],fact:"The NYSE and NASDAQ are famous stock exchanges in the US. They're like giant online bazaars for company shares.",cat:"Basics",level:2},
+  {q:"What does IPO stand for?",a:"Initial Public Offering",w:["International Price Option","Internal Profit Order","Index Price Output"],fact:"An IPO is when a private company first sells shares to the public. It's like a company's 'debut' on the stock market!",cat:"Market Terms",level:2},
+  {q:"What is diversification?",a:"Spreading money across many investments",w:["Putting all money in one stock","Borrowing money to invest","Selling all stocks at once"],fact:"'Don't put all your eggs in one basket!' Diversification reduces risk — if one stock falls, others can hold you up.",cat:"Strategy",level:2},
+  {q:"What is a mutual fund?",a:"A pool of money invested in many stocks",w:["A single company's stock","A type of bank account","A government loan"],fact:"Mutual funds let everyday investors own tiny pieces of many companies at once, managed by a professional.",cat:"Investing",level:3},
+  {q:"What is market capitalization?",a:"Total value of a company's shares",w:["The company's cash on hand","The number of employees","Annual profit"],fact:"Market cap = share price × total shares. Apple, Microsoft and NVIDIA are among the largest by market cap.",cat:"Valuation",level:3},
+  {q:"What does P/E ratio measure?",a:"Price compared to company earnings",w:["Profit divided by expenses","Percentage of employees","Price of equipment"],fact:"The P/E ratio tells investors how much they pay for each $1 of company earnings. Lower can mean better value!",cat:"Valuation",level:3},
+  {q:"What is compound interest?",a:"Earning interest on your interest",w:["A type of stock split","Fixed interest that never grows","Interest paid only at the end"],fact:"Einstein reportedly called compound interest the '8th wonder of the world.' Over time, small returns snowball into huge gains!",cat:"Investing",level:3},
+  {q:"What is short selling?",a:"Betting a stock price will fall",w:["Selling stocks you just bought","A quick sale under 1 hour","Selling stocks cheaper than you paid"],fact:"Short sellers borrow shares, sell them, then buy back cheaper. It's risky — prices can rise forever, but can only fall to $0!",cat:"Advanced",level:4},
+  {q:"What is an ETF?",a:"A fund that trades on a stock exchange",w:["An electronic transaction form","A type of bond","A banking license"],fact:"ETFs (Exchange-Traded Funds) are like mutual funds but trade all day like stocks. Very popular for easy diversification!",cat:"Investing",level:4},
+  {q:"What does 'volatility' mean in markets?",a:"How much prices swing up and down",w:["How fast you can sell a stock","The number of trades per day","A company's annual revenue"],fact:"High volatility = big price swings. Tech stocks are often more volatile than utility companies. More risk, more potential reward!",cat:"Market Terms",level:4},
+  {q:"What is inflation?",a:"Rising prices reducing purchasing power",w:["Stock prices going up","Government printing less money","A type of bond"],fact:"If inflation is 5%, something costing $100 today costs $105 next year. That's why investing beats keeping all cash!",cat:"Economics",level:4},
+  {q:"What is a 'blue chip' stock?",a:"Shares of a large, stable, reputable company",w:["The cheapest stocks available","New startup company shares","Government-owned company shares"],fact:"Blue chips (like Apple, Johnson & Johnson) are named after the highest-value poker chip. They're seen as reliable long-term holds.",cat:"Basics",level:5},
+  {q:"What does ROI stand for?",a:"Return on Investment",w:["Rate of Inflation","Risk of Interest","Revenue over Income"],fact:"ROI = (gain from investment - cost) ÷ cost × 100%. A 10% ROI means every $100 invested earned $10 profit.",cat:"Finance Math",level:5},
+  {q:"What is a stock split?",a:"When a company divides its shares into more shares",w:["Splitting a company into two","Selling half your shares","A dividend payment"],fact:"If a stock at $1,000 does a 10-for-1 split, you get 10 shares worth $100 each. Same total value, more affordable shares!",cat:"Advanced",level:5},
+  {q:"What is dollar-cost averaging?",a:"Investing fixed amounts regularly regardless of price",w:["Averaging all stock prices","Buying only when prices fall","Selling when prices peak"],fact:"By investing $50 every month no matter what, you buy more shares when prices are low. This smooths out market ups and downs!",cat:"Strategy",level:5},
+];
+
+let G={};
+let animId, timerInterval, questionTimer;
+
+function startGame(diff){
+  G={
+    diff, level:1, score:0, lives:3, streak:0, bestStreak:0,
+    portfolio:1000, correct:0, wrong:0,
+    questionPending:false, answered:false,
+    questionsThisLevel:0, questionsNeeded:3,
+    rocketY:0, rocketVY:0,
+    obstacles:[],obsTimer:0,
+    coins:[],coinTimer:0,
+    particles:[],
+    stars:[],
+    frame:0,
+    timerPct:1,
+    bonusMulti: diff==='easy'?1:diff==='medium'?1.5:2,
+    questionPool: shuffle([...QUESTIONS]),
+    qIdx:0,
+  };
+  for(let i=0;i<60;i++) G.stars.push({x:Math.random()*2000,y:Math.random()*2000,r:Math.random()*1.5+.5,s:Math.random()*.5+.5});
+  show('game-screen');
+  startCanvas();
+}
+
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[arr[i],arr[j]]=[arr[j],arr[i]]}return arr;}
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+
+function goTitle(){cancelAnimationFrame(animId);clearInterval(timerInterval);clearTimeout(questionTimer);show('title-screen');}
+
+function startCanvas(){
+  const canvas=document.getElementById('gc');
+  const root=document.getElementById('root');
+  canvas.width=root.offsetWidth||800;
+  canvas.height=root.offsetHeight||640;
+  G.W=canvas.width; G.H=canvas.height;
+  G.rocketY=G.H-120;
+  cancelAnimationFrame(animId);
+  gameLoop();
+  scheduleQuestion(2000);
+}
+
+function scheduleQuestion(delay){
+  clearTimeout(questionTimer);
+  questionTimer=setTimeout(()=>{if(G&&!G.questionPending&&G.lives>0)showQuestion();},delay);
+}
+
+function showQuestion(){
+  G.questionPending=true; G.answered=false;
+  const pool=G.questionPool.filter(q=>q.level<=Math.min(G.level+1,5));
+  const q=pool[G.qIdx%pool.length]; G.qIdx++;
+  const allAnswers=shuffle([q.a,...q.w.slice(0,3)]);
+  document.getElementById('q-category').textContent=q.cat;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-hint').textContent='';
+  document.getElementById('q-fact').style.display='none';
+  const grid=document.getElementById('ans-grid');
+  grid.innerHTML='';
+  allAnswers.forEach(ans=>{
+    const b=document.createElement('button');
+    b.className='ans-btn'; b.textContent=ans;
+    b.onclick=()=>answer(b,ans,q.a,q.fact);
+    grid.appendChild(b);
+  });
+  document.getElementById('quiz-popup').classList.add('on');
+  G.timerPct=1;
+  const timeLimit=G.diff==='easy'?20:G.diff==='medium'?14:9;
+  let elapsed=0;
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    elapsed+=100; G.timerPct=1-elapsed/(timeLimit*1000);
+    document.getElementById('q-timer-bar').style.width=(G.timerPct*100)+'%';
+    document.getElementById('q-timer-bar').style.background=G.timerPct>.5?'#3b82f6':G.timerPct>.25?'#f59e0b':'#ef4444';
+    if(G.timerPct<=0){clearInterval(timerInterval);if(!G.answered)timeUp();}
+  },100);
+}
+
+function timeUp(){
+  G.answered=true;
+  document.querySelectorAll('.ans-btn').forEach(b=>b.disabled=true);
+  toast('⏰ Time up! -❤️');
+  loseLife();
+  G.streak=0; updateHUD();
+  setTimeout(closeQuestion,1800);
+}
+
+function answer(btn,chosen,correct,fact){
+  if(G.answered) return;
+  G.answered=true;
+  clearInterval(timerInterval);
+  document.querySelectorAll('.ans-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===correct) b.classList.add('correct');
+    else if(b===btn && chosen!==correct) b.classList.add('wrong');
+  });
+  const factEl=document.getElementById('q-fact');
+  factEl.innerHTML='<strong>Did you know?</strong> '+fact;
+  factEl.style.display='block';
+  if(chosen===correct){
+    G.correct++;
+    G.streak++;
+    if(G.streak>G.bestStreak) G.bestStreak=G.streak;
+    const bonus=Math.round((50+G.streak*10)*G.bonusMulti);
+    const gain=Math.round((200+G.level*100)*G.bonusMulti);
+    G.score+=bonus;
+    G.portfolio+=gain;
+    G.questionsThisLevel++;
+    G.rocketVY=-8;
+    spawnCoins(G.W/2,G.H/2,5);
+    toast('✅ Correct! +$'+gain.toLocaleString()+' +'+bonus+'pts');
+    updateHUD();
+    setTimeout(()=>{closeQuestion();checkLevelUp();},2200);
+  } else {
+    G.wrong++;
+    G.streak=0;
+    G.portfolio=Math.max(0,G.portfolio-200);
+    loseLife();
+    G.rocketVY=5;
+    updateHUD();
+    setTimeout(closeQuestion,2200);
+  }
+}
+
+function closeQuestion(){
+  document.getElementById('quiz-popup').classList.remove('on');
+  G.questionPending=false;
+  if(G.lives>0) scheduleQuestion(3500);
+}
+
+function loseLife(){
+  G.lives--;
+  if(G.lives<=0) setTimeout(endGame,800);
+}
+
+function checkLevelUp(){
+  if(G.questionsThisLevel>=G.questionsNeeded){
+    G.level=Math.min(G.level+1,5);
+    G.questionsThisLevel=0;
+    G.questionsNeeded=Math.min(3+G.level,6);
+    spawnParticles(G.W/2,G.H/2,20,'#fbbf24');
+    toast('🎉 Level '+G.level+'! Market mastery growing!');
+    if(G.level>5) setTimeout(endGame,1000);
+  }
+}
+
+function endGame(){
+  cancelAnimationFrame(animId);clearInterval(timerInterval);clearTimeout(questionTimer);
+  document.getElementById('quiz-popup').classList.remove('on');
+  document.getElementById('es-score').textContent=G.score.toLocaleString();
+  document.getElementById('es-port').textContent='$'+G.portfolio.toLocaleString();
+  document.getElementById('es-correct').textContent=G.correct;
+  document.getElementById('es-wrong').textContent=G.wrong;
+  const tips=['Keep investing! Compound interest turns small savings into big wealth over time.','A diversified portfolio is your best shield against market crashes.','The best investors are patient — time in the market beats timing the market!','Every expert was once a beginner. Keep learning about finance!'];
+  document.getElementById('es-tip').textContent=tips[G.wrong>G.correct?1:Math.floor(Math.random()*tips.length)];
+  const won=G.lives>0;
+  document.getElementById('end-emoji').textContent=won?'🏆':'📉';
+  document.getElementById('end-title').textContent=won?'Market Master!':'Market Crash!';
+  document.getElementById('end-sub').textContent=won?'You reached level '+G.level:'You ran out of lives — try again!';
+  show('end-screen');
+}
+
+function updateHUD(){
+  document.getElementById('h-level').textContent=G.level;
+  document.getElementById('h-score').textContent=G.score.toLocaleString();
+  document.getElementById('h-portfolio').textContent='$'+G.portfolio.toLocaleString();
+  document.getElementById('h-lives').textContent='❤️'.repeat(G.lives)+'🖤'.repeat(Math.max(0,3-G.lives));
+  document.getElementById('h-streak').textContent=G.streak+'🔥';
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',2000);
+}
+
+function spawnCoins(x,y,n){
+  for(let i=0;i<n;i++){
+    G.coins.push({x,y,vx:(Math.random()-0.5)*5,vy:-Math.random()*6-2,life:60,maxLife:60});
+  }
+}
+
+function spawnParticles(x,y,n,color){
+  for(let i=0;i<n;i++){
+    G.particles.push({x,y,vx:(Math.random()-0.5)*8,vy:-Math.random()*8-1,life:50,maxLife:50,color,r:3+Math.random()*4});
+  }
+}
+
+function gameLoop(){
+  const canvas=document.getElementById('gc');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width=document.getElementById('root').offsetWidth;
+  const H=canvas.height=document.getElementById('root').offsetHeight;
+  G.W=W;G.H=H;
+  G.frame++;
+
+  ctx.fillStyle='#0a0e1a'; ctx.fillRect(0,0,W,H);
+
+  G.stars.forEach(s=>{
+    const twinkle=0.4+0.6*Math.sin(G.frame*s.s*0.05+s.x);
+    ctx.fillStyle=`rgba(148,163,184,${twinkle})`; ctx.beginPath(); ctx.arc(s.x%W,s.y%H,s.r,0,Math.PI*2); ctx.fill();
+  });
+
+  const groundY=H-40;
+  ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=1;
+  for(let i=0;i<W;i+=40){ ctx.beginPath(); ctx.moveTo(i,50); ctx.lineTo(i,groundY); ctx.stroke(); }
+  for(let j=50;j<groundY;j+=40){ ctx.beginPath(); ctx.moveTo(0,j); ctx.lineTo(W,j); ctx.stroke(); }
+
+  drawCandleChart(ctx,W,H);
+
+  if(!G.questionPending){
+    G.obsTimer++;
+    const obsRate=Math.max(80,140-G.level*12);
+    if(G.obsTimer>obsRate){ G.obstacles.push({x:W,y:60+Math.random()*(groundY-120),w:36,h:36,speed:2+G.level*.5,type:Math.random()>.5?'bear':'crash'}); G.obsTimer=0; }
+    G.coinTimer++;
+    if(G.coinTimer>60){ G.coins.push({x:W,y:80+Math.random()*(groundY-150),vx:-(2+G.level*.3),vy:0,life:200,maxLife:200,collect:true}); G.coinTimer=0; }
+  }
+
+  G.obstacles=G.obstacles.filter(o=>{
+    o.x-=o.speed;
+    ctx.font='28px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(o.type==='bear'?'🐻':'💥',o.x,o.y);
+    const rx=G.W/2-18,ry=G.rocketY-18;
+    if(Math.abs(o.x-rx)<30&&Math.abs(o.y-ry)<30){
+      spawnParticles(o.x,o.y,8,'#ef4444');
+      if(!G.questionPending){ loseLife(); G.streak=0; updateHUD(); toast('💥 Obstacle hit! -❤️'); }
+      return false;
+    }
+    return o.x>-40;
+  });
+
+  G.coins=G.coins.filter(c=>{
+    c.x+=c.vx||0; c.y+=c.vy||0; c.life--;
+    if(c.collect){
+      ctx.font='20px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('🪙',c.x,c.y);
+      const rx=G.W/2,ry=G.rocketY;
+      if(Math.abs(c.x-rx)<28&&Math.abs(c.y-ry)<28){ G.score+=15; G.portfolio+=50; updateHUD(); spawnParticles(c.x,c.y,4,'#fbbf24'); return false; }
+    } else {
+      ctx.globalAlpha=c.life/c.maxLife;
+      ctx.font='18px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('🪙',c.x,c.y);
+      ctx.globalAlpha=1;
+    }
+    return c.life>0 && c.x>-30;
+  });
+
+  G.particles=G.particles.filter(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=.3; p.life--; ctx.globalAlpha=p.life/p.maxLife; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; return p.life>0; });
+
+  if(!G.questionPending){
+    G.rocketVY*=0.9;
+    G.rocketY+=G.rocketVY;
+    G.rocketY=Math.max(80,Math.min(groundY-20,G.rocketY));
+  }
+  ctx.font='38px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const bob=Math.sin(G.frame*.08)*4;
+  ctx.fillText('🚀',W/2,G.rocketY+bob);
+
+  if(!G.questionPending){
+    ctx.fillStyle='#60a5fa'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('← AVOID OBSTACLES · COLLECT COINS · ANSWER QUESTIONS →',W/2,groundY+16);
+  }
+
+  drawLevelBar(ctx,W,H);
+
+  animId=requestAnimationFrame(gameLoop);
+}
+
+let chartOffsets=Array.from({length:60},()=>0);
+let chartTick=0;
+function drawCandleChart(ctx,W,H){
+  chartTick++;
+  if(chartTick%8===0){ chartOffsets.shift(); chartOffsets.push((Math.random()-0.46)*18); }
+  const base=H-60; let val=H/2;
+  ctx.strokeStyle='rgba(59,130,246,.15)'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  chartOffsets.forEach((o,i)=>{ val=Math.max(H/4,Math.min(H-80,val+o)); const x=(i/60)*W; i===0?ctx.moveTo(x,val):ctx.lineTo(x,val); });
+  ctx.stroke();
+}
+
+function drawLevelBar(ctx,W,H){
+  const barW=W-80,barH=8,bx=40,by=H-30;
+  ctx.fillStyle='#1e2537'; ctx.fillRect(bx,by,barW,barH);
+  const pct=G.questionsThisLevel/(G.questionsNeeded||3);
+  ctx.fillStyle='#3b82f6'; ctx.fillRect(bx,by,barW*Math.min(pct,1),barH);
+  ctx.strokeStyle='#2e3a55'; ctx.lineWidth=.5; ctx.strokeRect(bx,by,barW,barH);
+  ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('Level '+G.level+' progress',bx,by-4);
+  ctx.textAlign='right';
+  ctx.fillText(G.questionsThisLevel+'/'+G.questionsNeeded+' questions',bx+barW,by-4);
+}
+window.addEventListener('resize', () => {
+    if(G && G.W) {
+        startCanvas();
+    }
+});
+</script>
+</body>
+</html>

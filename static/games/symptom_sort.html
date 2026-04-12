@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symptom Sort - Career Quest</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;margin:0;overflow:hidden;scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+#G{background:#0d0d1f;width:100%;height:100vh;min-height:0;max-height:100vh;position:relative;overflow:hidden;border-radius:14px;color:#fff;user-select:none;font-family:'Segoe UI',system-ui,sans-serif}
+canvas#bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;padding:16px}
+.gone{display:none!important}
+#hud{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;z-index:30;background:rgba(5,5,25,.85);border-bottom:1px solid rgba(120,80,255,.25)}
+.hb{display:flex;flex-direction:column;align-items:center;gap:1px}
+.hl{font-size:8px;color:#a78bfa;letter-spacing:2px;opacity:.8;font-weight:700}
+.hv{font-size:16px;font-weight:700;color:#e0d4ff;letter-spacing:.5px}
+#stage{position:absolute;top:54px;left:0;right:0;bottom:0;z-index:5}
+#conveyor{position:absolute;bottom:0;left:0;right:0;height:110px;background:rgba(8,8,30,.9);border-top:2px solid rgba(120,80,255,.3);z-index:10;display:flex;align-items:center;padding:0 10px;gap:8px;overflow:hidden}
+#conv-label{position:absolute;bottom:112px;left:14px;font-size:9px;color:#a78bfa;letter-spacing:2px;font-weight:700;z-index:11}
+#clinic-area{position:absolute;top:0;left:0;right:0;bottom:110px;z-index:5}
+.pt{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:grab;transition:filter .15s}
+.pt:active{cursor:grabbing}
+.pt.dragging{z-index:100;opacity:.85;filter:brightness(1.3)}
+.body{position:relative;display:flex;flex-direction:column;align-items:center}
+.head{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid rgba(255,255,255,.2);position:relative}
+.torso{width:38px;height:32px;border-radius:6px;margin-top:-4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.5px}
+.legs{display:flex;gap:4px;margin-top:1px}
+.leg{width:14px;height:18px;border-radius:4px}
+.pt-name{font-size:9px;color:#ccc;margin-top:4px;text-align:center;background:rgba(0,0,20,.7);padding:2px 8px;border-radius:10px;max-width:80px;line-height:1.3}
+.symptom-tag{position:absolute;top:-10px;right:-14px;background:#7c3aed;border:1px solid #a78bfa;color:#e0d4ff;font-size:8px;padding:2px 5px;border-radius:8px;white-space:nowrap;font-weight:700}
+.ward{position:absolute;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;cursor:pointer;transition:all .2s}
+.ward:hover{transform:scale(1.02)}
+.ward-label{font-size:10px;font-weight:700;letter-spacing:1px;text-align:center;padding:0 6px;line-height:1.3}
+.ward-count{font-size:20px;font-weight:800;margin-top:4px}
+.ward-icon{font-size:24px;margin-top:2px}
+.ward.highlight{animation:glow .6s ease-in-out infinite alternate}
+@keyframes glow{from{box-shadow:0 0 6px 2px currentColor}to{box-shadow:0 0 18px 6px currentColor}}
+@keyframes walk{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes spawn{from{opacity:0;transform:scale(0) translateY(40px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes correct{0%{transform:scale(1)}30%{transform:scale(1.3)}100%{transform:scale(0);opacity:0}}
+@keyframes wrong-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(.6)}}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes slidein{from{transform:translateX(120%)}to{transform:translateX(0)}}
+@keyframes panic{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.pt.walking{animation:walk 1s ease-in-out infinite}
+.pt.panicking{animation:panic .3s ease-in-out infinite}
+.ft{position:absolute;pointer-events:none;font-size:14px;font-weight:800;z-index:80;animation:floatUp .9s ease-out forwards;white-space:nowrap}
+.panel{background:rgba(8,6,30,.97);border:1px solid rgba(120,80,255,.4);border-radius:18px;padding:24px 28px;max-width:480px;width:100%;text-align:center}
+.panel h1{font-size:26px;font-weight:800;color:#a78bfa;margin-bottom:6px;letter-spacing:2px}
+.panel p{font-size:12px;color:#8878aa;margin-bottom:14px;line-height:1.7}
+.btn{background:rgba(120,80,255,.2);border:1px solid #7c3aed;color:#c4b5fd;padding:11px 26px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .18s;margin:5px;font-family:inherit}
+.btn:hover{background:#7c3aed;color:#fff}
+.btn.grn{border-color:#10b981;color:#6ee7b7}
+.btn.grn:hover{background:#10b981;color:#fff}
+.sbig{font-size:50px;font-weight:800;color:#a78bfa;margin:10px 0}
+.sr{display:flex;justify-content:space-between;font-size:12px;color:#6655aa;padding:3px 0;border-bottom:1px solid rgba(120,80,255,.1)}
+#timer-ring{position:absolute;top:58px;right:10px;z-index:25;width:48px;height:48px}
+#wann{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:60;font-size:30px;font-weight:800;color:#c4b5fd;letter-spacing:4px;opacity:0;pointer-events:none;text-align:center}
+.badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:9px;letter-spacing:2px;font-weight:700;margin-bottom:12px}
+.chain-bar{position:absolute;bottom:114px;left:0;right:0;height:5px;z-index:12;background:rgba(120,80,255,.15)}
+#chain-fill{height:100%;background:#a78bfa;border-radius:0;transition:width .3s}
+#chain-label{position:absolute;bottom:120px;right:14px;font-size:9px;color:#a78bfa;letter-spacing:1px;z-index:13}
+#crisis-overlay{position:absolute;inset:0;background:rgba(180,0,0,.08);z-index:4;pointer-events:none;opacity:0;transition:opacity .5s;border-radius:14px}
+</style>
+</head>
+<body>
+<h2 style="position:absolute;left:-9999px">Symptom Sort — a medical ward drag-and-drop sorting game</h2>
+
+<div id="G">
+<canvas id="bg"></canvas>
+<div id="crisis-overlay"></div>
+
+<div id="hud" class="gone">
+  <div class="hb"><span class="hl">LEVEL</span><span class="hv" id="hlv">1</span></div>
+  <div class="hb"><span class="hl">SCORE</span><span class="hv" id="hsc">0</span></div>
+  <div class="hb" id="hlives"></div>
+  <div class="hb"><span class="hl">SAVED</span><span class="hv" id="hsv">0</span></div>
+  <div class="hb"><span class="hl">CHAIN</span><span class="hv" id="hch" style="color:#a78bfa">0</span></div>
+</div>
+
+<div id="stage">
+  <div id="clinic-area"></div>
+  <div id="conv-label">INCOMING PATIENTS</div>
+  <div class="chain-bar"><div id="chain-fill" style="width:0%"></div></div>
+  <div id="chain-label"></div>
+  <div id="conveyor"></div>
+</div>
+
+<svg id="timer-ring" class="gone" viewBox="0 0 48 48">
+  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(120,80,255,.2)" stroke-width="4"/>
+  <circle id="tcircle" cx="24" cy="24" r="20" fill="none" stroke="#a78bfa" stroke-width="4"
+    stroke-dasharray="125.6" stroke-dashoffset="0" stroke-linecap="round"
+    transform="rotate(-90 24 24)" style="transition:stroke-dashoffset .1s,stroke .3s"/>
+  <text x="24" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#e0d4ff" id="ttext">30</text>
+</svg>
+
+<div id="wann"></div>
+
+<div class="scr" id="s-start">
+  <div class="panel">
+    <div style="font-size:52px;margin-bottom:6px">🩺</div>
+    <h1>SYMPTOM SORT</h1>
+    <p>Patients arrive on the conveyor belt showing symptoms.<br>Drag them to the correct ward before they deteriorate!<br>Wrong ward = lose a life. Let them wait too long = crisis!</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 16px;text-align:left">
+      <div style="background:rgba(120,80,255,.08);border:1px solid rgba(120,80,255,.2);border-radius:8px;padding:8px 10px;font-size:10px;color:#8878aa;line-height:1.6">
+        <div style="color:#a78bfa;font-weight:700;margin-bottom:4px">WARDS</div>
+        🫀 Cardiology · ❤️ Emergency<br>🧠 Neurology · 🦠 Infectious<br>🦴 Orthopedics · 🧪 Toxicology
+      </div>
+      <div style="background:rgba(120,80,255,.08);border:1px solid rgba(120,80,255,.2);border-radius:8px;padding:8px 10px;font-size:10px;color:#8878aa;line-height:1.6">
+        <div style="color:#c084fc;font-weight:700;margin-bottom:4px">BONUSES</div>
+        Chain 3+ = Speed boost<br>Chain 5+ = Time freeze<br>Chain 8+ = Extra life<br>Perfect level = 2× score
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:#8878aa;margin-bottom:8px;letter-spacing:1px">SELECT DIFFICULTY</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn grn" onclick="setDiff(0)" id="db0">INTERN</button>
+        <button class="btn" onclick="setDiff(1)" id="db1">RESIDENT</button>
+        <button class="btn" style="border-color:#ef4444;color:#fca5a5" onclick="setDiff(2)" id="db2">SURGEON</button>
+      </div>
+    </div>
+    <button class="btn" style="font-size:14px;padding:13px 36px" onclick="startGame()">DIAGNOSE ⚕️</button>
+  </div>
+</div>
+
+<div class="scr gone" id="s-over">
+  <div class="panel">
+    <div style="font-size:52px;margin-bottom:6px">🚑</div>
+    <h1>CLINIC OVERWHELMED</h1>
+    <div class="sbig" id="os"></div>
+    <div class="sr"><span>Level reached</span><span id="olv" style="color:#a78bfa"></span></div>
+    <div class="sr"><span>Patients saved</span><span id="osv" style="color:#10b981"></span></div>
+    <div class="sr"><span>Best chain</span><span id="och" style="color:#c084fc"></span></div>
+    <div class="sr"><span>Accuracy</span><span id="oac" style="color:#6ee7b7"></span></div>
+    <br>
+    <button class="btn" onclick="quitGame(false)">CLAIM & EXIT</button>
+    <button class="btn grn" onclick="startGame()">RETRY ↺</button>
+  </div>
+</div>
+
+<div class="scr gone" id="s-win">
+  <div class="panel">
+    <div style="font-size:52px;margin-bottom:6px">🏆</div>
+    <h1>CHIEF OF MEDICINE!</h1>
+    <p>All levels mastered. The hospital is in safe hands!</p>
+    <div class="sbig" id="ws"></div>
+    <div class="sr"><span>Patients saved</span><span id="wsv" style="color:#10b981"></span></div>
+    <div class="sr"><span>Best chain</span><span id="wch" style="color:#c084fc"></span></div>
+    <div class="sr"><span>Accuracy</span><span id="wac" style="color:#6ee7b7"></span></div>
+    <br>
+    <button class="btn" onclick="quitGame(true)">CLAIM REWARDS</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const G=document.getElementById('G');
+const CLINIC=document.getElementById('clinic-area');
+const CONV=document.getElementById('conveyor');
+const HUD=document.getElementById('hud');
+const WANN=document.getElementById('wann');
+const CRISIS=document.getElementById('crisis-overlay');
+
+const WARDS=[
+  {id:'cardio',label:'Cardiology',icon:'🫀',color:'#be185d',bg:'rgba(190,24,93,.18)',border:'rgba(190,24,93,.5)'},
+  {id:'emergency',label:'Emergency',icon:'❤️',color:'#dc2626',bg:'rgba(220,38,38,.18)',border:'rgba(220,38,38,.5)'},
+  {id:'neuro',label:'Neurology',icon:'🧠',color:'#7c3aed',bg:'rgba(124,58,237,.18)',border:'rgba(124,58,237,.5)'},
+  {id:'infect',label:'Infectious',icon:'🦠',color:'#047857',bg:'rgba(4,120,87,.18)',border:'rgba(4,120,87,.5)'},
+  {id:'ortho',label:'Orthopedics',icon:'🦴',color:'#b45309',bg:'rgba(180,83,9,.18)',border:'rgba(180,83,9,.5)'},
+  {id:'toxicology',label:'Toxicology',icon:'🧪',color:'#0369a1',bg:'rgba(3,105,161,.18)',border:'rgba(3,105,161,.5)'},
+];
+
+const PATIENTS=[
+  {name:'Mr. Patel',emoji:'👨',colors:{h:'#d97706',t:'#92400e',l:'#78350f'},symptoms:['Chest pain','Palpitations','Shortness of breath'],ward:'cardio'},
+  {name:'Ms. Chen',emoji:'👩',colors:{h:'#db2777',t:'#9d174d',l:'#831843'},symptoms:['Seizure','Memory loss','Blurred vision'],ward:'neuro'},
+  {name:'Sam',emoji:'🧑',colors:{h:'#059669',t:'#065f46',l:'#064e3b'},symptoms:['High fever','Rash','Swollen nodes'],ward:'infect'},
+  {name:'Mrs. Rosa',emoji:'👵',colors:{h:'#7c3aed',t:'#4c1d95',l:'#3b0764'},symptoms:['Broken arm','Joint pain','Cannot walk'],ward:'ortho'},
+  {name:'Jake',emoji:'👦',colors:{h:'#0284c7',t:'#075985',l:'#0c4a6e'},symptoms:['Poisoning','Nausea','Confusion'],ward:'toxicology'},
+  {name:'Dr. Eve',emoji:'👩⚕️',colors:{h:'#e11d48',t:'#9f1239',l:'#881337'},symptoms:['Cardiac arrest','No pulse','Unconscious'],ward:'emergency'},
+  {name:'Tom',emoji:'👨🦱',colors:{h:'#0891b2',t:'#164e63',l:'#083344'},symptoms:['Arrhythmia','Chest pressure','Dizziness'],ward:'cardio'},
+  {name:'Lily',emoji:'👧',colors:{h:'#9333ea',t:'#581c87',l:'#3b0764'},symptoms:['Stroke symptoms','Slurred speech','Facial droop'],ward:'neuro'},
+  {name:'Ben',emoji:'🧔',colors:{h:'#16a34a',t:'#14532d',l:'#052e16'},symptoms:['HIV exposure','Night sweats','Weight loss'],ward:'infect'},
+  {name:'Nora',emoji:'👩🦳',colors:{h:'#ca8a04',t:'#713f12',l:'#451a03'},symptoms:['Spinal fracture','Back pain','Numbness'],ward:'ortho'},
+  {name:'Rex',emoji:'👱',colors:{h:'#dc2626',t:'#7f1d1d',l:'#450a0a'},symptoms:['Drug overdose','Pupil change','Slow breath'],ward:'toxicology'},
+  {name:'Amy',emoji:'👩🦰',colors:{h:'#7c3aed',t:'#4c1d95',l:'#2e1065'},symptoms:['Trauma','Bleeding','Critical BP'],ward:'emergency'},
+  {name:'Mr. Kim',emoji:'🧓',colors:{h:'#0f766e',t:'#134e4a',l:'#042f2e'},symptoms:['Angina','Left arm pain','Sweating'],ward:'cardio'},
+  {name:'Zara',emoji:'👩',colors:{h:'#a21caf',t:'#701a75',l:'#4a044e'},symptoms:['Epilepsy','Tremors','Confusion'],ward:'neuro'},
+  {name:'Luis',emoji:'👨',colors:{h:'#0369a1',t:'#0c4a6e',l:'#082f49'},symptoms:['Malaria','Chills','Yellow skin'],ward:'infect'},
+];
+
+const DIFFS=[
+  {label:'INTERN',speed:12000,spawnMs:4500,lives:5,timeLimit:25,color:'#10b981'},
+  {label:'RESIDENT',speed:9000,spawnMs:3200,lives:3,timeLimit:18,color:'#c084fc'},
+  {label:'SURGEON',speed:6500,spawnMs:2200,lives:2,timeLimit:12,color:'#ef4444'},
+];
+
+const LEVELS=6; // Capped to 6 for testing.
+
+let gs={};
+let diffIdx=1;
+let patientQ=[];
+let clinicPats=[];
+let spawnTimer=null;
+let levelTimer=null;
+let patUid=0;
+let dragPat=null;
+let dragOffX=0,dragOffY=0;
+let totalSorted=0;
+let correctSorted=0;
+let convInterval=null;
+let levelDuration=30000;
+let levelTimeLeft=0;
+let levelTimerInt=null;
+let convMovInt=null;
+let wardEls={};
+
+function setDiff(i){
+  diffIdx=i;
+  [0,1,2].forEach(j=>{
+    const b=document.getElementById('db'+j);
+    const d=DIFFS[j];
+    b.style.borderColor=j===i?d.color:'rgba(120,80,255,.4)';
+    b.style.color=j===i?d.color:'#c4b5fd';
+    b.style.background=j===i?'rgba(120,80,255,.15)':'rgba(120,80,255,.2)';
+  });
+}
+setDiff(1);
+
+function goMenu(){
+  ['s-over','s-win','s-start'].forEach(id=>document.getElementById(id).classList.add('gone'));
+  HUD.classList.add('gone');
+  document.getElementById('timer-ring').classList.add('gone');
+  clearAllTimers();
+  CLINIC.innerHTML='';
+  CONV.innerHTML='';
+  clinicPats=[];
+  document.getElementById('s-start').classList.remove('gone');
+}
+
+function clearAllTimers(){
+  clearInterval(spawnTimer);clearInterval(levelTimerInt);clearInterval(convMovInt);
+  clearTimeout(levelTimer);
+}
+
+function startGame(){
+  ['s-start','s-over','s-win'].forEach(id=>document.getElementById(id).classList.add('gone'));
+  HUD.classList.remove('gone');
+  document.getElementById('timer-ring').classList.remove('gone');
+  CLINIC.innerHTML='';CONV.innerHTML='';
+  clinicPats=[];patientQ=[];patUid=0;
+  totalSorted=0;correctSorted=0;
+  const D=DIFFS[diffIdx];
+  gs={level:1,score:0,lives:D.lives,maxLives:D.lives,saved:0,chain:0,bestChain:0};
+  buildWards();
+  updateHUD();
+  beginLevel();
+}
+
+function quitGame(won) {
+    if(window.parent && window.parent.currentUser) {
+        let xp = won ? 500 + gs.score : Math.floor(gs.score * 0.5);
+        let coins = won ? 300 + Math.floor(gs.score / 10) : Math.floor(gs.score / 20);
+        fetch('/api/save-gamestate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ xp: xp, coins: coins })
+        }).then(() => {
+            if(window.parent.closeGame) window.parent.closeGame(true);
+        }).catch(e => console.log(e));
+    } else if (window.parent && window.parent.closeGame) {
+        window.parent.closeGame(won);
+    }
+}
+
+function buildWards(){
+  CLINIC.innerHTML='';
+  wardEls={};
+  const gw=G.offsetWidth||600;
+  const gh=(G.offsetHeight||720)-54-110;
+  const cols=3,rows=2;
+  const pw=Math.floor((gw-20)/cols)-8;
+  const ph=Math.floor((gh-10)/rows)-8;
+  WARDS.forEach((w,i)=>{
+    const col=i%cols, row=Math.floor(i/cols);
+    const x=10+col*(pw+8);
+    const y=6+row*(ph+8);
+    const div=document.createElement('div');
+    div.className='ward';
+    div.id='ward-'+w.id;
+    div.style.left=x+'px';
+    div.style.top=y+'px';
+    div.style.width=pw+'px';
+    div.style.height=ph+'px';
+    div.style.background=w.bg;
+    div.style.border='2px solid '+w.border;
+    div.style.color=w.color;
+    div.innerHTML=`<div class="ward-icon">${w.icon}</div><div class="ward-label" style="color:${w.color}">${w.label}</div><div class="ward-count" id="wc-${w.id}" style="color:${w.color}">0</div>`;
+    div.dataset.ward=w.id;
+    CLINIC.appendChild(div);
+    wardEls[w.id]=div;
+  });
+}
+
+function updateWardCount(wid){
+  const cnt=clinicPats.filter(p=>p.assignedWard===wid).length;
+  const el=document.getElementById('wc-'+wid);
+  if(el) el.textContent=cnt;
+}
+
+function beginLevel(){
+  CONV.innerHTML='';
+  clinicPats.forEach(p=>{if(p.el) p.el.remove();});
+  clinicPats=[];
+  clearAllTimers();
+  CRISIS.style.opacity='0';
+
+  const D=DIFFS[diffIdx];
+  const spawnCount=5+gs.level*2;
+  const pool=[...PATIENTS].sort(()=>Math.random()-.5);
+  patientQ=[];
+  for(let i=0;i<spawnCount;i++) patientQ.push({...pool[i%pool.length],uid:patUid++,hp:100,assignedWard:null});
+
+  announceLevel(gs.level);
+  levelDuration=(LEVELS-gs.level+1)*3000+18000;
+  levelTimeLeft=levelDuration;
+
+  setTimeout(()=>{
+    startSpawning();
+    startLevelTimer();
+  }, 1200);
+}
+
+function startSpawning(){
+  const D=DIFFS[diffIdx];
+  let idx=0;
+  const spawn=()=>{
+    if(idx<patientQ.length){
+      addToConveyor(patientQ[idx]);
+      idx++;
+    }
+  };
+  spawn();
+  spawnTimer=setInterval(()=>{
+    if(idx<patientQ.length) spawn();
+    else clearInterval(spawnTimer);
+  }, D.spawnMs);
+}
+
+function startLevelTimer(){
+  const D=DIFFS[diffIdx];
+  updateTimerRing(1);
+  levelTimerInt=setInterval(()=>{
+    levelTimeLeft-=100;
+    const pct=Math.max(0,levelTimeLeft/levelDuration);
+    updateTimerRing(pct);
+    const secs=Math.round(levelTimeLeft/1000);
+    document.getElementById('ttext').textContent=secs;
+    if(pct<.3){
+      document.getElementById('tcircle').style.stroke='#ef4444';
+      CRISIS.style.opacity=String((1-pct/.3)*.18);
+    } else if(pct<.5){
+      document.getElementById('tcircle').style.stroke='#f59e0b';
+      CRISIS.style.opacity='0';
+    } else {
+      document.getElementById('tcircle').style.stroke='#a78bfa';
+      CRISIS.style.opacity='0';
+    }
+    if(levelTimeLeft<=0){
+      clearInterval(levelTimerInt);
+      levelFailed();
+    }
+  },100);
+}
+
+function updateTimerRing(pct){
+  const circumference=125.6;
+  document.getElementById('tcircle').style.strokeDashoffset=String(circumference*(1-pct));
+}
+
+function addToConveyor(pat){
+  const div=document.createElement('div');
+  div.className='pt walking';
+  div.id='pat-'+pat.uid;
+  div.dataset.uid=pat.uid;
+  div.style.animation='slidein .5s ease-out, walk 1s ease-in-out infinite';
+  const symp=pat.symptoms[Math.floor(Math.random()*pat.symptoms.length)];
+  div.innerHTML=buildPatientHTML(pat,symp,false);
+  div.style.position='relative';
+  div.style.flexShrink='0';
+  div.style.cursor='grab';
+  pat.convEl=div;
+  pat.inConveyor=true;
+  pat.symp=symp;
+  CONV.appendChild(div);
+  makeDraggable(div,pat);
+
+  const D=DIFFS[diffIdx];
+  pat.decayInt=setInterval(()=>{
+    pat.hp=Math.max(0,pat.hp-2);
+    if(pat.hp<=20&&pat.inConveyor){
+      div.style.filter='brightness(.7) saturate(.4)';
+      div.classList.add('panicking');
+    }
+    if(pat.hp<=0){
+      clearInterval(pat.decayInt);
+      patientDied(pat);
+    }
+  }, D.timeLimit*20);
+}
+
+function buildPatientHTML(pat,symp,inClinic){
+  return `<div class="body">
+    <div class="head" style="background:${pat.colors.h}30;border-color:${pat.colors.h}">
+      <span style="font-size:22px">${pat.emoji}</span>
+      <div class="symptom-tag">${symp}</div>
+    </div>
+    <div class="torso" style="background:${pat.colors.t};color:#fff">${pat.name.split(' ')[0]}</div>
+    <div class="legs">
+      <div class="leg" style="background:${pat.colors.l}"></div>
+      <div class="leg" style="background:${pat.colors.l}"></div>
+    </div>
+  </div>`;
+}
+
+function makeDraggable(el,pat){
+  let startX,startY,origParent,origStyle,origPos;
+
+  const onDown=(e)=>{
+    e.preventDefault();
+    const touch=e.touches?e.touches[0]:e;
+    const gr=G.getBoundingClientRect();
+    const er=el.getBoundingClientRect();
+    dragOffX=touch.clientX-er.left;
+    dragOffY=touch.clientY-er.top;
+    origParent=el.parentNode;
+    origStyle={left:el.style.left,top:el.style.top,position:el.style.position,zIndex:el.style.zIndex,animation:el.style.animation};
+    el.classList.add('dragging');
+    G.appendChild(el);
+    el.style.position='absolute';
+    el.style.zIndex='100';
+    el.style.animation='none';
+    el.style.left=(er.left-gr.left)+'px';
+    el.style.top=(er.top-gr.top)+'px';
+    dragPat=pat;
+    highlightWards(pat.ward);
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('touchmove',onMove,{passive:false});
+    document.addEventListener('mouseup',onUp);
+    document.addEventListener('touchend',onUp);
+  };
+
+  const onMove=(e)=>{
+    e.preventDefault();
+    const touch=e.touches?e.touches[0]:e;
+    const gr=G.getBoundingClientRect();
+    el.style.left=(touch.clientX-gr.left-dragOffX)+'px';
+    el.style.top=(touch.clientY-gr.top-dragOffY)+'px';
+  };
+
+  const onUp=(e)=>{
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('touchmove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    document.removeEventListener('touchend',onUp);
+    el.classList.remove('dragging');
+    clearWardHighlights();
+    const touch=e.changedTouches?e.changedTouches[0]:e;
+    const dropEl=getWardAtPoint(touch.clientX,touch.clientY);
+    if(dropEl){
+      const wardId=dropEl.dataset.ward;
+      handleDrop(pat,wardId,el);
+    } else {
+      if(origParent&&origParent!==G){
+        origParent.appendChild(el);
+        el.style.position='relative';
+        el.style.left='';el.style.top='';
+        el.style.zIndex='';
+        el.style.animation='walk 1s ease-in-out infinite';
+      } else {
+        el.style.animation='walk 1s ease-in-out infinite';
+      }
+    }
+    dragPat=null;
+  };
+
+  el.addEventListener('mousedown',onDown);
+  el.addEventListener('touchstart',onDown,{passive:false});
+}
+
+function getWardAtPoint(cx,cy){
+  const hits=document.elementsFromPoint(cx,cy);
+  for(const h of hits){
+    if(h.classList.contains('ward')) return h;
+    if(h.dataset&&h.dataset.ward) return h;
+    const p=h.closest&&h.closest('.ward');
+    if(p) return p;
+  }
+  return null;
+}
+
+function highlightWards(correctWard){
+  WARDS.forEach(w=>{
+    const el=wardEls[w.id];
+    if(!el) return;
+    if(w.id===correctWard){
+      el.classList.add('highlight');
+      el.style.color=w.color;
+    }
+  });
+}
+function clearWardHighlights(){WARDS.forEach(w=>{const el=wardEls[w.id];if(el) el.classList.remove('highlight');})}
+
+function handleDrop(pat,wardId,el){
+  clearInterval(pat.decayInt);
+  totalSorted++;
+  const correct=pat.ward===wardId;
+  if(correct){
+    correctSorted++;
+    gs.saved++;
+    gs.chain++;
+    gs.bestChain=Math.max(gs.bestChain,gs.chain);
+    const pts=100+gs.level*20+gs.chain*15;
+    gs.score+=pts;
+    floatMsg(el,'+'+pts,'#a78bfa');
+    burstParticles(el,'#a78bfa');
+    applyChainBonus(gs.chain);
+    el.style.animation='correct .5s ease-out forwards';
+    setTimeout(()=>{el.remove();},500);
+    removePat(pat);
+    const wardDef=WARDS.find(w=>w.id===wardId);
+    if(wardDef) floatMsg(wardEls[wardId],'✓ '+wardDef.label,'#10b981');
+  } else {
+    gs.chain=0;
+    gs.lives--;
+    floatMsg(el,'WRONG WARD!','#ef4444');
+    el.style.animation='wrong-shake .4s ease-out';
+    setTimeout(()=>{
+      el.style.animation='walk 1s ease-in-out infinite';
+      if(pat.inConveyor&&pat.convEl) CONV.appendChild(el);
+      else G.appendChild(el);
+    },450);
+    if(gs.lives<=0){clearAllTimers();setTimeout(showGameOver,600);return;}
+  }
+  updateHUD();
+  checkLevelComplete();
+}
+
+function applyChainBonus(chain){
+  if(chain===3) floatMsg(null,'⚡ SPEED BOOST!','#f59e0b');
+  if(chain===5){floatMsg(null,'❄️ TIME FREEZE!','#60a5fa');freezeTimer(4000);}
+  if(chain>=8&&chain%8===0){gs.lives=Math.min(gs.maxLives,gs.lives+1);floatMsg(null,'❤️ EXTRA LIFE!','#ef4444');}
+}
+
+function freezeTimer(ms){
+  clearInterval(levelTimerInt);
+  const savedLeft=levelTimeLeft;
+  setTimeout(()=>{
+    levelTimeLeft=savedLeft;
+    startLevelTimerResume();
+  },ms);
+}
+
+function startLevelTimerResume(){
+  const D=DIFFS[diffIdx];
+  levelTimerInt=setInterval(()=>{
+    levelTimeLeft-=100;
+    const pct=Math.max(0,levelTimeLeft/levelDuration);
+    updateTimerRing(pct);
+    document.getElementById('ttext').textContent=Math.round(levelTimeLeft/1000);
+    if(pct<.3){document.getElementById('tcircle').style.stroke='#ef4444';CRISIS.style.opacity=String((1-pct/.3)*.18);}
+    else if(pct<.5){document.getElementById('tcircle').style.stroke='#f59e0b';CRISIS.style.opacity='0';}
+    else{document.getElementById('tcircle').style.stroke='#a78bfa';CRISIS.style.opacity='0';}
+    if(levelTimeLeft<=0){clearInterval(levelTimerInt);levelFailed();}
+  },100);
+}
+
+function removePat(pat){
+  pat.inConveyor=false;
+  patientQ=patientQ.filter(p=>p.uid!==pat.uid);
+}
+
+function patientDied(pat){
+  gs.lives--;
+  if(pat.convEl) floatMsg(pat.convEl,'💀 TOO LATE','#ef4444');
+  if(pat.convEl) pat.convEl.remove();
+  removePat(pat);
+  updateHUD();
+  if(gs.lives<=0){clearAllTimers();setTimeout(showGameOver,600);return;}
+  checkLevelComplete();
+}
+
+function checkLevelComplete(){
+  const remaining=document.querySelectorAll('#conveyor .pt, #G > .pt').length;
+  if(remaining===0&&patientQ.length===0&&!spawnTimer._destroyed){
+  }
+  if(patientQ.length===0&&document.querySelectorAll('#conveyor .pt').length===0){
+    setTimeout(()=>{
+      if(gs.level>=LEVELS){clearAllTimers();setTimeout(showWin,600);}
+      else{gs.level++;updateHUD();beginLevel();}
+    },900);
+  }
+}
+
+function levelFailed(){
+  gs.lives--;
+  updateHUD();
+  if(gs.lives<=0){showGameOver();return;}
+  floatMsg(null,'⏰ TIME EXPIRED! -1 LIFE','#ef4444');
+  clearAllTimers();
+  setTimeout(()=>{beginLevel();},1200);
+}
+
+function floatMsg(ref,txt,col){
+  const el=document.createElement('div');
+  el.className='ft';
+  el.textContent=txt;
+  el.style.color=col;
+  if(ref){
+    const r=ref.getBoundingClientRect();
+    const gr=G.getBoundingClientRect();
+    el.style.left=(r.left-gr.left+r.width/2)+'px';
+    el.style.top=(r.top-gr.top)+'px';
+    el.style.transform='translateX(-50%)';
+  } else {
+    el.style.left='50%';el.style.top='35%';el.style.transform='translateX(-50%)';
+  }
+  G.appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
+
+function burstParticles(ref,col){
+  if(!ref) return;
+  const r=ref.getBoundingClientRect();
+  const gr=G.getBoundingClientRect();
+  const cx=r.left-gr.left+r.width/2;
+  const cy=r.top-gr.top+r.height/2;
+  ['✨','💊','🩺','❤️','⚡'].forEach((em,i)=>{
+    const p=document.createElement('div');
+    p.className='ft';
+    p.textContent=em;
+    p.style.fontSize='14px';
+    const angle=(i/5)*Math.PI*2;
+    p.style.left=(cx+Math.cos(angle)*30)+'px';
+    p.style.top=(cy+Math.sin(angle)*20)+'px';
+    p.style.transform='translateX(-50%)';
+    G.appendChild(p);
+    setTimeout(()=>p.remove(),950);
+  });
+}
+
+function updateHUD(){
+  document.getElementById('hlv').textContent=gs.level;
+  document.getElementById('hsc').textContent=gs.score;
+  document.getElementById('hsv').textContent=gs.saved;
+  document.getElementById('hch').textContent=gs.chain;
+  let lh='';
+  for(let i=0;i<gs.maxLives;i++) lh+=`<span style="font-size:16px;opacity:${i<gs.lives?1:.15}">${i<gs.lives?'❤️':'🖤'}</span>`;
+  document.getElementById('hlives').innerHTML=`<span class="hl">LIVES</span><div style="display:flex;gap:3px">${lh}</div>`;
+  const chainPct=Math.min(100,Math.round(gs.chain/10*100));
+  document.getElementById('chain-fill').style.width=chainPct+'%';
+  document.getElementById('chain-label').textContent=gs.chain>=8?'⚡ MAX CHAIN':gs.chain>=5?'❄️ FREEZE READY':gs.chain>=3?'⚡ BOOST ACTIVE':'';
+}
+
+function announceLevel(lv){
+  const el=WANN;
+  el.style.opacity='0';
+  el.innerHTML=`LEVEL ${lv}<br><span style="font-size:14px;color:#c4b5fd;letter-spacing:2px">${DIFFS[diffIdx].label}</span>`;
+  el.style.transition='opacity .3s';
+  el.style.opacity='1';
+  setTimeout(()=>{el.style.opacity='0';},1100);
+}
+
+function accuracy(){return totalSorted?Math.round(correctSorted/totalSorted*100)+'%':'N/A';}
+
+function showGameOver(){
+  clearAllTimers();
+  CLINIC.innerHTML='';CONV.innerHTML='';clinicPats=[];
+  HUD.classList.add('gone');
+  document.getElementById('timer-ring').classList.add('gone');
+  document.getElementById('os').textContent=gs.score;
+  document.getElementById('olv').textContent=gs.level;
+  document.getElementById('osv').textContent=gs.saved;
+  document.getElementById('och').textContent='×'+gs.bestChain;
+  document.getElementById('oac').textContent=accuracy();
+  document.getElementById('s-over').classList.remove('gone');
+}
+
+function showWin(){
+  clearAllTimers();
+  CLINIC.innerHTML='';CONV.innerHTML='';clinicPats=[];
+  HUD.classList.add('gone');
+  document.getElementById('timer-ring').classList.add('gone');
+  document.getElementById('ws').textContent=gs.score;
+  document.getElementById('wsv').textContent=gs.saved;
+  document.getElementById('wch').textContent='×'+gs.bestChain;
+  document.getElementById('wac').textContent=accuracy();
+  document.getElementById('s-win').classList.remove('gone');
+}
+
+(function starfield(){
+  const c=document.getElementById('bg');
+  const ctx=c.getContext('2d');
+  const resize=()=>{c.width=G.offsetWidth||600;c.height=G.offsetHeight||720;};
+  resize();
+  const dots=Array.from({length:80},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:.3+Math.random()*.9,sp:.03+Math.random()*.08,ph:Math.random()*Math.PI*2}));
+  const crosses=Array.from({length:12},()=>({x:Math.random()*c.width,y:Math.random()*c.height,size:4+Math.random()*8,op:.05+Math.random()*.12,sp:.02+Math.random()*.05,ph:Math.random()*Math.PI*2}));
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    const t=Date.now()/1000;
+    dots.forEach(d=>{
+      const a=.1+.5*(Math.sin(t*d.sp*5+d.ph)*.5+.5);
+      ctx.fillStyle=`rgba(167,139,250,${a})`;
+      ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();
+    });
+    crosses.forEach(d=>{
+      const a=d.op*(Math.sin(t*d.sp*4+d.ph)*.5+.5);
+      ctx.strokeStyle=`rgba(167,139,250,${a})`;
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(d.x-d.size,d.y);ctx.lineTo(d.x+d.size,d.y);
+      ctx.moveTo(d.x,d.y-d.size);ctx.lineTo(d.x,d.y+d.size);
+      ctx.stroke();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',resize);
+})();
+</script>
+</body>
+</html>

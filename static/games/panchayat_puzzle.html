@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panchayat Puzzle - Career Quest</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#pg{font-family:'Segoe UI',sans-serif;background:#1a0a2e;color:#fff;min-height:100vh;overflow:hidden;position:relative;user-select:none;display:flex;flex-direction:column}
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;text-align:center}
+.screen.active{display:flex}
+.title-logo{font-size:52px;font-weight:900;color:#FFD700;text-shadow:0 0 0 #000;letter-spacing:2px;line-height:1}
+.subtitle{font-size:16px;color:#f9a825;margin:8px 0 24px;font-weight:600}
+.village-scene{display:flex;gap:12px;justify-content:center;margin:16px 0;font-size:36px}
+.char-box{display:flex;flex-direction:column;align-items:center;gap:4px}
+.char-name{font-size:11px;color:#aaa;font-weight:600}
+.btn{padding:12px 28px;border:none;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .1s}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:#FF6B35;color:#fff}
+.btn-green{background:#4CAF50;color:#fff}
+.btn-amber{background:#FFC107;color:#222}
+.btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#0d0620;border-bottom:2px solid #7b2d8b;z-index:10}
+.hud-item{display:flex;flex-direction:column;align-items:center;font-size:11px;color:#ccc;font-weight:600}
+.hud-val{font-size:18px;font-weight:800;color:#FFD700}
+.lives-row{display:flex;gap:3px}
+.heart{font-size:16px;color:#e53935}
+.heart.lost{color:#333}
+.level-badge{background:#7b2d8b;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;color:#FFD700}
+.timer-ring{font-size:20px;font-weight:800;color:#FF6B35}
+.game-area{margin-top:64px;padding:16px;width:100%}
+.issue-card{background:#0d1b4b;border:2px solid #4a1fa8;border-radius:16px;padding:16px;margin:0 auto 14px;max-width:500px}
+.issue-emoji{font-size:32px;margin-bottom:6px}
+.issue-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
+.issue-desc{font-size:13px;color:#aac;margin-bottom:12px;line-height:1.4}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:500px;margin:0 auto}
+.opt-btn{background:#1c2a6b;border:2px solid #3949ab;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:600;color:#cce;cursor:pointer;transition:transform .1s,background .1s;line-height:1.3}
+.opt-btn:active{transform:scale(.97)}
+.opt-btn:hover{background:#253580}
+.opt-btn.correct{background:#1b5e20;border-color:#4caf50;color:#a5d6a7}
+.opt-btn.wrong{background:#b71c1c;border-color:#ef5350;color:#ef9a9a}
+.feedback-box{background:#0d1b4b;border:2px solid #4a1fa8;border-radius:16px;padding:16px;max-width:480px;margin:0 auto;text-align:center}
+.feedback-icon{font-size:40px;margin-bottom:8px}
+.feedback-title{font-size:18px;font-weight:800;margin-bottom:6px}
+.feedback-msg{font-size:13px;color:#cce;line-height:1.5;margin-bottom:14px}
+.score-pop{position:absolute;font-size:22px;font-weight:800;color:#FFD700;pointer-events:none;animation:floatUp 1s ease-out forwards;z-index:20}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+.char-walk{animation:walkBounce .5s infinite alternate}
+@keyframes walkBounce{0%{transform:translateY(0)}100%{transform:translateY(-4px)}}
+.progress-bar-bg{background:#1c0938;border-radius:8px;height:8px;width:100%;max-width:500px;margin:6px auto}
+.progress-bar{background:#FF6B35;height:8px;border-radius:8px;transition:width .3s}
+.level-info{font-size:12px;color:#9b59b6;margin:4px 0 10px;font-weight:600}
+.combo-flash{position:absolute;top:70px;left:50%;transform:translateX(-50%);font-size:20px;font-weight:800;color:#FFD700;animation:comboAnim .8s ease-out forwards;z-index:15;pointer-events:none}
+@keyframes comboAnim{0%{opacity:1;transform:translateX(-50%) scale(1.2)}100%{opacity:0;transform:translateX(-50%) scale(.8) translateY(-20px)}}
+.over-title{font-size:36px;font-weight:900;color:#FF6B35;margin-bottom:8px}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a1050;font-size:14px;max-width:320px;width:100%}
+.stat-label{color:#aac}
+.stat-val{font-weight:700;color:#FFD700}
+.level-complete{font-size:28px;font-weight:900;color:#4CAF50;margin-bottom:8px}
+.badge-row{display:flex;gap:10px;justify-content:center;margin:12px 0;flex-wrap:wrap}
+.badge{background:#1b2060;border:2px solid #3949ab;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;color:#80b4ff}
+.bonus-text{color:#FFD700;font-size:14px;font-weight:700;margin:6px 0}
+.sarpanch-say{background:#1a0533;border:2px dashed #9b59b6;border-radius:14px;padding:12px 16px;max-width:460px;margin:10px auto;font-size:13px;color:#ddd;line-height:1.5;text-align:left}
+.sarpanch-say b{color:#FFD700}
+.diff-indicator{display:flex;gap:6px;justify-content:center;margin:6px 0}
+.diff-dot{width:10px;height:10px;border-radius:50%;background:#333}
+.diff-dot.active{background:#FF6B35}
+</style>
+</head>
+<body>
+<div id="pg">
+
+<div id="screen-home" class="screen active">
+  <div class="title-logo">🏡 Panchayat<br>Puzzle</div>
+  <div class="subtitle">Solve village governance issues!</div>
+  <div class="village-scene">
+    <div class="char-box"><div style="font-size:40px" class="char-walk">👳</div><div class="char-name">Sarpanch</div></div>
+    <div class="char-box"><div style="font-size:40px" class="char-walk">👩🌾</div><div class="char-name">Kamla Devi</div></div>
+    <div class="char-box"><div style="font-size:40px" class="char-walk">🧑💼</div><div class="char-name">Ram Babu</div></div>
+    <div class="char-box"><div style="font-size:40px" class="char-walk">👴</div><div class="char-name">Masterji</div></div>
+  </div>
+  <div style="background:#12003a;border-radius:14px;padding:12px 20px;max-width:380px;margin:8px 0 16px;font-size:13px;color:#cce;line-height:1.6">
+    You are the new <b style="color:#FFD700">Junior Sarpanch</b> of Rampur village!<br>
+    Help villagers by solving real Panchayati Raj problems.<br>
+    Earn points, unlock characters, and become the <b style="color:#FF6B35">Gram Pradhan!</b>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="startGame()">Start Game</button>
+    <button class="btn btn-amber" onclick="showHowTo()">How to Play</button>
+  </div>
+  <div style="margin-top:16px;font-size:12px;color:#666">5 Levels • 3 Lives • Real Panchayat Topics</div>
+</div>
+
+<div id="screen-howto" class="screen">
+  <div style="font-size:32px;font-weight:800;color:#FFD700;margin-bottom:8px">How to Play</div>
+  <div style="max-width:420px;text-align:left;background:#0d0620;border-radius:14px;padding:16px;font-size:13px;line-height:1.8;color:#ddd">
+    <div>📋 <b style="color:#FFD700">Read</b> the village problem carefully</div>
+    <div>✅ <b style="color:#4CAF50">Choose</b> the best solution from 4 options</div>
+    <div>⏱️ <b style="color:#FF6B35">Be fast!</b> Timer ticks — slower = fewer points</div>
+    <div>❤️ You have <b style="color:#e53935">3 lives</b> — wrong answers cost a life!</div>
+    <div>⭐ <b style="color:#FFD700">Combos</b> multiply your score</div>
+    <div>🏆 5 levels: Easy → Hard, more complex problems each time</div>
+    <div style="margin-top:10px;color:#9b59b6">Topics: Water supply, education, health, land records, gram sabha, ration cards, roads, elections & more!</div>
+  </div>
+  <div class="btn-row" style="margin-top:16px">
+    <button class="btn btn-primary" onclick="startGame()">Let's Go!</button>
+    <button class="btn" style="background:#333;color:#fff" onclick="showScreen('screen-home')">Back</button>
+  </div>
+</div>
+
+<div id="screen-game" class="screen" style="justify-content:flex-start;padding:0">
+  <div class="hud">
+    <div class="hud-item"><span class="hud-val" id="hud-score">0</span>Score</div>
+    <div class="hud-item">
+      <span class="level-badge" id="hud-level">Level 1</span>
+      <div class="diff-indicator" id="diff-dots"></div>
+    </div>
+    <div class="hud-item"><span class="timer-ring" id="hud-timer">15</span>Secs</div>
+    <div class="hud-item">
+      <div class="lives-row" id="hud-lives"></div>
+      Lives
+    </div>
+  </div>
+  <div class="game-area">
+    <div class="progress-bar-bg"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+    <div class="level-info" id="level-info">Level 1 — Gram Sabha Basics</div>
+    <div id="q-area"></div>
+  </div>
+</div>
+
+<div id="screen-feedback" class="screen" style="justify-content:flex-start;padding:0">
+  <div class="hud">
+    <div class="hud-item"><span class="hud-val" id="fb-score">0</span>Score</div>
+    <div class="hud-item"><span class="level-badge" id="fb-level">Level 1</span></div>
+    <div class="hud-item"><span class="timer-ring" id="fb-q">1/5</span>Q</div>
+    <div class="hud-item"><div class="lives-row" id="fb-lives"></div>Lives</div>
+  </div>
+  <div style="margin-top:74px;width:100%;padding:16px">
+    <div class="feedback-box" id="fb-box">
+      <div class="feedback-icon" id="fb-icon">✅</div>
+      <div class="feedback-title" id="fb-title">Correct!</div>
+      <div class="feedback-msg" id="fb-msg"></div>
+      <div class="sarpanch-say" id="fb-sarpanch"></div>
+      <button class="btn btn-primary" id="fb-btn" onclick="nextQuestion()" style="margin-top:10px">Next Issue</button>
+    </div>
+  </div>
+</div>
+
+<div id="screen-levelup" class="screen">
+  <div class="level-complete">Level Complete!</div>
+  <div style="font-size:48px;margin:8px 0" id="lu-trophy">🏆</div>
+  <div style="font-size:16px;color:#FFD700;font-weight:700;margin-bottom:12px" id="lu-title"></div>
+  <div class="badge-row" id="lu-badges"></div>
+  <div id="lu-bonus" class="bonus-text"></div>
+  <div style="font-size:14px;color:#aac;margin:8px 0" id="lu-next"></div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-green" id="lu-btn" onclick="nextLevel()">Next Level</button>
+  </div>
+</div>
+
+<div id="screen-over" class="screen">
+  <div class="over-title" id="over-heading">Game Over!</div>
+  <div style="font-size:40px;margin:8px 0" id="over-icon">😢</div>
+  <div style="max-width:320px;width:100%">
+    <div class="stat-row"><span class="stat-label">Final Score</span><span class="stat-val" id="over-score">0</span></div>
+    <div class="stat-row"><span class="stat-label">Level Reached</span><span class="stat-val" id="over-level">1</span></div>
+    <div class="stat-row"><span class="stat-label">Questions Solved</span><span class="stat-val" id="over-correct">0</span></div>
+    <div class="stat-row"><span class="stat-label">Best Combo</span><span class="stat-val" id="over-combo">0x</span></div>
+  </div>
+  <div id="over-msg" style="font-size:13px;color:#aac;margin:12px 0;max-width:320px;line-height:1.5"></div>
+  <div class="btn-row" style="margin-top:16px">
+    <button class="btn btn-primary" onclick="startGame()">Play Again</button>
+    <button class="btn" style="background:#333;color:#fff" onclick="quitGameNow()">Return</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const LEVELS = [
+  {name:"Gram Sabha Basics",time:18,qCount:4,diff:1,trophy:"🌱",theme:"Introduction to village governance"},
+  {name:"Village Services",time:15,qCount:5,diff:2,trophy:"🚰",theme:"Water, roads and public services"},
+  {name:"Welfare Schemes",time:13,qCount:5,diff:3,trophy:"📋",theme:"Government schemes and rights"},
+  {name:"Land & Elections",time:11,qCount:6,diff:4,trophy:"🗳️",theme:"Land records and Panchayat elections"},
+  {name:"Budget & Justice",time:9,qCount:6,diff:5,trophy:"⚖️",theme:"Gram panchayat budget and disputes"}
+];
+
+const QUESTIONS = [
+  {level:1,emoji:"🏛️",title:"Gram Sabha Meeting",desc:"Villagers want to discuss the new road project. Where should this discussion happen?",opts:["In the Sarpanch's house","At a Gram Sabha meeting","At the Block Development Office","Via WhatsApp group"],ans:1,explain:"Gram Sabha is the primary democratic body where all adult villagers discuss and approve local development works.",sarpanch:"The Gram Sabha is like a village parliament! Every adult voter in the village is its member. Big decisions MUST be taken here."},
+  {level:1,emoji:"📜",title:"Panchayati Raj Act",desc:"Under India's Constitution, which amendment gave power to Panchayati Raj Institutions?",opts:["42nd Amendment","73rd Amendment","86th Amendment","91st Amendment"],ans:1,explain:"The 73rd Constitutional Amendment (1992) gave constitutional status to Panchayati Raj and created a 3-tier system.",sarpanch:"1992 was a landmark year! The 73rd Amendment made gram panchayats part of our Constitution itself."},
+  {level:1,emoji:"👥",title:"Who Can Vote?",desc:"Sunita is 17 years old. She wants to vote in Gram Panchayat elections. Is she eligible?",opts:["Yes, she can vote","No, she must be 18+","Yes, if she has Aadhaar","Only if her parents allow"],ans:1,explain:"Voting age in India is 18 years. Citizens must be 18 or older and registered as voters to participate in any election.",sarpanch:"Democracy means everyone's voice matters — but you must be 18 to vote. Tell Sunita to register when she turns 18!"},
+  {level:1,emoji:"🏠",title:"Sarpanch's Role",desc:"The Sarpanch of Rampur village uses panchayat funds to fix only his own street. What should villagers do?",opts:["Accept it, he's the leader","Raise it in the Gram Sabha","Wait for next election","Complain on social media"],ans:1,explain:"Gram Sabha is the right forum to raise misuse of funds. Villagers can question the Sarpanch's decisions there.",sarpanch:"Public money belongs to ALL villagers. The Gram Sabha has the power to question how funds are spent!"},
+  {level:2,emoji:"🚰",title:"Water Crisis",desc:"The village hand pump is broken for 2 weeks. Families have no clean water. What is the FASTEST official solution?",opts:["Buy bottled water","File RTI immediately","Complain to Gram Panchayat in writing","Wait for monsoon"],ans:2,explain:"The Gram Panchayat is responsible for water supply. A written complaint creates official record and triggers faster action.",sarpanch:"Clean water is your RIGHT under the Constitution! Write to the Gram Panchayat — they MUST fix it within days."},
+  {level:2,emoji:"🛣️",title:"Road Damage",desc:"The village road was built last year but has already broken down. Who is responsible for repair?",opts:["State Highway Dept","Gram Panchayat","NHAI","Individual villagers"],ans:1,explain:"Village roads (within gram panchayat limits) fall under the Gram Panchayat's jurisdiction for maintenance.",sarpanch:"Village roads are the Panchayat's responsibility. Use MGNREGS funds or 14th Finance Commission grants for repairs!"},
+  {level:2,emoji:"💡",title:"Street Lights",desc:"Half the village has no street lights for 3 months. Children fear walking at night. Who should villagers approach FIRST?",opts:["Electricity Board directly","Gram Panchayat Ward Member","Chief Minister helpline","District Collector"],ans:1,explain:"Ward Members are the first point of contact for local issues like street lights. They represent your ward in the Panchayat.",sarpanch:"Your Ward Panch is closest to you! They represent your area and must take up local issues in Panchayat meetings."},
+  {level:2,emoji:"🏥",title:"Health Sub-Centre",desc:"The village health sub-centre has been locked for a month — no doctor comes. What is the BEST action?",opts:["Go to city hospital","Raise in Gram Sabha + complain to Block Medical Officer","Wait and hope","Buy medicines online"],ans:1,explain:"Health issues must be raised in Gram Sabha AND escalated to Block Medical Officer for official action.",sarpanch:"Healthcare is a basic right! The Gram Sabha can pass a resolution demanding the health centre be made functional."},
+  {level:2,emoji:"🏫",title:"School Repairs",desc:"The government primary school has no toilets. Girls stop attending. Who funds school toilet construction?",opts:["Parents must pay","Swachh Bharat Mission - Grameen","State Education Department only","NGOs"],ans:1,explain:"Swachh Bharat Mission - Grameen provides funds for school toilets under WASH (Water, Sanitation, Hygiene) programs.",sarpanch:"Under Swachh Bharat, the Panchayat can get funds for school sanitation! No girl should miss school due to lack of toilets."},
+  {level:3,emoji:"🌾",title:"MGNREGS Work",desc:"Hari needs work during the lean farming season. Under MGNREGA, how many days of work is he guaranteed?",opts:["50 days","100 days","200 days","365 days"],ans:1,explain:"MGNREGA guarantees 100 days of wage employment per year to every rural household. This is a legal right.",sarpanch:"MGNREGA gives 100 days of work as a LEGAL RIGHT! Hari should register his job card at the Gram Panchayat immediately."},
+  {level:3,emoji:"🍚",title:"Ration Card Problem",desc:"Priya's family is poor but has no ration card. They cannot get subsidized food. What should she do FIRST?",opts:["Go to State Food Ministry","Apply at Gram Panchayat for new ration card","Wait for survey","Buy from market"],ans:1,explain:"Applications for ration cards under PDS start at the Gram Panchayat or Fair Price Shop. The Sarpanch signs the verification.",sarpanch:"Food security is a RIGHT under NFSA 2013! The Panchayat verifies and recommends ration card applications."},
+  {level:3,emoji:"📋",title:"Aawas Yojana",desc:"A homeless widow wants a house under PM Aawas Yojana (Gramin). Who identifies and recommends her?",opts:["She applies online directly","Gram Sabha identifies and recommends beneficiaries","Block office decides alone","District Collector selects"],ans:1,explain:"Under PMAY-G, the Gram Sabha plays the key role in identifying and recommending genuine beneficiaries transparently.",sarpanch:"The Gram Sabha is the GATEKEEPER for housing schemes — this ensures deserving people get houses, not influential ones!"},
+  {level:3,emoji:"👩🤝👩",title:"Women's Reservation",desc:"In Gram Panchayat elections, what percentage of seats are reserved for women across India?",opts:["25%","33%","50%","No reservation"],ans:1,explain:"The 73rd Amendment mandates at least 33% reservation for women in Panchayati Raj. Many states like Rajasthan have 50%.",sarpanch:"Women's reservation transformed village democracy! Today millions of women are elected representatives — called Panches and Sarpanches."},
+  {level:3,emoji:"📰",title:"RTI Power",desc:"Raju wants to know how panchayat funds were spent this year. What is his LEGAL right?",opts:["Beg the Sarpanch","File RTI under Right to Information Act","Wait for annual report","Ask a journalist"],ans:1,explain:"RTI Act 2005 gives every citizen the right to get information from government offices including Panchayats within 30 days.",sarpanch:"RTI is your weapon! Any citizen can file RTI and the Panchayat MUST respond within 30 days. No secrets allowed!"},
+  {level:4,emoji:"📑",title:"Land Records",desc:"A farmer's land was sold fraudulently. He discovers this when checking records. Where should he go FIRST?",opts:["High Court directly","Tehsildar / Revenue Department","Panchayat only","Police station"],ans:1,explain:"Land fraud cases begin with the Revenue Department (Tehsildar). They control land records (Jamabandi, Khasra) and can correct mutations.",sarpanch:"Land records are kept by Revenue Dept. The Tehsildar can investigate fraud and freeze illegal mutations quickly!"},
+  {level:4,emoji:"🗳️",title:"Election Model Code",desc:"A candidate distributes cash to voters 2 days before Panchayat voting. What is this called?",opts:["Donation","Voter bribery — illegal under Representation of People Act","Traditional gift","Normal practice"],ans:1,explain:"Distributing cash to influence votes is a criminal offence. It can lead to disqualification and imprisonment.",sarpanch:"Free and fair elections are the backbone of democracy! Report bribery to the Election Commission or local police immediately."},
+  {level:4,emoji:"🏗️",title:"Panchayat Budget",desc:"The Panchayat received ₹5 lakh from 15th Finance Commission. Who MUST approve how it is spent?",opts:["Sarpanch alone","Block Development Officer","Gram Sabha must approve the budget","District Collector"],ans:2,explain:"Finance Commission grants must be approved through the Gram Sabha. The Panchayat budget requires Gram Sabha's sanction.",sarpanch:"Public money = public accountability! Gram Sabha must approve and later audit how Finance Commission funds are used."},
+  {level:4,emoji:"📊",title:"Social Audit",desc:"Villages must conduct a Social Audit of MGNREGS works. Who LEADS the social audit?",opts:["Gram Panchayat secretary","Independent Social Audit Unit (state government)","Block office","NGO of Sarpanch's choice"],ans:1,explain:"Social Audits under MGNREGS must be conducted by independent State Social Audit Units — not by the Panchayat itself.",sarpanch:"Social audit is transparency in action! Independent auditors check if the work actually happened and money was not stolen."},
+  {level:4,emoji:"⚖️",title:"Gram Nyayalaya",desc:"Two farmers dispute over boundary of their fields. Their quarrel can be solved at the village level by:",opts:["Going to High Court","Gram Nyayalaya — mobile village court","Only district court","Private arbitration"],ans:1,explain:"Gram Nyayalayas are mobile courts at Panchayat level that provide fast, cheap justice for minor civil and criminal matters.",sarpanch:"Gram Nyayalayas reduce burden on city courts AND save villagers time and money. Justice at your doorstep!"},
+  {level:5,emoji:"💰",title:"Panchayat Own Tax",desc:"The Gram Panchayat wants to raise its own revenue. Which of these can it legally collect?",opts:["Income tax from farmers","Property tax on houses and land","GST from shops","Toll on national highway"],ans:1,explain:"Gram Panchayats can levy property tax, water tax, and professional tax within their area — this is called 'Own Source Revenue'.",sarpanch:"Self-reliant Panchayats collect their own taxes! Property tax on houses helps fund local services without depending on state funds."},
+  {level:5,emoji:"🌊",title:"Disaster Response",desc:"Floods hit Rampur. 50 families are homeless. Who has FIRST RESPONSIBILITY for immediate relief?",opts:["Central Government","State Disaster Relief Fund","District Disaster Management Authority + Gram Panchayat","UN agencies"],ans:2,explain:"District Disaster Management Authority (DDMA) coordinates immediate relief, with Panchayat as the ground-level responder.",sarpanch:"In disasters, the Panchayat is the FIRST RESPONDER — evacuating people, identifying needs, and coordinating with DDMA!"},
+  {level:5,emoji:"🌿",title:"Panchayat Environment",desc:"A factory is dumping waste into the village pond, killing fish and making water dirty. What can the Panchayat do?",opts:["Nothing, it's outside their power","Pass resolution, issue notice, escalate to Pollution Control Board","Only complain to collector","Wait for High Court order"],ans:1,explain:"Panchayats have power under Environmental Acts to protect local water bodies. They can issue notices and escalate to State PCB.",sarpanch:"Protecting village water and forests IS the Panchayat's job! Use your authority — the Gram Sabha can pass resolutions on environmental issues."},
+  {level:5,emoji:"📡",title:"Digital Panchayat",desc:"Villagers need birth certificates urgently. The new system issues them digitally. Which platform?",opts:["WhatsApp","Common Service Centre (CSC) / e-Panchayat portal","Email to collector","Only manual at BDO"],ans:1,explain:"Common Service Centres (CSCs) and e-Panchayat portal provide digital certificates including birth, death, income, and domicile.",sarpanch:"Digital India reaches villages through CSCs! Birth certificates, land records, scheme applications — all can be done online now."}
+];
+
+let state={};
+let timerInterval=null;
+
+function initState(){
+  state={score:0,lives:3,level:0,qIndex:0,qSet:[],combo:0,maxCombo:0,totalCorrect:0,answered:false};
+}
+
+function buildQuestionSet(levelIdx){
+  const qs = QUESTIONS.filter(q=>q.level===levelIdx+1);
+  const shuffled = [...qs].sort(()=>Math.random()-.5);
+  return shuffled.slice(0,LEVELS[levelIdx].qCount);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showHowTo(){showScreen('screen-howto');}
+
+function startGame(){
+  initState();
+  state.level=0;
+  state.qSet=buildQuestionSet(0);
+  state.qIndex=0;
+  showScreen('screen-game');
+  renderHUD();
+  renderQuestion();
+}
+
+function renderHUD(){
+  const lv=LEVELS[state.level];
+  document.getElementById('hud-score').textContent=state.score;
+  document.getElementById('hud-level').textContent='Level '+(state.level+1);
+  document.getElementById('hud-timer').textContent=lv.time;
+  const livesEl=document.getElementById('hud-lives');
+  livesEl.innerHTML='';
+  for(let i=0;i<3;i++){
+    const h=document.createElement('span');
+    h.className='heart'+(i>=state.lives?' lost':'');
+    h.textContent='♥';
+    livesEl.appendChild(h);
+  }
+  const dots=document.getElementById('diff-dots');
+  dots.innerHTML='';
+  for(let i=0;i<5;i++){
+    const d=document.createElement('div');
+    d.className='diff-dot'+(i<lv.diff?' active':'');
+    dots.appendChild(d);
+  }
+  const info=document.getElementById('level-info');
+  info.textContent='Level '+(state.level+1)+' — '+lv.name;
+  const prog=document.getElementById('prog-bar');
+  prog.style.width=Math.round((state.qIndex/state.qSet.length)*100)+'%';
+}
+
+function renderQuestion(){
+  clearInterval(timerInterval);
+  state.answered=false;
+  const q=state.qSet[state.qIndex];
+  const lv=LEVELS[state.level];
+  let timeLeft=lv.time;
+  document.getElementById('hud-timer').textContent=timeLeft;
+  renderHUD();
+
+  const qa=document.getElementById('q-area');
+  qa.innerHTML=`
+    <div class="issue-card">
+      <div class="issue-emoji">${q.emoji}</div>
+      <div class="issue-title">${q.title}</div>
+      <div class="issue-desc">${q.desc}</div>
+    </div>
+    <div class="options-grid" id="opts"></div>
+  `;
+  const og=document.getElementById('opts');
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt-btn';
+    b.textContent=o;
+    b.onclick=()=>answerQ(i,q,b,timeLeft);
+    og.appendChild(b);
+  });
+
+  timerInterval=setInterval(()=>{
+    timeLeft--;
+    document.getElementById('hud-timer').textContent=timeLeft;
+    if(timeLeft<=0){
+      clearInterval(timerInterval);
+      if(!state.answered) answerQ(-1,q,null,0);
+    }
+  },1000);
+}
+
+function answerQ(chosen,q,btnEl,timeLeft){
+  if(state.answered)return;
+  state.answered=true;
+  clearInterval(timerInterval);
+  const correct=chosen===q.ans;
+  const opts=document.querySelectorAll('.opt-btn');
+  opts.forEach((b,i)=>{
+    if(i===q.ans) b.className='opt-btn correct';
+    else if(i===chosen) b.className='opt-btn wrong';
+  });
+
+  if(correct){
+    state.totalCorrect++;
+    state.combo++;
+    if(state.combo>state.maxCombo) state.maxCombo=state.combo;
+    const timeBonus=Math.round(timeLeft*5);
+    const comboBonus=state.combo>1?state.combo*10:0;
+    const pts=100+timeBonus+comboBonus;
+    state.score+=pts;
+    document.getElementById('hud-score').textContent=state.score;
+    showScorePop('+'+pts, btnEl);
+    if(state.combo>1) showCombo(state.combo+'x Combo!');
+  } else {
+    state.combo=0;
+    state.lives--;
+    renderHUDLives();
+    if(chosen===-1) showComboMsg('⏰ Time Up!');
+  }
+
+  setTimeout(()=>showFeedback(correct,q,chosen),400);
+}
+
+function renderHUDLives(){
+  const livesEl=document.getElementById('hud-lives');
+  livesEl.innerHTML='';
+  for(let i=0;i<3;i++){
+    const h=document.createElement('span');
+    h.className='heart'+(i>=state.lives?' lost':'');
+    h.textContent='♥';
+    livesEl.appendChild(h);
+  }
+}
+
+function showScorePop(txt, ref){
+  const el=document.createElement('div');
+  el.className='score-pop';
+  el.textContent=txt;
+  el.style.left=Math.round(Math.random()*60+20)+'%';
+  el.style.top='30%';
+  document.getElementById('pg').appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function showCombo(txt){
+  const el=document.createElement('div');
+  el.className='combo-flash';
+  el.textContent=txt;
+  document.getElementById('pg').appendChild(el);
+  setTimeout(()=>el.remove(),800);
+}
+
+function showComboMsg(txt){
+  const el=document.createElement('div');
+  el.className='combo-flash';
+  el.style.color='#FF6B35';
+  el.textContent=txt;
+  document.getElementById('pg').appendChild(el);
+  setTimeout(()=>el.remove(),800);
+}
+
+function showFeedback(correct,q,chosen){
+  showScreen('screen-feedback');
+  document.getElementById('fb-score').textContent=state.score;
+  document.getElementById('fb-level').textContent='Level '+(state.level+1);
+  document.getElementById('fb-q').textContent=(state.qIndex+1)+'/'+state.qSet.length;
+  const fbLives=document.getElementById('fb-lives');
+  fbLives.innerHTML='';
+  for(let i=0;i<3;i++){
+    const h=document.createElement('span');
+    h.className='heart'+(i>=state.lives?' lost':'');
+    h.textContent='♥';
+    fbLives.appendChild(h);
+  }
+  document.getElementById('fb-icon').textContent=correct?'✅':(chosen===-1?'⏰':'❌');
+  document.getElementById('fb-title').textContent=correct?'Correct! Well done!':chosen===-1?'Time Up!':'Wrong Answer!';
+  document.getElementById('fb-title').style.color=correct?'#4CAF50':'#FF4D4D';
+  document.getElementById('fb-msg').textContent=q.explain;
+  document.getElementById('fb-sarpanch').innerHTML='<b>Sarpanch says:</b> '+q.sarpanch;
+  const btn=document.getElementById('fb-btn');
+  const isLast=state.qIndex>=state.qSet.length-1;
+  btn.textContent=isLast?'See Results':'Next Issue';
+}
+
+function nextQuestion(){
+  state.qIndex++;
+  if(state.lives<=0){
+    endGame(false);
+    return;
+  }
+  if(state.qIndex>=state.qSet.length){
+    showLevelUp();
+    return;
+  }
+  showScreen('screen-game');
+  renderQuestion();
+}
+
+function showLevelUp(){
+  const lv=LEVELS[state.level];
+  showScreen('screen-levelup');
+  document.getElementById('lu-trophy').textContent=lv.trophy;
+  document.getElementById('lu-title').textContent='You mastered: '+lv.name;
+  const badges=document.getElementById('lu-badges');
+  badges.innerHTML='';
+  const earned=['Village Learner','Governance Star','Panchayat Pro','Civic Champion','Gram Guru'];
+  for(let i=0;i<=state.level;i++){
+    const b=document.createElement('div');
+    b.className='badge';
+    b.textContent=earned[i];
+    badges.appendChild(b);
+  }
+  const bonus=state.combo>1?state.combo*20:0;
+  if(bonus>0){
+    state.score+=bonus;
+    document.getElementById('lu-bonus').textContent='Combo Bonus: +'+bonus+' points!';
+  } else {
+    document.getElementById('lu-bonus').textContent='Score: '+state.score;
+  }
+  const nextLv=state.level+1;
+  if(nextLv<LEVELS.length){
+    document.getElementById('lu-next').textContent='Next: Level '+(nextLv+1)+' — '+LEVELS[nextLv].name;
+    document.getElementById('lu-btn').textContent='Next Level';
+  } else {
+    document.getElementById('lu-next').textContent='You have completed ALL 5 levels!';
+    document.getElementById('lu-btn').textContent='Final Score';
+  }
+}
+
+function nextLevel(){
+  state.level++;
+  if(state.level>=LEVELS.length){
+    endGame(true);
+    return;
+  }
+  state.qSet=buildQuestionSet(state.level);
+  state.qIndex=0;
+  state.combo=0;
+  showScreen('screen-game');
+  renderHUD();
+  renderQuestion();
+}
+
+function endGame(won){
+  showScreen('screen-over');
+  document.getElementById('over-heading').textContent=won?'Congratulations! You won!':'Game Over!';
+  document.getElementById('over-icon').textContent=won?'🏆':'😢';
+  document.getElementById('over-score').textContent=state.score;
+  document.getElementById('over-level').textContent=(state.level+1);
+  document.getElementById('over-correct').textContent=state.totalCorrect;
+  document.getElementById('over-combo').textContent=state.maxCombo+'x';
+  const msgs=[
+    'Keep learning about Panchayati Raj — it shapes village life for millions!',
+    'Great effort! India has 2.5 lakh+ Gram Panchayats — they need informed citizens like you!',
+    'You are learning governance! Try again to get a higher score.',
+    'Amazing! You understand village democracy better than most adults!'
+  ];
+  document.getElementById('over-msg').textContent=won?msgs[3]:state.score>300?msgs[1]:msgs[2];
+
+  if (won) {
+    document.querySelector('#screen-over button.btn-primary').style.display = 'none';
+    document.querySelector('#screen-over button[onclick="quitGameNow()"]').textContent = 'Claim Rewards & Exit';
+    document.querySelector('#screen-over button[onclick="quitGameNow()"]').style.background = '#4CAF50';
+  }
+}
+
+function quitGameNow() {
+    let won = state.level >= LEVELS.length;
+    let xp = won ? 500 + state.score : Math.floor(state.score * 0.5);
+    let coins = won ? 300 + Math.floor(state.score / 10) : Math.floor(state.score / 20);
+    
+    if(window.parent && window.parent.currentUser) {
+        fetch('/api/save-gamestate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ xp: xp, coins: coins })
+        }).then(() => {
+            if(window.parent.closeGame) window.parent.closeGame(won);
+        }).catch(e => console.log(e));
+    } else if (window.parent && window.parent.closeGame) {
+        window.parent.closeGame(won);
+    }
+}
+</script>
+</body>
+</html>

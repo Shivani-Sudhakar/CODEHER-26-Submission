@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agri Market Arena</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#game-root{background:#1a2e0a;height:100vh;font-family:sans-serif;color:#fff;overflow:hidden;position:relative;user-select:none}
+#canvas-wrap{position:relative;width:100%;height:560px;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+#ui-bar{display:flex;align-items:center;gap:12px;padding:8px 16px;background:#0f1f05;border-bottom:2px solid #3b6d11}
+.ui-pill{background:#27500a;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:500;color:#c0dd97;display:flex;align-items:center;gap:6px}
+.ui-pill span{font-size:15px;font-weight:500;color:#fff}
+#lives-wrap{display:flex;gap:4px}
+.heart{width:18px;height:18px;background:#e24b4a;clip-path:polygon(50% 90%,10% 40%,10% 25%,25% 10%,50% 25%,75% 10%,90% 25%,90% 40%)}
+.heart.lost{background:#444;opacity:.4}
+#quiz-modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#1e3a0a;border:3px solid #639922;border-radius:16px;padding:24px;width:90%;max-width:380px;z-index:100;text-align:center}
+#quiz-modal h3{color:#c0dd97;font-size:17px;margin-bottom:12px}
+#quiz-question{font-size:15px;margin-bottom:16px;line-height:1.5}
+.quiz-btn{display:block;width:100%;padding:10px;margin:6px 0;background:#27500a;border:1.5px solid #639922;border-radius:8px;color:#c0dd97;font-size:14px;cursor:pointer;text-align:left;transition:background .15s}
+.quiz-btn:hover{background:#3b6d11}
+.quiz-btn.correct{background:#1d9e75;border-color:#1d9e75;color:#fff}
+.quiz-btn.wrong{background:#a32d2d;border-color:#a32d2d;color:#fff}
+#quiz-feedback{font-size:13px;margin-top:10px;min-height:18px}
+#quiz-cont{margin-top:14px;padding:8px 20px;background:#639922;border:none;border-radius:8px;color:#fff;font-size:14px;cursor:pointer;display:none}
+#quiz-cont:hover{background:#3b6d11}
+#screen-overlay{position:absolute;inset:0;background:rgba(10,20,5,0.92);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#screen-overlay h2{font-size:26px;color:#c0dd97;text-align:center}
+#screen-overlay p{font-size:14px;color:#97C459;text-align:center;max-width:300px;line-height:1.6}
+#start-btn{padding:12px 32px;background:#639922;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:500;cursor:pointer;margin-top:8px}
+#start-btn:hover{background:#3b6d11}
+#level-badge{background:#BA7517;border-radius:20px;padding:4px 14px;font-size:13px;color:#faeeda}
+</style>
+</head>
+<body>
+<div id="game-root">
+  <div id="ui-bar">
+    <div class="ui-pill">Score <span id="score-val">0</span></div>
+    <div class="ui-pill">Level <span id="level-val">1</span></div>
+    <div class="ui-pill">Time <span id="time-val">60</span>s</div>
+    <div class="ui-pill" style="margin-left:auto">Lives
+      <div id="lives-wrap">
+        <div class="heart" id="h1"></div>
+        <div class="heart" id="h2"></div>
+        <div class="heart" id="h3"></div>
+      </div>
+    </div>
+  </div>
+  <div id="canvas-wrap">
+    <canvas id="gc" width="700" height="500"></canvas>
+    <div id="quiz-modal" style="display:none">
+      <h3 id="quiz-title">Market Challenge!</h3>
+      <p id="quiz-question"></p>
+      <div id="quiz-options"></div>
+      <div id="quiz-feedback"></div>
+      <button id="quiz-cont">Continue &rarr;</button>
+    </div>
+    <div id="screen-overlay">
+      <div style="font-size:48px">🌾</div>
+      <h2>Market Forces</h2>
+      <div id="level-badge">Trade smart in the agri market</div>
+      <p>Catch the right crops, dodge spoiled goods, and answer market questions to earn profits! Learn how supply, demand, and prices work in agriculture.</p>
+      <button id="start-btn">Start Game</button>
+      <p id="overlay-sub" style="font-size:12px;opacity:.6">Arrow keys or tap to move</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+const W = 700, H = 500;
+canvas.width = W; canvas.height = H;
+
+let state = 'title';
+let score = 0, lives = 3, level = 1, timeLeft = 60;
+let player, items = [], particles = [], floats = [];
+let keys = {}, timerInt, spawnInt;
+let quizPending = false, quizAnswered = false;
+let levelData, nextQuizAt;
+
+const CROPS = [
+  {name:'Wheat',color:'#EF9F27',emoji:'🌾',value:10,good:true},
+  {name:'Tomato',color:'#E24B4A',emoji:'🍅',value:15,good:true},
+  {name:'Corn',color:'#FAC775',emoji:'🌽',value:12,good:true},
+  {name:'Rice',color:'#C0DD97',emoji:'🍚',value:8,good:true},
+  {name:'Onion',color:'#D4537E',emoji:'🧅',value:18,good:true},
+  {name:'Spoiled',color:'#5F5E5A',emoji:'🤢',value:-20,good:false},
+  {name:'Flood',color:'#378ADD',emoji:'🌊',value:-15,good:false},
+  {name:'Drought',color:'#BA7517',emoji:'☀',value:-12,good:false},
+];
+
+const QUESTIONS = [
+  {q:'If there is a drought, what usually happens to wheat prices?',opts:['They go down','They go up','They stay same','Wheat disappears'],ans:1,exp:'Less supply during drought means higher prices — scarcity drives cost up!'},
+  {q:'A farmer grows 10,000 kg of tomatoes but everyone wants them. What is this called?',opts:['Surplus','Deficit','High demand','Embargo'],ans:2,exp:'High demand means buyers want more than usual, which pushes prices up!'},
+  {q:'If too many farmers grow corn at the same time, prices will:',opts:['Rise sharply','Stay the same','Fall due to surplus','Double'],ans:2,exp:'Oversupply (surplus) means more corn than buyers need, so prices drop!'},
+  {q:'What is the "market price" of a crop?',opts:['Price the government sets','Price buyers and sellers agree on','Always the lowest price','Fixed forever'],ans:1,exp:'Market price is set by supply and demand — what buyers will pay and sellers will accept.'},
+  {q:'A middleman buys rice at ₹20/kg and sells at ₹30/kg. Their profit per kg is:',opts:['₹20','₹50','₹10','₹30'],ans:2,exp:'Profit = Selling price minus buying price. ₹30 - ₹20 = ₹10 per kg!'},
+  {q:'Which season usually increases vegetable supply and lowers prices?',opts:['Dry season','Harvest season','Winter','Festival season'],ans:1,exp:'Harvest season floods the market with produce, so supply goes up and prices fall!'},
+  {q:'A cooperative lets farmers sell together. Why does this help them?',opts:['They get lower prices','They get more bargaining power','They pay more taxes','They sell less'],ans:1,exp:'Selling together gives farmers collective strength to negotiate better prices!'},
+  {q:'Importing food from another country usually:',opts:['Raises local prices','Lowers local prices','Has no effect','Bans local farming'],ans:1,exp:'Imports increase supply in the market, which pulls local prices down.'},
+  {q:'If fuel prices rise, what happens to the cost of transporting vegetables?',opts:['It falls','It stays same','It rises','Vegetables grow faster'],ans:2,exp:'Transport costs pass through to food prices — higher fuel = more expensive delivery!'},
+  {q:'What is "value addition" in agriculture?',opts:['Selling raw crops','Processing crops to increase worth','Wasting crops','Lowering prices'],ans:1,exp:'Value addition means turning raw tomatoes into ketchup — more processing, more profit!'},
+  {q:'A farmer stores wheat and sells it 3 months later when prices are high. This is:',opts:['Illegal hoarding','Smart market timing','A loss','Wasting food'],ans:1,exp:'Holding stock and selling when demand peaks is a key market strategy!'},
+  {q:'MSP (Minimum Support Price) protects farmers because:',opts:['It bans selling crops','It sets a price floor so farmers never sell too cheap','It only helps big farms','It exports all crops'],ans:1,exp:'MSP guarantees farmers a minimum income even if market prices crash.'},
+];
+
+const LEVELS = [
+  {time:60,speed:1.5,spawnRate:1800,quizEvery:300,label:'Beginner Farmer'},
+  {time:55,speed:2,spawnRate:1500,quizEvery:250,label:'Market Apprentice'},
+  {time:50,speed:2.5,spawnRate:1200,quizEvery:200,label:'Trade Trader'},
+  {time:45,speed:3,spawnRate:1000,quizEvery:170,label:'Market Veteran'},
+  {time:40,speed:3.5,spawnRate:800,quizEvery:140,label:'Agri Champion'},
+];
+
+function getLv(){return LEVELS[Math.min(level-1,LEVELS.length-1)];}
+
+function initPlayer(){
+  player={x:W/2-25,y:H-70,w:50,h:55,vx:0,speed:5,basket:0,frame:0,fCount:0,color:'#639922',shine:false,shineT:0};
+}
+
+function startGame(){
+  score=0;lives=3;level=1;items=[];particles=[];floats=[];quizPending=false;
+  document.getElementById('screen-overlay').style.display='none';
+  updateUI();
+  initPlayer();
+  levelData=getLv();
+  timeLeft=levelData.time;
+  nextQuizAt=levelData.quizEvery;
+  clearInterval(timerInt);clearInterval(spawnInt);
+  timerInt=setInterval(tickTimer,1000);
+  spawnInt=setInterval(spawnItem,levelData.spawnRate);
+  state='playing';
+}
+
+function tickTimer(){
+  if(state!=='playing')return;
+  timeLeft--;
+  document.getElementById('time-val').textContent=timeLeft;
+  if(timeLeft<=0)nextLevel();
+}
+
+function nextLevel(){
+  clearInterval(timerInt);clearInterval(spawnInt);
+  items=[];
+  level++;
+  if(level>5){endGame(true);return;}
+  levelData=getLv();
+  timeLeft=levelData.time;
+  document.getElementById('level-val').textContent=level;
+  spawnInt=setInterval(spawnItem,levelData.spawnRate);
+  timerInt=setInterval(tickTimer,1000);
+  showFloat('Level '+level+'! '+levelData.label,W/2,H/2,'#FAC775',22);
+}
+
+function endGame(win){
+  state='over';
+  clearInterval(timerInt);clearInterval(spawnInt);
+  const ov=document.getElementById('screen-overlay');
+  ov.style.display='flex';
+  ov.querySelector('h2').textContent=win?'You Win! Champion!':'Game Over!';
+  ov.querySelector('p').textContent=(win?'Amazing trading! You mastered the agri market! ':'The market beat you this time! ')+'Final score: '+score;
+  
+  if (win) {
+    document.getElementById('start-btn').textContent='Claim Rewards';
+    document.getElementById('start-btn').onclick = () => {
+      let xp = 500 + score;
+      let coins = 300 + Math.floor(score / 5);
+      if(window.parent && window.parent.currentUser) {
+          fetch('/api/save-gamestate', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ xp: xp, coins: coins })
+          }).then(() => {
+              if(window.parent.closeGame) window.parent.closeGame(true);
+          }).catch(e => console.log(e));
+      } else if (window.parent && window.parent.closeGame) {
+          window.parent.closeGame(true);
+      }
+    };
+  } else {
+    document.getElementById('start-btn').textContent='Play Again';
+    document.getElementById('start-btn').onclick = startGame;
+  }
+}
+
+function spawnItem(){
+  if(state!=='playing')return;
+  const crop=CROPS[Math.floor(Math.random()*CROPS.length)];
+  const x=Math.random()*(W-40)+20;
+  items.push({x,y:-30,w:38,h:38,vy:getLv().speed+(Math.random()*.8),crop,rot:0,rotV:(Math.random()-.5)*.08,collected:false,age:0});
+}
+
+function spawnParticles(x,y,color,count){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2;
+    const s=Math.random()*3+1;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,color,life:1,r:Math.random()*4+2});
+  }
+}
+
+function showFloat(txt,x,y,color,size){
+  floats.push({txt,x,y,color,size:size||16,life:1,vy:-1.2});
+}
+
+function collectItem(it){
+  it.collected=true;
+  const v=it.crop.value;
+  if(it.crop.good){
+    score+=v;
+    player.shine=true;player.shineT=0.4;
+    spawnParticles(it.x,it.y,'#97C459',10);
+    showFloat('+'+v+' ('+it.crop.name+')',it.x,it.y-10,'#c0dd97');
+  } else {
+    score=Math.max(0,score+v);
+    lives--;
+    updateHearts();
+    spawnParticles(it.x,it.y,'#E24B4A',14);
+    showFloat(v+' '+it.crop.name+'!',it.x,it.y-10,'#F09595');
+    if(lives<=0){endGame(false);return;}
+  }
+  score=Math.max(0,score);
+  document.getElementById('score-val').textContent=score;
+  nextQuizAt-=Math.abs(v);
+  if(nextQuizAt<=0&&!quizPending){triggerQuiz();}
+}
+
+function updateHearts(){
+  [1,2,3].forEach(i=>{
+    const h=document.getElementById('h'+i);
+    if(h)h.classList.toggle('lost',i>lives);
+  });
+}
+
+function updateUI(){
+  document.getElementById('score-val').textContent=score;
+  document.getElementById('level-val').textContent=level;
+  document.getElementById('time-val').textContent=timeLeft;
+  updateHearts();
+}
+
+function triggerQuiz(){
+  if(quizPending)return;
+  quizPending=true;
+  state='quiz';
+  clearInterval(timerInt);
+  const q=QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)];
+  const modal=document.getElementById('quiz-modal');
+  modal.style.display='block';
+  document.getElementById('quiz-title').textContent='Market Challenge! +Bonus Points!';
+  document.getElementById('quiz-question').textContent=q.q;
+  document.getElementById('quiz-feedback').textContent='';
+  document.getElementById('quiz-cont').style.display='none';
+  quizAnswered=false;
+  const opDiv=document.getElementById('quiz-options');
+  opDiv.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='quiz-btn';
+    b.textContent=(i===0?'A. ':i===1?'B. ':i===2?'C. ':'D. ')+o;
+    b.onclick=()=>{
+      if(quizAnswered)return;
+      quizAnswered=true;
+      const correct=i===q.ans;
+      b.classList.add(correct?'correct':'wrong');
+      if(correct){
+        score+=50;document.getElementById('score-val').textContent=score;
+        document.getElementById('quiz-feedback').textContent='Correct! +50 bonus points!';
+        document.getElementById('quiz-feedback').style.color='#97C459';
+        spawnParticles(350,250,'#97C459',20);
+      } else {
+        opDiv.querySelectorAll('.quiz-btn')[q.ans].classList.add('correct');
+        document.getElementById('quiz-feedback').textContent=q.exp;
+        document.getElementById('quiz-feedback').style.color='#F09595';
+      }
+      document.getElementById('quiz-cont').style.display='block';
+    };
+    opDiv.appendChild(b);
+  });
+}
+
+document.getElementById('quiz-cont').onclick=()=>{
+  document.getElementById('quiz-modal').style.display='none';
+  quizPending=false;
+  state='playing';
+  nextQuizAt=getLv().quizEvery;
+  timerInt=setInterval(tickTimer,1000);
+};
+
+document.getElementById('start-btn').onclick=startGame;
+
+function drawPlayer(p){
+  ctx.save();
+  ctx.translate(p.x+p.w/2,p.y+p.h/2);
+  if(p.shine&&p.shineT>0){
+    ctx.globalAlpha=p.shineT;
+    ctx.fillStyle='#FAC775';
+    ctx.beginPath();ctx.arc(0,0,34,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  const bob=Math.sin(p.fCount*0.15)*2;
+  ctx.translate(0,bob);
+  ctx.fillStyle='#8B4513';
+  ctx.beginPath();ctx.ellipse(0,-20,16,8,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#FAC775';
+  ctx.beginPath();ctx.arc(0,-20,14,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#333';
+  ctx.beginPath();ctx.arc(-5,-22,2.5,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(5,-22,2.5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#333';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(0,-17,5,0.1,Math.PI-0.1);ctx.stroke();
+  ctx.fillStyle=p.color;
+  ctx.fillRect(-14,-10,28,20);
+  ctx.fillStyle='#EF9F27';
+  ctx.fillRect(-18,-8,4,16);
+  ctx.fillRect(14,-8,4,16);
+  ctx.fillStyle='#854F0B';
+  ctx.fillRect(-20,10,40,10);
+  ctx.fillStyle='#639922';
+  ctx.beginPath();ctx.ellipse(-6,5,3,5,-.3,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(6,5,3,5,.3,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+function drawItem(it){
+  ctx.save();
+  ctx.translate(it.x,it.y);
+  ctx.rotate(it.rot);
+  const r=it.w/2;
+  ctx.fillStyle=it.crop.color;
+  ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.2)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.font=`${Math.floor(r*1.1)}px serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(it.crop.emoji,0,1);
+  if(!it.crop.good){
+    ctx.strokeStyle='rgba(255,0,0,0.5)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-r*.6,-r*.6);ctx.lineTo(r*.6,r*.6);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(r*.6,-r*.6);ctx.lineTo(-r*.6,r*.6);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawBg(){
+  ctx.fillStyle='#1a2e0a';
+  ctx.fillRect(0,0,W,H);
+  for(let x=0;x<W;x+=80){
+    ctx.fillStyle='rgba(59,109,17,0.12)';
+    ctx.fillRect(x,0,2,H);
+  }
+  ctx.fillStyle='#27500a';
+  ctx.fillRect(0,H-28,W,28);
+  for(let x=0;x<W;x+=60){
+    ctx.fillStyle='#3b6d11';
+    ctx.fillRect(x,H-28,3,28);
+    ctx.fillStyle='#639922';
+    ctx.beginPath();ctx.arc(x+1,H-32,7,0,Math.PI*2);ctx.fill();
+  }
+  ctx.fillStyle='rgba(99,153,34,0.15)';
+  ctx.font='bold 14px monospace';
+  ctx.fillText('AGRI MARKET ARENA',W/2-80,20);
+}
+
+function gameLoop(){
+  requestAnimationFrame(gameLoop);
+  ctx.clearRect(0,0,W,H);
+  drawBg();
+  if(state==='playing'||state==='quiz'){
+    player.fCount++;
+    if(state==='playing'){
+      if(keys['ArrowLeft']||keys['a'])player.x=Math.max(0,player.x-player.speed);
+      if(keys['ArrowRight']||keys['d'])player.x=Math.min(W-player.w,player.x+player.speed);
+    }
+    if(player.shineT>0)player.shineT-=0.02;
+    items.forEach(it=>{
+      if(it.collected)return;
+      it.y+=it.vy;
+      it.rot+=it.rotV;
+      it.age++;
+      if(it.y>H+40){it.collected=true;return;}
+      const px=player.x,py=player.y,pw=player.w,ph=player.h;
+      if(it.x>px-10&&it.x<px+pw+10&&it.y>py&&it.y<py+ph){collectItem(it);}
+    });
+    items=items.filter(i=>!i.collected&&i.y<H+60);
+    particles=particles.filter(p=>p.life>0);
+    particles.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.life-=0.04;
+      ctx.globalAlpha=p.life;
+      ctx.fillStyle=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+    });
+    floats=floats.filter(f=>f.life>0);
+    floats.forEach(f=>{
+      f.y+=f.vy;f.life-=0.025;
+      ctx.globalAlpha=f.life;
+      ctx.fillStyle=f.color;
+      ctx.font=`${f.size}px sans-serif`;
+      ctx.textAlign='center';
+      ctx.fillText(f.txt,f.x,f.y);
+      ctx.globalAlpha=1;
+    });
+    items.forEach(it=>{if(!it.collected)drawItem(it);});
+    drawPlayer(player);
+    const lv=getLv();
+    const pct=Math.max(0,1-nextQuizAt/lv.quizEvery);
+    ctx.fillStyle='#27500a';
+    ctx.fillRect(10,H-50,180,8);
+    ctx.fillStyle='#FAC775';
+    ctx.fillRect(10,H-50,180*pct,8);
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.font='11px sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText('Quiz meter',10,H-54);
+  }
+}
+
+document.addEventListener('keydown',e=>keys[e.key]=true);
+document.addEventListener('keyup',e=>keys[e.key]=false);
+
+let touchStartX=0;
+canvas.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(state!=='playing')return;
+  const tx=e.touches[0].clientX;
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=W/rect.width;
+  player.x=Math.min(W-player.w,Math.max(0,tx*scaleX-player.w/2));
+},{passive:false});
+
+initPlayer();
+gameLoop();
+</script>
+</body>
+</html>

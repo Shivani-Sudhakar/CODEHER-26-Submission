@@ -1,0 +1,443 @@
+{
+  "nethra": {
+    "email": "nethu2212@gmail.com",
+    "salt": "47d93674716a422616794add729d68fb",
+    "password": "d923072a851cb454cfa56d514f2e0e058da4a2bba816e9af9e5121950a0d2b3f",
+    "coins": 400,
+    "level": 3,
+    "xp": 550,
+    "streak": 3,
+    "skills": [
+      "skill_6",
+      "skill_7",
+      "skill_12",
+      "skill_14"
+    ],
+    "hero": null,
+    "last_login": "2026-04-12",
+    "player_name": "Nethra",
+    "language": "en",
+    "onboarded": true,
+    "claimed_rewards": [
+      "stationery_kit"
+    ]
+  },
+  "testplayer": {
+    "email": "test@test.com",
+    "salt": "e16cb3f076e0ffcd918a20d6a24c7cd3",
+    "password": "a3ff92939bdd7817c9750d88bd352945f5c04d4eb4cd35d00b8819d546c669fa",
+    "coins": 100,
+    "level": 2,
+    "xp": 376,
+    "streak": 2,
+    "skills": [
+      "skill_1",
+      "skill_2",
+      "skill_3"
+    ],
+    "hero": null,
+    "player_name": "Test Hero",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "nethra balaji": {
+    "email": "nethra2510282@ssn.edu.in",
+    "salt": "9e51fcf319e43f724532bc9d17b536ef",
+    "password": "271b0c74e5247bd4dcb5fa28cbabbc09f3ca2e87bc041491a034e815300fbc96",
+    "coins": 190,
+    "level": 2,
+    "xp": 320,
+    "streak": 2,
+    "skills": [
+      "skill_1",
+      "skill_6",
+      "skill_11",
+      "skill_14"
+    ],
+    "hero": null,
+    "player_name": "Nethra",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "nethra_shivani": {
+    "email": "nethra@gmail.com",
+    "salt": "89b3f4263f4142a4f21307d7c904c21c",
+    "password": "f7b73270f03cec37cf6dc24c93b94fb3317c08acaa17660ca88056171d176bc2",
+    "coins": 50,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [
+      "skill_2",
+      "skill_6",
+      "skill_7",
+      "skill_11",
+      "skill_10"
+    ],
+    "hero": null,
+    "player_name": "Shivani",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "hackathon": {
+    "email": "hackathon@gmail.com",
+    "salt": "caec2f0bc830e09d87f0673cabce178b",
+    "password": "da013e65f4075ca847f8c05c14c432ecf14dab5f3e2305b1d30f8e7e67e62966",
+    "coins": 50,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [
+      "skill_1",
+      "skill_2",
+      "skill_7",
+      "skill_8"
+    ],
+    "hero": null,
+    "player_name": "Shivani",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "phone": {
+    "email": "phone@gmail.com",
+    "salt": "d19de5324869ff9c4a57af32300fe663",
+    "password": "c0f4c51493ed19035a401dfc3096c73dc58389a0f47670936f3f9d9129e0ad00",
+    "coins": 0,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [
+      "skill_1",
+      "skill_2",
+      "skill_11",
+      "skill_16",
+      "skill_20",
+      "skill_19"
+    ],
+    "hero": null,
+    "player_name": "Phone",
+    "language": "ta",
+    "onboarded": true,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "mee": {
+    "email": "me@gmail.com",
+    "salt": "2f768fabf3189dbbe3f10ecb9a183140",
+    "password": "52e9fed95646f7000376900d24f2f5889f421554346b5101914637ee6a01d719",
+    "coins": 50,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [],
+    "hero": null,
+    "player_name": "",
+    "language": "en",
+    "onboarded": false,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "laptop": {
+    "email": "laptop@gmail.com",
+    "salt": "1efc0e453369679130d2af452c7d707c",
+    "password": "1f99c368b3870fe727b431d6115491718fa5aac7ca0d45dfe0220499ce6037d0",
+    "coins": 0,
+    "level": 1,
+    "xp": 0,
+    "streak": 2,
+    "skills": [
+      "skill_4",
+      "skill_3",
+      "skill_2",
+      "skill_1"
+    ],
+    "hero": null,
+    "player_name": "Shivani",
+    "language": "ta",
+    "onboarded": true,
+    "last_login": "2026-04-12",
+    "claimed_rewards": [
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "laptop123": {
+    "email": "laptop123@gmail.com",
+    "salt": "9b5072d602fa0ad94a2e4181c290736c",
+    "password": "75d0ed309feed902005aca9c088f8427a9839dc7cbf943b813e9404e2f30aeca",
+    "coins": 80,
+    "level": 1,
+    "xp": 431,
+    "streak": 1,
+    "skills": [
+      "skill_6",
+      "skill_11",
+      "skill_10",
+      "skill_9"
+    ],
+    "hero": null,
+    "player_name": "Shivani",
+    "language": "mr",
+    "onboarded": true,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "tester": {
+    "email": "tester@example.com",
+    "salt": "a98f932304e098fbf9d5e4f9fe77b7cd",
+    "password": "927fb469bbc35cf745b1e1cd345bb68d047e25b06379dd802d4cf0367c108306",
+    "coins": 50,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [
+      "skill_1",
+      "skill_2",
+      "skill_3"
+    ],
+    "hero": null,
+    "player_name": "Tester",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-11",
+    "claimed_rewards": [],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "demo": {
+    "email": "demo@gmail.com",
+    "salt": "cc592c917099f0161f9e259a44c30980",
+    "password": "ad05909048cbd229a60957912c573e7b4893b0c4c02c4a404986a09177115b65",
+    "coins": 325,
+    "level": 2,
+    "xp": 250,
+    "streak": 1,
+    "skills": [
+      "skill_11",
+      "skill_7",
+      "skill_8",
+      "skill_15",
+      "skill_19",
+      "skill_20",
+      "skill_17",
+      "skill_18",
+      "skill_10"
+    ],
+    "hero": null,
+    "player_name": "Demo",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-12",
+    "claimed_rewards": [
+      "data_pack",
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "testuser678": {
+    "email": "test678@example.com",
+    "apaar_id": "123456789012",
+    "salt": "70c6bee347e3b186a2f5e26fc46d4d3c",
+    "password": "f6f757106bd248926e41ccf15ea9e18afb390894cf1f1146bde71504d326cc2a",
+    "coins": 100,
+    "level": 1,
+    "xp": 50,
+    "streak": 1,
+    "skills": [
+      "skill_1",
+      "skill_2",
+      "skill_3"
+    ],
+    "hero": null,
+    "player_name": "TestHero",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-12",
+    "claimed_rewards": [],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "oreoo": {
+    "email": "hbj1767@gmail.com",
+    "apaar_id": "233555666666",
+    "salt": "138a08e396b4c85da700a63046c60680",
+    "password": "4ab73e677013179dc0911e37dfaac5cb15972fdce010e4e11d0b67af7df2af00",
+    "coins": 50,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [
+      "skill_6",
+      "skill_2"
+    ],
+    "hero": null,
+    "player_name": "Hubert",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-12",
+    "claimed_rewards": [],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "acc": {
+    "email": "acc@gmail.com",
+    "apaar_id": "123456789123",
+    "salt": "be710ab93ee4fae466cfbbe28df493fb",
+    "password": "7483dad659afbc3c848bf478f1d726da8e268d3ad50a6dca1f7642e7707d9da1",
+    "coins": 50,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [
+      "skill_4",
+      "skill_8",
+      "skill_12",
+      "skill_14",
+      "skill_11",
+      "skill_15",
+      "skill_7",
+      "skill_10"
+    ],
+    "hero": null,
+    "player_name": "shivani",
+    "language": "ta",
+    "onboarded": true,
+    "last_login": "2026-04-12",
+    "claimed_rewards": [],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "shivani": {
+    "email": "mahalakshmi@gmail.com",
+    "apaar_id": "123456783456",
+    "salt": "431d549d8120c7c91d814af6979a4544",
+    "password": "c0edc6f787449f88e502899f0b548e8c4b8fbf5e77e1660762445b7070a0fe83",
+    "coins": 55,
+    "level": 1,
+    "xp": 205,
+    "streak": 1,
+    "skills": [
+      "skill_6",
+      "skill_10",
+      "skill_11",
+      "skill_7",
+      "skill_15",
+      "skill_14",
+      "skill_18"
+    ],
+    "hero": null,
+    "player_name": "Shivani",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-12",
+    "claimed_rewards": [
+      "stationery_kit"
+    ],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  },
+  "test run": {
+    "email": "test@gmail.com",
+    "apaar_id": "123456789357",
+    "salt": "3781f96ac10b5937ac62b4afc8d0cf95",
+    "password": "e0fe97eb532accda453ce70648fa1aa074b3bb8904169b30fb27607ab4573b9c",
+    "coins": 50,
+    "level": 1,
+    "xp": 0,
+    "streak": 1,
+    "skills": [
+      "skill_8",
+      "skill_12",
+      "skill_11",
+      "skill_7",
+      "skill_6"
+    ],
+    "hero": null,
+    "player_name": "Shivani",
+    "language": "en",
+    "onboarded": true,
+    "last_login": "2026-04-12",
+    "claimed_rewards": [],
+    "game_state": {
+      "forge_skills": {},
+      "quest_progress": {},
+      "enrolled_courses": []
+    }
+  }
+}

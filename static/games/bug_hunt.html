@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bug Hunt — Career Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   BUG HUNT — CAREER QUEST MINI-GAME
+   Dark RPG Coding Game for Grades 6-8
+   ============================================ */
+
+:root {
+  --bg: #060410;
+  --bg2: #0c0818;
+  --panel: #120d20;
+  --panel2: #1a1330;
+  --code-bg: #0a0714;
+  --border: #2d2245;
+  --glow-border: #5a3d8a;
+  --txt: #e8e2f0;
+  --dim: #7a6d94;
+  --purple: #c8a2ff;
+  --purple-d: #6b3fa0;
+  --green: #5cff8a;
+  --green-d: #1a3d24;
+  --red: #ff5c6a;
+  --red-d: #3d1a1e;
+  --orange: #ffa94d;
+  --gold: #ffd859;
+  --cyan: #5ce0ff;
+  --pink: #ff6eb4;
+  --font: 'Chakra Petch', sans-serif;
+  --mono: 'Fira Code', monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-tap-highlight-color:transparent;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar{display:none;width:0;height:0}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;overflow-y:auto;display:flex;justify-content:center;scrollbar-width:none;-ms-overflow-style:none}
+body::-webkit-scrollbar{display:none;width:0;height:0}
+
+/* ===== BG FX ===== */
+.bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(200,162,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(200,162,255,.02) 1px,transparent 1px);
+  background-size:35px 35px}
+.bg-fx{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-fx span{position:absolute;border-radius:50%;animation:bfloat linear infinite;opacity:0}
+@keyframes bfloat{0%{transform:translateY(105vh) scale(0);opacity:0}8%{opacity:.6}90%{opacity:.3}100%{transform:translateY(-5vh) scale(1);opacity:0}}
+
+/* ===== CONTAINER ===== */
+.game{max-width:520px;width:100%;padding:10px;position:relative;z-index:1}
+
+/* ===== SCREENS ===== */
+.screen{display:none;animation:screenIn .5s ease}
+.screen.active{display:block}
+@keyframes screenIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== TITLE SCREEN ===== */
+.title-screen{text-align:center;padding:30px 16px}
+.title-bug{font-size:80px;animation:bugBounce 2s ease-in-out infinite;filter:drop-shadow(0 0 30px rgba(92,255,138,.3));display:inline-block}
+@keyframes bugBounce{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-12px) rotate(-8deg)}50%{transform:translateY(-4px) rotate(0)}75%{transform:translateY(-12px) rotate(8deg)}}
+.title-h1{font-size:42px;font-weight:800;letter-spacing:4px;margin:12px 0 4px;
+  background:linear-gradient(135deg,var(--green),var(--cyan),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.title-sub{color:var(--dim);font-size:14px;font-weight:500;margin-bottom:24px;letter-spacing:1px}
+.title-zone{display:inline-flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:8px 18px;font-size:13px;color:var(--purple);font-weight:600;margin-bottom:28px}
+
+/* Difficulty selection */
+.diff-title{font-size:13px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;font-weight:700}
+.diff-cards{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;justify-content:center}
+.diff-card{flex:1;min-width:120px;max-width:160px;padding:14px 10px;border-radius:14px;cursor:pointer;text-align:center;transition:all .3s;border:2px solid transparent;position:relative;overflow:hidden}
+.diff-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.diff-card:hover::before{opacity:1}
+.diff-card.easy{background:var(--green-d);border-color:rgba(92,255,138,.2)}
+.diff-card.easy::before{background:radial-gradient(circle at 50% 30%,rgba(92,255,138,.08),transparent)}
+.diff-card.easy:hover,.diff-card.easy.sel{border-color:var(--green);box-shadow:0 0 25px rgba(92,255,138,.15)}
+.diff-card.medium{background:linear-gradient(135deg,#2a1f0f,#1a1508);border-color:rgba(255,169,77,.2)}
+.diff-card.medium::before{background:radial-gradient(circle at 50% 30%,rgba(255,169,77,.08),transparent)}
+.diff-card.medium:hover,.diff-card.medium.sel{border-color:var(--orange);box-shadow:0 0 25px rgba(255,169,77,.15)}
+.diff-card.hard{background:var(--red-d);border-color:rgba(255,92,106,.2)}
+.diff-card.hard::before{background:radial-gradient(circle at 50% 30%,rgba(255,92,106,.08),transparent)}
+.diff-card.hard:hover,.diff-card.hard.sel{border-color:var(--red);box-shadow:0 0 25px rgba(255,92,106,.15)}
+.diff-icon{font-size:28px;margin-bottom:6px;display:block}
+.diff-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.diff-card.easy .diff-name{color:var(--green)}
+.diff-card.medium .diff-name{color:var(--orange)}
+.diff-card.hard .diff-name{color:var(--red)}
+.diff-detail{font-size:10px;color:var(--dim);line-height:1.3}
+
+.play-btn{width:100%;max-width:300px;padding:16px 24px;border:none;border-radius:14px;font-family:var(--font);font-size:20px;font-weight:800;cursor:pointer;letter-spacing:3px;text-transform:uppercase;transition:all .3s;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--green),#3adf6f);color:#0a1a0f;box-shadow:0 6px 30px rgba(92,255,138,.25)}
+.play-btn::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);transition:left .5s}
+.play-btn:hover::after{left:100%}
+.play-btn:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(92,255,138,.35)}
+.play-btn:active{transform:translateY(0)}
+
+.title-features{display:flex;gap:14px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+.title-feat{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);font-weight:500}
+.title-feat span{font-size:14px}
+
+/* ===== GAME HUD ===== */
+.hud{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;flex-wrap:wrap}
+.hud-left,.hud-right{display:flex;align-items:center;gap:8px}
+.hud-right{margin-left:auto}
+.hud-item{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:16px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.04);white-space:nowrap}
+.hud-item.lvl{color:var(--purple)}
+.hud-item.score{color:var(--gold)}
+.hud-item.combo{color:var(--cyan);display:none}
+.hud-item.combo.show{display:flex;animation:comboPop .3s ease}
+@keyframes comboPop{from{transform:scale(1.4)}to{transform:scale(1)}}
+.hud-item.timer{color:var(--orange)}
+.hud-item.timer.danger{color:var(--red);animation:timerPulse .5s ease-in-out infinite}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Lives */
+.lives{display:flex;gap:3px;align-items:center}
+.life{font-size:16px;transition:all .3s}
+.life.lost{opacity:.2;transform:scale(.7);filter:grayscale(1)}
+
+/* ===== BATTLE ARENA ===== */
+.arena{background:linear-gradient(180deg,var(--panel) 0%,var(--bg2) 100%);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.arena::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(92,255,138,.03),transparent 60%);pointer-events:none}
+
+/* HP Row */
+.hp-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.hp-block{flex:1}
+.hp-block.right{text-align:right}
+.hp-label{font-size:11px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.hp-block.right .hp-label{justify-content:flex-end}
+.hp-bar{height:10px;background:rgba(0,0,0,.5);border-radius:5px;overflow:hidden;border:1px solid rgba(255,255,255,.04)}
+.hp-fill{height:100%;border-radius:5px;transition:width .5s ease;position:relative}
+.hp-fill.hero-hp{background:linear-gradient(90deg,#2a8040,var(--green))}
+.hp-fill.boss-hp{background:linear-gradient(90deg,#802a35,var(--red))}
+.hp-fill::after{content:'';position:absolute;right:0;top:0;width:25px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3));animation:hpGlint 2s ease-in-out infinite}
+@keyframes hpGlint{0%,100%{opacity:0}50%{opacity:1}}
+.hp-text{font-size:9px;color:var(--dim);margin-top:2px;font-weight:600}
+
+/* Sprites */
+.sprites{display:flex;justify-content:space-around;align-items:flex-end;height:110px;position:relative;margin-bottom:10px}
+.sprite{display:flex;flex-direction:column;align-items:center;position:relative}
+.sprite-body{font-size:52px;transition:all .3s;position:relative}
+.sprite.hero .sprite-body{animation:heroIdle 2.5s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(92,255,138,.25))}
+@keyframes heroIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.sprite.boss .sprite-body{animation:bossIdle 1.6s ease-in-out infinite;filter:drop-shadow(0 0 18px rgba(255,92,106,.25))}
+@keyframes bossIdle{0%,100%{transform:translateY(0) rotate(0deg)}30%{transform:translateY(-6px) rotate(-5deg)}70%{transform:translateY(-4px) rotate(5deg)}}
+
+/* Attack animations */
+.sprite.hero.attacking .sprite-body{animation:heroAttack .4s ease!important}
+@keyframes heroAttack{0%{transform:translateX(0) scale(1)}40%{transform:translateX(60px) scale(1.2)}60%{transform:translateX(50px) scale(1.1)}100%{transform:translateX(0) scale(1)}}
+.sprite.boss.hit .sprite-body{animation:bossHit .4s ease!important}
+@keyframes bossHit{0%{transform:translateX(0);filter:brightness(1)}20%{transform:translateX(10px);filter:brightness(3)}40%{transform:translateX(-8px);filter:brightness(1)}60%{transform:translateX(5px)}100%{transform:translateX(0)}}
+.sprite.hero.hit .sprite-body{animation:heroHit .4s ease!important}
+@keyframes heroHit{0%{transform:translateX(0);filter:brightness(1)}20%{transform:translateX(-10px);filter:brightness(3) hue-rotate(180deg)}40%{transform:translateX(8px);filter:brightness(1)}100%{transform:translateX(0)}}
+.sprite.boss.attacking .sprite-body{animation:bossAttack .5s ease!important}
+@keyframes bossAttack{0%{transform:translateX(0) scale(1)}40%{transform:translateX(-60px) scale(1.3) rotate(-10deg)}60%{transform:translateX(-50px) scale(1.1)}100%{transform:translateX(0) scale(1) rotate(0deg)}}
+.sprite.boss.dying .sprite-body{animation:bossDie 1s ease forwards!important}
+@keyframes bossDie{0%{transform:scale(1) rotate(0);opacity:1;filter:brightness(1)}30%{transform:scale(1.2) rotate(10deg);filter:brightness(3)}60%{transform:scale(.8) rotate(-20deg);opacity:.5}100%{transform:scale(0) rotate(60deg);opacity:0}}
+.sprite.hero.victory .sprite-body{animation:heroVictory 1s ease infinite!important}
+@keyframes heroVictory{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-20px) rotate(-5deg)}60%{transform:translateY(-15px) rotate(5deg)}}
+
+.sprite-tag{font-size:10px;font-weight:700;padding:2px 10px;border-radius:8px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.05);margin-top:4px}
+.sprite.hero .sprite-tag{color:var(--green)}
+.sprite.boss .sprite-tag{color:var(--red)}
+.sprite-shadow{width:50px;height:6px;border-radius:50%;margin-top:2px}
+.sprite.hero .sprite-shadow{background:radial-gradient(ellipse,rgba(92,255,138,.25),transparent)}
+.sprite.boss .sprite-shadow{background:radial-gradient(ellipse,rgba(255,92,106,.25),transparent)}
+
+/* VS */
+.vs{position:absolute;left:50%;top:35%;transform:translate(-50%,-50%);font-size:18px;font-weight:900;color:var(--gold);text-shadow:0 0 20px rgba(255,216,89,.4);animation:vsPulse 1.5s ease-in-out infinite;letter-spacing:3px}
+@keyframes vsPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.15)}}
+
+/* Damage popup */
+.dmg-popup{position:absolute;font-size:18px;font-weight:900;pointer-events:none;z-index:50;animation:dmgFloat 1s ease-out forwards;text-shadow:0 0 8px currentColor}
+@keyframes dmgFloat{0%{opacity:1;transform:translateY(0) scale(1)}50%{opacity:1;transform:translateY(-30px) scale(1.3)}100%{opacity:0;transform:translateY(-50px) scale(.8)}}
+
+/* ===== CODE PANEL ===== */
+.code-panel{background:var(--code-bg);border:1px solid var(--border);border-radius:14px;padding:0;margin-bottom:10px;overflow:hidden}
+.code-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.3)}
+.code-header-left{display:flex;align-items:center;gap:8px}
+.code-dots{display:flex;gap:5px}
+.code-dots span{width:8px;height:8px;border-radius:50%}
+.code-dots span:nth-child(1){background:#ff5f57}
+.code-dots span:nth-child(2){background:#ffbd2e}
+.code-dots span:nth-child(3){background:#28c940}
+.code-file{font-size:11px;color:var(--dim);font-family:var(--mono);font-weight:500}
+.code-hint-btn{font-size:10px;color:var(--gold);background:rgba(255,216,89,.1);border:1px solid rgba(255,216,89,.2);border-radius:8px;padding:3px 10px;cursor:pointer;font-family:var(--font);font-weight:600;transition:all .3s}
+.code-hint-btn:hover{background:rgba(255,216,89,.2)}
+.code-hint-btn:disabled{opacity:.3;cursor:not-allowed}
+
+.code-body{padding:14px;font-family:var(--mono);font-size:13px;line-height:1.8;overflow-x:auto;min-height:120px;position:relative;scrollbar-width:none;-ms-overflow-style:none}
+.code-body::-webkit-scrollbar{display:none;height:0;width:0}
+.code-line{display:flex;align-items:flex-start;border-radius:6px;padding:2px 6px;margin:1px 0;cursor:pointer;transition:all .2s;border:2px solid transparent;position:relative}
+.code-line:hover{background:rgba(200,162,255,.06);border-color:rgba(200,162,255,.1)}
+.code-line.selected{background:rgba(200,162,255,.1);border-color:var(--purple)}
+.code-line.correct{background:rgba(92,255,138,.08);border-color:var(--green);animation:correctFlash .6s ease}
+@keyframes correctFlash{0%{box-shadow:0 0 0 rgba(92,255,138,0)}30%{box-shadow:0 0 20px rgba(92,255,138,.3)}100%{box-shadow:0 0 0 rgba(92,255,138,0)}}
+.code-line.wrong{background:rgba(255,92,106,.08);border-color:var(--red);animation:wrongShake .4s ease}
+@keyframes wrongShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.code-line.bug-line{background:rgba(92,255,138,.12);border-color:var(--green)}
+.code-ln{width:28px;color:var(--dim);font-size:11px;text-align:right;margin-right:10px;user-select:none;flex-shrink:0;padding-top:1px}
+.code-txt{flex:1;white-space:pre}
+
+/* Syntax colors */
+.kw{color:#c792ea}.fn{color:#82aaff}.str{color:#c3e88d}.num{color:#f78c6c}.cm{color:#546e7a;font-style:italic}.op{color:#89ddff}.var-name{color:#eeffff}.bug-text{color:var(--red);text-decoration:wavy underline var(--red)}
+
+/* ===== FEEDBACK BAR ===== */
+.feedback{padding:10px 14px;border-radius:12px;margin-bottom:10px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;animation:feedIn .3s ease}
+.feedback.show{display:flex}
+@keyframes feedIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.feedback.good{background:rgba(92,255,138,.08);border:1px solid rgba(92,255,138,.2);color:var(--green)}
+.feedback.bad{background:rgba(255,92,106,.08);border:1px solid rgba(255,92,106,.2);color:var(--red)}
+.feedback.info{background:rgba(200,162,255,.08);border:1px solid rgba(200,162,255,.2);color:var(--purple)}
+.feedback-icon{font-size:18px}
+.feedback-text{flex:1;font-size:12px;line-height:1.4}
+.feedback-text strong{display:block;font-size:13px;margin-bottom:2px}
+
+/* ===== ACTION BUTTONS ===== */
+.actions{display:flex;gap:8px;margin-bottom:10px}
+.act-btn{flex:1;padding:12px;border:none;border-radius:12px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:all .3s;letter-spacing:1px;position:relative;overflow:hidden}
+.act-btn::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .4s}
+.act-btn:hover::after{left:100%}
+.act-btn.fix{background:linear-gradient(135deg,var(--green),#3adf6f);color:#0a1a0f;box-shadow:0 4px 18px rgba(92,255,138,.2)}
+.act-btn.fix:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(92,255,138,.3)}
+.act-btn.skip{background:var(--panel2);color:var(--dim);border:1px solid var(--border)}
+.act-btn.skip:hover{border-color:var(--orange);color:var(--orange)}
+.act-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+
+/* ===== EXPLANATION BOX ===== */
+.explain{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:none;animation:feedIn .3s ease;font-size:12px;color:var(--dim);line-height:1.5}
+.explain.show{display:block}
+.explain h4{font-size:13px;color:var(--purple);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.explain .fix-show{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:12px;margin-top:6px;color:var(--green)}
+
+/* ===== PROGRESS BAR ===== */
+.progress-wrap{margin-bottom:10px}
+.progress-label{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);font-weight:600;margin-bottom:4px}
+.progress-bar{height:6px;background:rgba(0,0,0,.4);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple-d),var(--purple));transition:width .5s ease;position:relative}
+.progress-fill::after{content:'';position:absolute;right:0;top:0;width:15px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4));animation:hpGlint 1.5s ease-in-out infinite}
+
+/* ===== END SCREENS ===== */
+.end-screen{text-align:center;padding:30px 16px}
+.end-icon{font-size:80px;display:inline-block;margin-bottom:12px}
+.end-screen.win .end-icon{animation:heroVictory 1s ease infinite;filter:drop-shadow(0 0 30px rgba(92,255,138,.4))}
+.end-screen.lose .end-icon{animation:loseSpin 2s ease infinite;filter:drop-shadow(0 0 30px rgba(255,92,106,.4))}
+@keyframes loseSpin{0%,100%{transform:rotate(0)}50%{transform:rotate(180deg)}}
+.end-h2{font-size:32px;font-weight:800;letter-spacing:3px;margin-bottom:6px}
+.end-screen.win .end-h2{background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.end-screen.lose .end-h2{background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.end-sub{color:var(--dim);font-size:14px;margin-bottom:22px}
+.end-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:300px;margin:0 auto 24px}
+.end-stat{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.end-stat-val{font-size:24px;font-weight:800;display:block}
+.end-stat-lbl{font-size:10px;color:var(--dim);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.end-stat.xp .end-stat-val{color:var(--green)}
+.end-stat.coins .end-stat-val{color:var(--gold)}
+.end-stat.acc .end-stat-val{color:var(--purple)}
+.end-stat.time .end-stat-val{color:var(--cyan)}
+
+.end-rewards{display:flex;gap:8px;justify-content:center;margin-bottom:24px;flex-wrap:wrap}
+.end-reward{background:rgba(92,255,138,.08);border:1px solid rgba(92,255,138,.2);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--green);font-weight:600}
+
+.end-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.end-btn{padding:14px 28px;border:none;border-radius:12px;font-family:var(--font);font-size:16px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .3s}
+.end-btn.again{background:linear-gradient(135deg,var(--green),#3adf6f);color:#0a1a0f;box-shadow:0 4px 20px rgba(92,255,138,.2)}
+.end-btn.again:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(92,255,138,.3)}
+.end-btn.quit{background:var(--panel2);color:var(--dim);border:1px solid var(--border)}
+.end-btn.quit:hover{border-color:var(--purple);color:var(--purple)}
+
+/* ===== PARTICLE LAYER ===== */
+.particles{position:fixed;inset:0;pointer-events:none;z-index:100;overflow:hidden}
+.particle{position:absolute;border-radius:50%;pointer-events:none;animation:pBurst .7s ease-out forwards}
+@keyframes pBurst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+
+/* ===== TRANSITIONS ===== */
+.level-transition{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;animation:ltIn .3s ease}
+@keyframes ltIn{from{opacity:0}to{opacity:1}}
+.lt-content{text-align:center;animation:ltPop .5s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes ltPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.lt-level{font-size:16px;color:var(--dim);letter-spacing:3px;text-transform:uppercase;font-weight:700}
+.lt-num{font-size:64px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.lt-name{font-size:18px;font-weight:700;color:var(--txt);margin:8px 0}
+.lt-boss{display:flex;align-items:center;gap:8px;justify-content:center;font-size:14px;color:var(--red);font-weight:600;margin-top:4px}
+.lt-boss-char{font-size:36px;animation:bossIdle 1.2s ease-in-out infinite}
+
+/* ===== MOBILE ===== */
+@media(max-width:400px){
+  .code-body{font-size:11px}
+  .sprite-body{font-size:42px}
+  .sprites{height:90px}
+  .diff-cards{flex-direction:column;align-items:center}
+  .diff-card{max-width:100%;min-width:0;width:100%}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-fx" id="bgFx"></div>
+<div class="particles" id="particleLayer"></div>
+
+<div class="game" id="gameRoot">
+
+<!-- ==================== TITLE SCREEN ==================== -->
+<div class="screen active" id="titleScreen">
+  <div class="title-screen">
+    <div class="title-bug">🐛</div>
+    <h1 class="title-h1">BUG HUNT</h1>
+    <p class="title-sub">Find the bug before it spreads</p>
+    <div class="title-zone">🏰 Tech Citadel · Code Runner</div>
+
+    <div class="diff-title">Choose your difficulty</div>
+    <div class="diff-cards" id="diffCards">
+      <div class="diff-card easy sel" data-diff="easy">
+        <span class="diff-icon">🌱</span>
+        <div class="diff-name">Seedling</div>
+        <div class="diff-detail">45s timer · 5 lives<br>Simple bugs · Hints ON</div>
+      </div>
+      <div class="diff-card medium" data-diff="medium">
+        <span class="diff-icon">⚔️</span>
+        <div class="diff-name">Pathfinder</div>
+        <div class="diff-detail">35s timer · 3 lives<br>Tricky bugs · 2 hints</div>
+      </div>
+      <div class="diff-card hard" data-diff="hard">
+        <span class="diff-icon">🔥</span>
+        <div class="diff-name">Legend</div>
+        <div class="diff-detail">25s timer · 2 lives<br>Expert bugs · No hints</div>
+      </div>
+    </div>
+
+    <button class="play-btn" id="playBtn">FIGHT ⚔️</button>
+
+    <div class="title-features">
+      <div class="title-feat"><span>📚</span> 10 levels</div>
+      <div class="title-feat"><span>🐛</span> Real code bugs</div>
+      <div class="title-feat"><span>⚡</span> Combo system</div>
+      <div class="title-feat"><span>🏆</span> Boss battles</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== GAME SCREEN ==================== -->
+<div class="screen" id="gameScreen">
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-left">
+      <div class="hud-item lvl" id="hudLevel">🏰 Lv 1</div>
+      <div class="lives" id="hudLives"></div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-item combo" id="hudCombo">🔥 x2</div>
+      <div class="hud-item score" id="hudScore">⭐ 0</div>
+      <div class="hud-item timer" id="hudTimer">⏱ 45</div>
+    </div>
+  </div>
+
+  <!-- Battle Arena -->
+  <div class="arena">
+    <div class="hp-row">
+      <div class="hp-block">
+        <div class="hp-label"><span style="color:var(--green)">🛡️ You</span> <span class="hp-text" id="heroHpText">100/100</span></div>
+        <div class="hp-bar"><div class="hp-fill hero-hp" id="heroHpFill" style="width:100%"></div></div>
+      </div>
+      <div class="hp-block right">
+        <div class="hp-label"><span class="hp-text" id="bossHpText">80/80</span> <span style="color:var(--red)" id="bossNameHud">🐛 Bug</span></div>
+        <div class="hp-bar"><div class="hp-fill boss-hp" id="bossHpFill" style="width:100%"></div></div>
+      </div>
+    </div>
+    <div class="sprites">
+      <div class="sprite hero" id="heroSprite">
+        <div class="sprite-body" id="heroBody">🧑💻</div>
+        <div class="sprite-tag">Arjun · Lv6</div>
+        <div class="sprite-shadow"></div>
+      </div>
+      <div class="vs">⚔️ VS</div>
+      <div class="sprite boss" id="bossSprite">
+        <div class="sprite-body" id="bossBody">🐛</div>
+        <div class="sprite-tag" id="bossTag">Bug · Lv1</div>
+        <div class="sprite-shadow"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-label"><span id="progLabel">Level 1 of 10</span><span id="progPct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Code Panel -->
+  <div class="code-panel">
+    <div class="code-header">
+      <div class="code-header-left">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <span class="code-file" id="codeFile">level_1.py</span>
+      </div>
+      <button class="code-hint-btn" id="hintBtn" onclick="useHint()">💡 Hint</button>
+    </div>
+    <div class="code-body" id="codeBody">
+      <!-- Code lines rendered by JS -->
+    </div>
+  </div>
+
+  <!-- Feedback -->
+  <div class="feedback" id="feedback">
+    <span class="feedback-icon" id="feedIcon">✅</span>
+    <div class="feedback-text" id="feedText"></div>
+  </div>
+
+  <!-- Explanation -->
+  <div class="explain" id="explain"></div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="act-btn fix" id="fixBtn" onclick="submitFix()" disabled>⚡ SQUASH BUG</button>
+    <button class="act-btn skip" id="skipBtn" onclick="skipLevel()">⏭ Skip</button>
+  </div>
+</div>
+
+<!-- ==================== WIN SCREEN ==================== -->
+<div class="screen" id="winScreen">
+  <div class="end-screen win">
+    <div class="end-icon">🏆</div>
+    <h2 class="end-h2">BUGS SQUASHED!</h2>
+    <p class="end-sub">The Tech Citadel code is clean again!</p>
+    <div class="end-stats">
+      <div class="end-stat xp"><span class="end-stat-val" id="winXp">0</span><span class="end-stat-lbl">XP Earned</span></div>
+      <div class="end-stat coins"><span class="end-stat-val" id="winCoins">0</span><span class="end-stat-lbl">Coins</span></div>
+      <div class="end-stat acc"><span class="end-stat-val" id="winAcc">0%</span><span class="end-stat-lbl">Accuracy</span></div>
+      <div class="end-stat time"><span class="end-stat-val" id="winTime">0s</span><span class="end-stat-lbl">Total Time</span></div>
+    </div>
+    <div class="end-rewards" id="winRewards"></div>
+    <div class="end-btns">
+      <button class="end-btn again" onclick="restartGame()">Play Again ⚔️</button>
+      <button class="end-btn quit" onclick="goTitle()">Quit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LOSE SCREEN ==================== -->
+<div class="screen" id="loseScreen">
+  <div class="end-screen lose">
+    <div class="end-icon">💀</div>
+    <h2 class="end-h2">BUGS WIN!</h2>
+    <p class="end-sub">The code is overrun... try again, hero!</p>
+    <div class="end-stats">
+      <div class="end-stat xp"><span class="end-stat-val" id="loseXp">0</span><span class="end-stat-lbl">XP Earned</span></div>
+      <div class="end-stat coins"><span class="end-stat-val" id="loseCoins">0</span><span class="end-stat-lbl">Coins</span></div>
+      <div class="end-stat acc"><span class="end-stat-val" id="loseAcc">0%</span><span class="end-stat-lbl">Accuracy</span></div>
+      <div class="end-stat time"><span class="end-stat-val" id="loseLvl">Lv 0</span><span class="end-stat-lbl">Reached</span></div>
+    </div>
+    <div class="end-btns">
+      <button class="end-btn again" onclick="restartGame()">Try Again ⚔️</button>
+      <button class="end-btn quit" onclick="goTitle()">Quit</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /game -->
+
+<script>
+// ============================================================
+//  BUG HUNT — FULL GAME ENGINE
+// ============================================================
+
+// ---- BG PARTICLES ----
+(function(){
+  var c=document.getElementById('bgFx');
+  var cols=['#c8a2ff','#5cff8a','#ffd859','#ff5c6a','#5ce0ff','#ff6eb4'];
+  for(var i=0;i<25;i++){
+    var s=document.createElement('span');
+    var sz=Math.random()*3+1;
+    s.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+Math.random()*100+'%;background:'+cols[i%cols.length]+';box-shadow:0 0 '+(sz*4)+'px '+cols[i%cols.length]+';animation-duration:'+(10+Math.random()*15)+'s;animation-delay:'+(Math.random()*12)+'s;';
+    c.appendChild(s);
+  }
+})();
+
+// ---- GAME STATE ----
+var G = {
+  diff: 'easy',
+  level: 0,
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  lives: 5,
+  maxLives: 5,
+  hints: 99,
+  maxHints: 99,
+  heroHp: 100,
+  heroMaxHp: 100,
+  bossHp: 80,
+  bossMaxHp: 80,
+  timer: 45,
+  maxTimer: 45,
+  timerInterval: null,
+  totalTime: 0,
+  correct: 0,
+  wrong: 0,
+  selectedLine: -1,
+  currentPuzzle: null,
+  playing: false
+};
+
+var DIFF_CONFIG = {
+  easy:   { timer: 45, lives: 5, hints: 99, hpMul: 1,    label: 'Seedling' },
+  medium: { timer: 35, lives: 3, hints: 2,  hpMul: 1.3,  label: 'Pathfinder' },
+  hard:   { timer: 25, lives: 2, hints: 0,  hpMul: 1.8,  label: 'Legend' }
+};
+
+// ---- LEVEL DATA: 10 levels with increasing difficulty ----
+// Each puzzle: code lines, bugLine (0-indexed), concept, explanation, fix, bossName, bossEmoji, bossLvl, fileName
+var LEVELS = [
+  {
+    concept: 'Print Statement',
+    bossName: 'Typo Beetle', bossEmoji: '🐛', bossLvl: 1, bossHp: 80, fileName: 'hello.py',
+    lines: [
+      { text: '# Say hello to the world', cls: 'cm' },
+      { text: 'message = "Hello World"', cls: '' },
+      { text: 'prnt(message)', cls: '', isBug: true },
+      { text: 'print("Done!")', cls: '' }
+    ],
+    hint: 'Look carefully at how we call the print function...',
+    explanation: '<strong>print()</strong> is a built-in Python function. <strong>prnt</strong> is a typo — Python won\'t recognise it!',
+    fix: 'print(message)'
+  },
+  {
+    concept: 'Variable Names',
+    bossName: 'Name Worm', bossEmoji: '🪱', bossLvl: 2, bossHp: 90, fileName: 'score.py',
+    lines: [
+      { text: 'player_score = 100', cls: '' },
+      { text: 'bonus = 50', cls: '' },
+      { text: 'total = player_scor + bonus', cls: '', isBug: true },
+      { text: 'print("Total:", total)', cls: '' }
+    ],
+    hint: 'Check if the variable name matches what was defined above...',
+    explanation: 'We defined <strong>player_score</strong> but typed <strong>player_scor</strong> (missing the "e"). Variable names must match exactly!',
+    fix: 'total = player_score + bonus'
+  },
+  {
+    concept: 'String Quotes',
+    bossName: 'Quote Spider', bossEmoji: '🕷️', bossLvl: 3, bossHp: 100, fileName: 'greet.py',
+    lines: [
+      { text: 'name = "Priya"', cls: '' },
+      { text: 'age = 13', cls: '' },
+      { text: 'greeting = "Hello, " + name', cls: '' },
+      { text: 'print("Age: + str(age))', cls: '', isBug: true }
+    ],
+    hint: 'Count the quotation marks on each line...',
+    explanation: 'The string is missing a closing quote after "Age: ". Every opening <strong>"</strong> needs a matching closing <strong>"</strong>!',
+    fix: 'print("Age: " + str(age))'
+  },
+  {
+    concept: 'Indentation',
+    bossName: 'Indent Moth', bossEmoji: '🦋', bossLvl: 4, bossHp: 110, fileName: 'check.py',
+    lines: [
+      { text: 'score = 85', cls: '' },
+      { text: 'if score >= 80:', cls: '' },
+      { text: 'print("Great job!")', cls: '', isBug: true },
+      { text: '    print("Keep it up!")', cls: '' }
+    ],
+    hint: 'In Python, code inside an if-block must be indented...',
+    explanation: 'Python uses <strong>indentation</strong> (spaces at the start) to show which code belongs inside an if-block. Line 3 is missing its indent!',
+    fix: '    print("Great job!")'
+  },
+  {
+    concept: 'Comparison Operator',
+    bossName: 'Logic Ant', bossEmoji: '🐜', bossLvl: 5, bossHp: 120, fileName: 'compare.py',
+    lines: [
+      { text: 'password = "secret123"', cls: '' },
+      { text: 'user_input = input("Enter password: ")', cls: '' },
+      { text: 'if user_input = password:', cls: '', isBug: true },
+      { text: '    print("Access granted!")', cls: '' },
+      { text: 'else:', cls: '' },
+      { text: '    print("Wrong password!")', cls: '' }
+    ],
+    hint: 'There are two kinds of "equals" in Python. One assigns, one compares...',
+    explanation: 'A single <strong>=</strong> is for assignment. To <strong>compare</strong> two values, use double equals <strong>==</strong>!',
+    fix: 'if user_input == password:'
+  },
+  {
+    concept: 'List Index',
+    bossName: 'Index Roach', bossEmoji: '🪳', bossLvl: 6, bossHp: 130, fileName: 'fruits.py',
+    lines: [
+      { text: 'fruits = ["apple", "banana", "cherry"]', cls: '' },
+      { text: '# Get the last fruit', cls: 'cm' },
+      { text: 'last = fruits[3]', cls: '', isBug: true },
+      { text: 'print("Last fruit:", last)', cls: '' }
+    ],
+    hint: 'Lists start counting from 0, not 1...',
+    explanation: 'Lists in Python start at index <strong>0</strong>. A list with 3 items has indices 0, 1, 2. Index 3 is <strong>out of range</strong>! Use <strong>fruits[2]</strong> or <strong>fruits[-1]</strong>.',
+    fix: 'last = fruits[2]'
+  },
+  {
+    concept: 'Loop Range',
+    bossName: 'Loop Centipede', bossEmoji: '🐍', bossLvl: 7, bossHp: 140, fileName: 'count.py',
+    lines: [
+      { text: '# Print numbers 1 to 5', cls: 'cm' },
+      { text: 'for i in range(1, 5):', cls: '', isBug: true },
+      { text: '    print(i)', cls: '' },
+      { text: 'print("Done counting!")', cls: '' }
+    ],
+    hint: 'range(a, b) goes from a up to but NOT including b...',
+    explanation: '<strong>range(1, 5)</strong> produces 1, 2, 3, 4 — it stops <strong>before</strong> 5! To include 5, use <strong>range(1, 6)</strong>.',
+    fix: 'for i in range(1, 6):'
+  },
+  {
+    concept: 'Function Return',
+    bossName: 'Return Wasp', bossEmoji: '🐝', bossLvl: 8, bossHp: 160, fileName: 'math_helper.py',
+    lines: [
+      { text: 'def add(a, b):', cls: '' },
+      { text: '    result = a + b', cls: '' },
+      { text: '    print(result)', cls: '', isBug: true },
+      { text: '', cls: '' },
+      { text: 'total = add(3, 4)', cls: '' },
+      { text: 'print("Total:", total)', cls: '' }
+    ],
+    hint: 'If you want to USE the result of a function, printing it is not enough...',
+    explanation: '<strong>print()</strong> only displays a value on screen — it doesn\'t send it back to the caller. Use <strong>return</strong> to give the value back so <strong>total</strong> gets 7 instead of <strong>None</strong>!',
+    fix: '    return result'
+  },
+  {
+    concept: 'Data Type Mismatch',
+    bossName: 'Type Scorpion', bossEmoji: '🦂', bossLvl: 9, bossHp: 180, fileName: 'age_check.py',
+    lines: [
+      { text: 'age = input("Enter your age: ")', cls: '' },
+      { text: '# Check if old enough', cls: 'cm' },
+      { text: 'if age >= 13:', cls: '', isBug: true },
+      { text: '    print("Welcome!")', cls: '' },
+      { text: 'else:', cls: '' },
+      { text: '    print("Too young!")', cls: '' }
+    ],
+    hint: 'input() always returns a string, even if the user types a number...',
+    explanation: '<strong>input()</strong> returns a <strong>string</strong> (text), not a number. Comparing a string to a number doesn\'t work as expected. Convert it first with <strong>int()</strong>!',
+    fix: 'if int(age) >= 13:'
+  },
+  {
+    concept: 'Infinite Loop (Boss Battle!)',
+    bossName: '💀 MEGA BUG 💀', bossEmoji: '🐉', bossLvl: 10, bossHp: 220, fileName: 'FINAL_BOSS.py',
+    lines: [
+      { text: 'count = 0', cls: '' },
+      { text: 'target = 5', cls: '' },
+      { text: '# Count up to target', cls: 'cm' },
+      { text: 'while count < target:', cls: '' },
+      { text: '    print("Count:", count)', cls: '' },
+      { text: '    # Bug: count never changes!', cls: 'cm', isBug: true },
+      { text: 'print("Done! Reached", target)', cls: '' }
+    ],
+    hint: 'The while loop runs FOREVER if the condition never becomes False...',
+    explanation: 'This is an <strong>infinite loop</strong>! The variable <strong>count</strong> never increases, so <strong>count < target</strong> is always True. We need <strong>count += 1</strong> inside the loop to make it end!',
+    fix: '    count += 1'
+  }
+];
+
+// ---- UTILITY ----
+function $(id){ return document.getElementById(id); }
+function show(id){ document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')}); $(id).classList.add('active'); }
+
+function burst(el, n, col){
+  var r=el.getBoundingClientRect();
+  var c=document.getElementById('particleLayer');
+  for(var i=0;i<n;i++){
+    var p=document.createElement('div');p.className='particle';
+    var a=(i/n)*Math.PI*2, d=25+Math.random()*45;
+    var x=r.left+r.width/2, y=r.top+r.height/2;
+    p.style.cssText='left:'+x+'px;top:'+y+'px;width:6px;height:6px;background:'+col+';box-shadow:0 0 8px '+col+';--dx:'+(Math.cos(a)*d)+'px;--dy:'+(Math.sin(a)*d)+'px;animation-delay:'+(Math.random()*.08)+'s;';
+    c.appendChild(p);
+    setTimeout(function(el){el.remove()}, 800, p);
+  }
+}
+
+function dmgPopup(sprite, text, col){
+  var el=document.createElement('div');
+  el.className='dmg-popup';el.textContent=text;el.style.color=col;
+  el.style.left='50%';el.style.top='20%';el.style.transform='translateX(-50%)';
+  sprite.appendChild(el);
+  setTimeout(function(){el.remove()},1000);
+}
+
+// ---- SCREEN MANAGEMENT ----
+function goTitle(){
+  clearInterval(G.timerInterval);
+  show('titleScreen');
+}
+
+// ---- DIFFICULTY SELECTION ----
+document.querySelectorAll('.diff-card').forEach(function(card){
+  card.addEventListener('click', function(){
+    document.querySelectorAll('.diff-card').forEach(function(c){c.classList.remove('sel')});
+    card.classList.add('sel');
+    G.diff = card.dataset.diff;
+  });
+});
+
+$('playBtn').addEventListener('click', function(){ startGame(); });
+
+// ---- START GAME ----
+function startGame(){
+  var cfg = DIFF_CONFIG[G.diff];
+  G.level = 0;
+  G.score = 0;
+  G.combo = 0;
+  G.maxCombo = 0;
+  G.lives = cfg.lives;
+  G.maxLives = cfg.lives;
+  G.hints = cfg.hints;
+  G.maxHints = cfg.hints;
+  G.heroHp = 100;
+  G.heroMaxHp = 100;
+  G.totalTime = 0;
+  G.correct = 0;
+  G.wrong = 0;
+  G.playing = true;
+  G.maxTimer = cfg.timer;
+
+  show('gameScreen');
+  showLevelTransition();
+}
+
+function restartGame(){ startGame(); }
+
+// ---- LEVEL TRANSITION ----
+function showLevelTransition(){
+  clearInterval(G.timerInterval);
+  var lvl = LEVELS[G.level];
+  var overlay = document.createElement('div');
+  overlay.className = 'level-transition';
+  overlay.innerHTML =
+    '<div class="lt-content">'+
+      '<div class="lt-level">'+(G.level===9?'⚠️ BOSS BATTLE ⚠️':'LEVEL')+'</div>'+
+      '<div class="lt-num">'+(G.level+1)+'</div>'+
+      '<div class="lt-name">'+lvl.concept+'</div>'+
+      '<div class="lt-boss"><span class="lt-boss-char">'+lvl.bossEmoji+'</span> '+lvl.bossName+'</div>'+
+    '</div>';
+  document.body.appendChild(overlay);
+  setTimeout(function(){
+    overlay.style.opacity='0';overlay.style.transition='opacity .3s';
+    setTimeout(function(){overlay.remove(); loadLevel();}, 300);
+  }, 1600);
+}
+
+// ---- LOAD LEVEL ----
+function loadLevel(){
+  var cfg = DIFF_CONFIG[G.diff];
+  var lvl = LEVELS[G.level];
+  G.currentPuzzle = lvl;
+  G.selectedLine = -1;
+  G.timer = cfg.timer;
+
+  // Boss HP scales with difficulty
+  G.bossMaxHp = Math.floor(lvl.bossHp * cfg.hpMul);
+  G.bossHp = G.bossMaxHp;
+
+  // Update HUD
+  $('hudLevel').textContent = '🏰 Lv ' + (G.level+1);
+  $('hudScore').textContent = '⭐ ' + G.score;
+  $('hudTimer').textContent = '⏱ ' + G.timer;
+  $('hudTimer').classList.remove('danger');
+  updateLives();
+  updateCombo();
+  updateHpBars();
+
+  // Boss info
+  $('bossBody').textContent = lvl.bossEmoji;
+  $('bossTag').textContent = lvl.bossName + ' · Lv' + lvl.bossLvl;
+  $('bossNameHud').innerHTML = lvl.bossEmoji + ' ' + lvl.bossName.split(' ').pop();
+  $('bossHpText').textContent = G.bossHp + '/' + G.bossMaxHp;
+  $('heroHpText').textContent = G.heroHp + '/' + G.heroMaxHp;
+
+  // Progress
+  var pct = Math.round((G.level / LEVELS.length) * 100);
+  $('progLabel').textContent = 'Level ' + (G.level+1) + ' of ' + LEVELS.length;
+  $('progPct').textContent = pct + '%';
+  $('progFill').style.width = pct + '%';
+
+  // Code file name
+  $('codeFile').textContent = lvl.fileName;
+
+  // Hint button
+  if(G.hints > 0){
+    $('hintBtn').disabled = false;
+    $('hintBtn').textContent = G.hints >= 99 ? '💡 Hint' : '💡 Hint (' + G.hints + ')';
+  } else {
+    $('hintBtn').disabled = true;
+    $('hintBtn').textContent = '💡 No hints';
+  }
+
+  // Render code
+  renderCode();
+
+  // Clear feedback/explain
+  $('feedback').classList.remove('show');
+  $('explain').classList.remove('show');
+  $('fixBtn').disabled = true;
+
+  // Reset sprite animations
+  var hs=$('heroSprite'), bs=$('bossSprite');
+  hs.className='sprite hero'; bs.className='sprite boss';
+
+  // Start timer
+  startTimer();
+}
+
+// ---- RENDER CODE ----
+function renderCode(){
+  var body = $('codeBody');
+  body.innerHTML = '';
+  var lvl = G.currentPuzzle;
+  lvl.lines.forEach(function(line, idx){
+    var div = document.createElement('div');
+    div.className = 'code-line';
+    div.dataset.idx = idx;
+
+    var ln = document.createElement('span');
+    ln.className = 'code-ln';
+    ln.textContent = idx + 1;
+
+    var txt = document.createElement('span');
+    txt.className = 'code-txt';
+    txt.innerHTML = syntaxHighlight(line.text, line.cls);
+
+    div.appendChild(ln);
+    div.appendChild(txt);
+
+    div.addEventListener('click', function(){
+      if(!G.playing) return;
+      // Deselect others
+      body.querySelectorAll('.code-line').forEach(function(l){l.classList.remove('selected')});
+      div.classList.add('selected');
+      G.selectedLine = idx;
+      $('fixBtn').disabled = false;
+    });
+
+    body.appendChild(div);
+  });
+}
+
+function syntaxHighlight(text, cls){
+  if(cls === 'cm') return '<span class="cm">' + escHtml(text) + '</span>';
+  var s = escHtml(text);
+  // Keywords
+  s = s.replace(/\b(def|if|else|elif|for|while|return|import|from|class|in|not|and|or|True|False|None|print|input|range|int|str|len)\b/g, '<span class="kw">$1</span>');
+  // Strings
+  s = s.replace(/(&quot;[^&]*&quot;|&#x27;[^&]*&#x27;|"[^"]*"|'[^']*')/g, '<span class="str">$1</span>');
+  // Numbers
+  s = s.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+  // Operators
+  s = s.replace(/(==|!=|&gt;=|&lt;=|=|\+|-|\*|\/|:)/g, '<span class="op">$1</span>');
+  // Comments
+  s = s.replace(/(#.*)$/g, '<span class="cm">$1</span>');
+  return s;
+}
+
+function escHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+
+// ---- TIMER ----
+function startTimer(){
+  clearInterval(G.timerInterval);
+  G.timerInterval = setInterval(function(){
+    if(!G.playing) return;
+    G.timer--;
+    G.totalTime++;
+    $('hudTimer').textContent = '⏱ ' + G.timer;
+    if(G.timer <= 10) $('hudTimer').classList.add('danger');
+    if(G.timer <= 0){
+      clearInterval(G.timerInterval);
+      timeOut();
+    }
+  }, 1000);
+}
+
+function timeOut(){
+  G.lives--;
+  G.combo = 0;
+  updateCombo();
+  updateLives();
+
+  // Boss attacks hero
+  bossAttacksHero(20);
+
+  showFeedback('bad', '⏰', '<strong>Time\'s up!</strong> The bug bit you! -1 life');
+
+  // Reveal the bug
+  revealBug();
+
+  if(G.lives <= 0){
+    setTimeout(function(){ gameOver(false); }, 1500);
+  } else {
+    setTimeout(function(){ nextLevel(); }, 2500);
+  }
+}
+
+// ---- SUBMIT FIX ----
+function submitFix(){
+  if(!G.playing || G.selectedLine < 0) return;
+  clearInterval(G.timerInterval);
+
+  var lvl = G.currentPuzzle;
+  var bugIdx = -1;
+  lvl.lines.forEach(function(l, i){ if(l.isBug) bugIdx = i; });
+
+  var allLines = $('codeBody').querySelectorAll('.code-line');
+
+  if(G.selectedLine === bugIdx){
+    // CORRECT!
+    G.correct++;
+    G.combo++;
+    if(G.combo > G.maxCombo) G.maxCombo = G.combo;
+    var comboMul = Math.min(G.combo, 5);
+    var pts = (100 + G.timer * 2) * comboMul;
+    G.score += pts;
+
+    allLines[bugIdx].classList.add('correct');
+    burst(allLines[bugIdx], 15, '#5cff8a');
+
+    // Hero attacks boss
+    heroAttacksBoss(Math.floor(G.bossMaxHp * 0.6));
+
+    showFeedback('good', '✅', '<strong>Bug found! +' + pts + ' pts</strong> (x' + comboMul + ' combo)');
+    showExplanation(lvl);
+
+    updateCombo();
+    $('hudScore').textContent = '⭐ ' + G.score;
+    $('fixBtn').disabled = true;
+
+    setTimeout(function(){ nextLevel(); }, 3000);
+  } else {
+    // WRONG
+    G.wrong++;
+    G.combo = 0;
+    G.lives--;
+    updateCombo();
+    updateLives();
+
+    allLines[G.selectedLine].classList.add('wrong');
+    burst(allLines[G.selectedLine], 8, '#ff5c6a');
+
+    // Boss attacks hero
+    bossAttacksHero(15);
+
+    showFeedback('bad', '❌', '<strong>Wrong line!</strong> That\'s not the bug. -1 life. Try again!');
+
+    if(G.lives <= 0){
+      revealBug();
+      setTimeout(function(){ gameOver(false); }, 1500);
+    } else {
+      // Allow retry
+      setTimeout(function(){
+        allLines[G.selectedLine].classList.remove('wrong');
+        G.selectedLine = -1;
+        $('fixBtn').disabled = true;
+        startTimer();
+      }, 1200);
+    }
+  }
+}
+
+// ---- COMBAT ANIMATIONS ----
+function heroAttacksBoss(dmg){
+  var hs = $('heroSprite'), bs = $('bossSprite');
+  hs.className = 'sprite hero attacking';
+  setTimeout(function(){
+    bs.className = 'sprite boss hit';
+    burst(bs, 12, '#ff5c6a');
+    dmgPopup(bs, '-' + dmg, '#ff5c6a');
+    G.bossHp = Math.max(0, G.bossHp - dmg);
+    updateHpBars();
+    if(G.bossHp <= 0){
+      setTimeout(function(){ bs.className = 'sprite boss dying'; }, 300);
+    }
+  }, 300);
+  setTimeout(function(){ hs.className = 'sprite hero'; }, 800);
+  setTimeout(function(){ if(G.bossHp > 0) bs.className = 'sprite boss'; }, 800);
+}
+
+function bossAttacksHero(dmg){
+  var hs = $('heroSprite'), bs = $('bossSprite');
+  bs.className = 'sprite boss attacking';
+  setTimeout(function(){
+    hs.className = 'sprite hero hit';
+    burst(hs, 8, '#5cff8a');
+    dmgPopup(hs, '-' + dmg, '#ff5c6a');
+    G.heroHp = Math.max(0, G.heroHp - dmg);
+    updateHpBars();
+  }, 350);
+  setTimeout(function(){ bs.className = 'sprite boss'; }, 900);
+  setTimeout(function(){ hs.className = 'sprite hero'; }, 900);
+}
+
+// ---- HINT ----
+function useHint(){
+  if(G.hints <= 0 || !G.playing) return;
+  G.hints--;
+  if(G.hints >= 99){
+    $('hintBtn').textContent = '💡 Hint';
+  } else if(G.hints > 0){
+    $('hintBtn').textContent = '💡 Hint (' + G.hints + ')';
+  } else {
+    $('hintBtn').disabled = true;
+    $('hintBtn').textContent = '💡 No hints';
+  }
+  showFeedback('info', '💡', '<strong>Hint:</strong> ' + G.currentPuzzle.hint);
+}
+
+// ---- SKIP ----
+function skipLevel(){
+  if(!G.playing) return;
+  clearInterval(G.timerInterval);
+  G.combo = 0;
+  G.lives--;
+  updateLives();
+  updateCombo();
+  revealBug();
+  showFeedback('bad', '⏭', '<strong>Skipped!</strong> -1 life');
+
+  if(G.lives <= 0){
+    setTimeout(function(){ gameOver(false); }, 1500);
+  } else {
+    setTimeout(function(){ nextLevel(); }, 2000);
+  }
+}
+
+// ---- NEXT LEVEL ----
+function nextLevel(){
+  G.level++;
+  if(G.level >= LEVELS.length){
+    gameOver(true);
+  } else {
+    showLevelTransition();
+  }
+}
+
+// ---- REVEAL BUG ----
+function revealBug(){
+  var lvl = G.currentPuzzle;
+  var allLines = $('codeBody').querySelectorAll('.code-line');
+  lvl.lines.forEach(function(l, i){
+    if(l.isBug) allLines[i].classList.add('bug-line');
+  });
+  showExplanation(lvl);
+  G.playing = false;
+}
+
+// ---- FEEDBACK ----
+function showFeedback(type, icon, html){
+  var fb = $('feedback');
+  fb.className = 'feedback ' + type + ' show';
+  $('feedIcon').textContent = icon;
+  $('feedText').innerHTML = html;
+}
+
+function showExplanation(lvl){
+  var ex = $('explain');
+  ex.innerHTML = '<h4>📘 Learn: ' + lvl.concept + '</h4><p>' + lvl.explanation + '</p><div class="fix-show">✅ Fix: ' + escHtml(lvl.fix) + '</div>';
+  ex.classList.add('show');
+}
+
+// ---- UI UPDATES ----
+function updateLives(){
+  var html = '';
+  for(var i = 0; i < G.maxLives; i++){
+    html += '<span class="life' + (i >= G.lives ? ' lost' : '') + '">❤️</span>';
+  }
+  $('hudLives').innerHTML = html;
+}
+
+function updateCombo(){
+  var el = $('hudCombo');
+  if(G.combo >= 2){
+    el.textContent = '🔥 x' + G.combo;
+    el.classList.add('show');
+  } else {
+    el.classList.remove('show');
+  }
+}
+
+function updateHpBars(){
+  var heroPct = Math.max(0, (G.heroHp / G.heroMaxHp) * 100);
+  var bossPct = Math.max(0, (G.bossHp / G.bossMaxHp) * 100);
+  $('heroHpFill').style.width = heroPct + '%';
+  $('bossHpFill').style.width = bossPct + '%';
+  $('heroHpText').textContent = Math.max(0,G.heroHp) + '/' + G.heroMaxHp;
+  $('bossHpText').textContent = Math.max(0,G.bossHp) + '/' + G.bossMaxHp;
+}
+
+// ---- GAME OVER ----
+function gameOver(won){
+  clearInterval(G.timerInterval);
+  G.playing = false;
+
+  var acc = G.correct + G.wrong > 0 ? Math.round((G.correct / (G.correct + G.wrong)) * 100) : 0;
+  var xp = won ? 500 + G.score : Math.floor(G.score * 0.3);
+  var coins = won ? 300 + Math.floor(G.score / 10) : Math.floor(G.score / 20);
+
+  if(won){
+    $('heroSprite').className = 'sprite hero victory';
+    setTimeout(function(){
+      show('winScreen');
+      $('winXp').textContent = '+' + xp;
+      $('winCoins').textContent = '+' + coins;
+      $('winAcc').textContent = acc + '%';
+      $('winTime').textContent = G.totalTime + 's';
+
+      var rewards = '';
+      rewards += '<span>🏆 Bug Hunter Badge</span>';
+      if(acc >= 80) rewards += '<span>🎯 Sharpshooter</span>';
+      if(G.maxCombo >= 3) rewards += '<span>🔥 Combo Master</span>';
+      if(G.diff === 'hard') rewards += '<span>💀 Legend Clear</span>';
+      $('winRewards').innerHTML = rewards;
+    }, 1000);
+  } else {
+    show('loseScreen');
+    $('loseXp').textContent = '+' + xp;
+    $('loseCoins').textContent = '+' + coins;
+    $('loseAcc').textContent = acc + '%';
+    $('loseLvl').textContent = 'Lv ' + (G.level + 1);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Body Systems Battle - Career Quest</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d0d2b; color: #fff;}
+  #game{background:#0d0d2b;height:100vh;color:#fff;padding:0;border-radius:12px;overflow:hidden;position:relative;user-select:none;}
+  .screen{display:none;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:24px;text-align:center;}
+  .screen.active{display:flex;}
+  h1.logo{font-size:2.2rem;font-weight:700;letter-spacing:2px;color:#a78bfa;text-shadow:0 0 20px #7c3aed55;}
+  .subtitle{font-size:1rem;color:#94a3b8;margin-top:8px;}
+  .btn{background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;color:#fff;font-size:1rem;font-weight:600;padding:12px 32px;border-radius:8px;cursor:pointer;margin:8px;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 16px #7c3aed44;}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px #7c3aed66;}
+  .btn.red{background:linear-gradient(135deg,#dc2626,#991b1b);}
+  .btn.green{background:linear-gradient(135deg,#16a34a,#14532d);}
+  .btn.gold{background:linear-gradient(135deg,#d97706,#92400e);}
+  .level-card{background:#1e1b4b;border:1.5px solid #4c1d9580;border-radius:12px;padding:16px 24px;margin:8px;min-width:180px;cursor:pointer;transition:transform .15s,border-color .15s;}
+  .level-card:hover{transform:scale(1.04);border-color:#7c3aed;}
+  .level-card h3{font-size:1rem;color:#a78bfa;}
+  .level-card p{font-size:0.78rem;color:#94a3b8;margin-top:4px;}
+  #battle-screen{flex-direction:column;justify-content:flex-start;padding:16px;}
+  #hud{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:10px;background:#1e1b4b88;padding:8px 16px;border-radius:8px;}
+  #hud .stat{display:flex;align-items:center;gap:6px;font-size:0.85rem;}
+  #hud .stat span{color:#a78bfa;font-weight:700;}
+  #lives{display:flex;gap:4px;}
+  .heart{color:#f87171;font-size:1.1rem;}
+  #timer-bar{width:100%;height:8px;background:#1e1b4b;border-radius:4px;margin-bottom:12px;overflow:hidden;}
+  #timer-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:4px;transition:width .3s;}
+  #arena{display:flex;gap:16px;width:100%;justify-content:center;align-items:flex-start;}
+  #player-side{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:120px;}
+  #enemy-side{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:120px;}
+  .char-name{font-size:0.75rem;color:#a78bfa;font-weight:700;letter-spacing:1px;}
+  .char-sprite{font-size:4rem;transition:transform .3s;}
+  .char-sprite.attack{animation:attackAnim .35s ease;}
+  .char-sprite.hurt{animation:hurtAnim .35s ease;}
+  .hp-bar{width:100px;height:10px;background:#1e1b4b;border-radius:5px;overflow:hidden;}
+  .hp-fill{height:100%;border-radius:5px;transition:width .4s;}
+  .hp-text{font-size:0.7rem;color:#94a3b8;margin-top:2px;}
+  #question-zone{flex:1;background:#1e1b4b88;border-radius:12px;padding:16px;display:flex;flex-direction:column;align-items:center;max-width:360px;}
+  #q-sys-label{font-size:0.72rem;color:#a78bfa;font-weight:700;letter-spacing:2px;margin-bottom:6px;}
+  #q-text{font-size:0.95rem;color:#e2e8f0;margin-bottom:14px;text-align:center;min-height:48px;line-height:1.5;}
+  #choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
+  .choice{background:#2d2b6e;border:1px solid #4c1d9560;border-radius:8px;color:#e2e8f0;font-size:0.82rem;padding:10px 8px;cursor:pointer;transition:background .2s,border-color .2s;text-align:center;}
+  .choice:hover{background:#4c1d95;border-color:#7c3aed;}
+  .choice.correct{background:#166534;border-color:#4ade80;}
+  .choice.wrong{background:#991b1b;border-color:#f87171;}
+  #feedback{font-size:0.85rem;min-height:28px;margin-top:8px;font-weight:600;}
+  #fact-box{font-size:0.75rem;color:#94a3b8;margin-top:6px;text-align:center;min-height:32px;font-style:italic;}
+  #combo-display{font-size:0.9rem;color:#fbbf24;font-weight:700;min-height:24px;}
+  #vs-label{font-size:1.4rem;font-weight:700;color:#f87171;align-self:center;padding-top:40px;}
+  #damage-popup{position:absolute;pointer-events:none;font-size:1.5rem;font-weight:700;color:#f87171;opacity:0;transition:none;top:50%;left:50%;}
+  #score-display{font-size:0.82rem;color:#fbbf24;}
+  #level-label{font-size:0.75rem;color:#a78bfa;font-weight:700;}
+  @keyframes attackAnim{0%{transform:scale(1)}40%{transform:scale(1.25) rotate(-8deg)}100%{transform:scale(1)}}
+  @keyframes hurtAnim{0%{transform:translateX(0)}20%{transform:translateX(-10px)}50%{transform:translateX(8px)}100%{transform:translateX(0)}}
+  @keyframes popUp{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-120%) scale(1.4)}}
+  .results-card{background:#1e1b4b;border-radius:16px;padding:24px 32px;text-align:center;max-width:340px;}
+  .results-card h2{color:#a78bfa;margin-bottom:8px;}
+  .results-card .big{font-size:2.5rem;font-weight:700;color:#fbbf24;}
+  .results-card p{color:#94a3b8;font-size:0.9rem;margin:6px 0;}
+  .system-badge{display:inline-block;background:#4c1d95;color:#c4b5fd;font-size:0.7rem;padding:3px 10px;border-radius:20px;margin:3px;}
+  #progress-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0;}
+  .prog-dot{width:14px;height:14px;border-radius:50%;background:#2d2b6e;border:1.5px solid #4c1d95;}
+  .prog-dot.done{background:#7c3aed;}
+  .prog-dot.current{background:#fbbf24;animation:pulse 1s infinite alternate;}
+  @keyframes pulse{from{box-shadow:0 0 0 0 #fbbf2488}to{box-shadow:0 0 0 6px #fbbf2400}}
+  #streak-flash{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:700;color:#fbbf24;pointer-events:none;opacity:0;}
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="screen active" id="title-screen">
+    <div style="font-size:3rem;margin-bottom:8px;">🧬</div>
+    <h1 class="logo">BODY BATTLE</h1>
+    <p class="subtitle">Master every organ system to save your body!</p>
+    <div style="margin:24px 0;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
+      <span class="system-badge">🫀 Circulatory</span>
+      <span class="system-badge">🫁 Respiratory</span>
+      <span class="system-badge">🦷 Digestive</span>
+      <span class="system-badge">🧠 Nervous</span>
+      <span class="system-badge">💪 Muscular</span>
+      <span class="system-badge">🦴 Skeletal</span>
+    </div>
+    <p style="color:#94a3b8;font-size:0.82rem;max-width:320px;margin-bottom:20px;">Answer questions about organ systems to attack enemies. Chain correct answers for COMBO damage! 3 lives per level.</p>
+    <button class="btn" onclick="showLevelSelect()">▶ START GAME</button>
+    <button class="btn" style="background:#1e1b4b;border:1px solid #4c1d95;" onclick="showHighScores()">🏆 High Scores</button>
+  </div>
+
+  <div class="screen" id="level-select">
+    <h2 style="color:#a78bfa;margin-bottom:4px;">Choose Level</h2>
+    <p class="subtitle" style="margin-bottom:20px;">Harder levels = more questions & trickier choices</p>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
+      <div class="level-card" onclick="startLevel(1)"><h3>⭐ Level 1</h3><p>Easy · 15s/Q · 4 choices</p><p style="color:#4ade80;font-size:0.72rem;margin-top:4px;">Beginner</p></div>
+      <div class="level-card" onclick="startLevel(2)"><h3>⭐⭐ Level 2</h3><p>Medium · 12s/Q · 4 choices</p><p style="color:#fbbf24;font-size:0.72rem;margin-top:4px;">Intermediate</p></div>
+      <div class="level-card" onclick="startLevel(3)"><h3>⭐⭐⭐ Level 3</h3><p>Hard · 9s/Q · 4 choices</p><p style="color:#f87171;font-size:0.72rem;margin-top:4px;">Advanced</p></div>
+      <div class="level-card" onclick="startLevel(4)"><h3>💀 BOSS</h3><p>Expert · 7s/Q · mixed</p><p style="color:#f87171;font-size:0.72rem;margin-top:4px;">Brain Buster!</p></div>
+    </div>
+    <button class="btn" style="background:#1e1b4b;border:1px solid #4c1d95;margin-top:16px;" onclick="show('title-screen')">← Back</button>
+  </div>
+
+  <div class="screen" id="battle-screen">
+    <div id="hud">
+      <div class="stat">❤️ <div id="lives"></div></div>
+      <div class="stat" id="level-label">LVL 1</div>
+      <div class="stat">⚡ Combo: <span id="combo-val">x1</span></div>
+      <div class="stat">🏅 <span id="score-display">0</span></div>
+    </div>
+    <div id="timer-bar"><div id="timer-fill" style="width:100%"></div></div>
+    <div id="progress-row"></div>
+    <div id="arena">
+      <div id="player-side">
+        <div class="char-name">YOU</div>
+        <div class="char-sprite" id="player-sprite">🦸</div>
+        <div class="hp-bar"><div class="hp-fill" id="player-hp-fill" style="width:100%;background:linear-gradient(90deg,#4ade80,#16a34a);"></div></div>
+        <div class="hp-text" id="player-hp-text">3 / 3</div>
+      </div>
+      <div id="question-zone">
+        <div id="q-sys-label">CIRCULATORY SYSTEM</div>
+        <div id="q-text">Loading question...</div>
+        <div id="choices"></div>
+        <div id="feedback"></div>
+        <div id="fact-box"></div>
+        <div id="combo-display"></div>
+      </div>
+      <div id="vs-label">VS</div>
+      <div id="enemy-side">
+        <div class="char-name" id="enemy-name">GERM BOSS</div>
+        <div class="char-sprite" id="enemy-sprite">🦠</div>
+        <div class="hp-bar"><div class="hp-fill" id="enemy-hp-fill" style="width:100%;background:linear-gradient(90deg,#f87171,#dc2626);"></div></div>
+        <div class="hp-text" id="enemy-hp-text">10 / 10</div>
+      </div>
+    </div>
+    <div id="damage-popup">-❤️</div>
+    <div id="streak-flash"></div>
+  </div>
+
+  <div class="screen" id="results-screen">
+    <div class="results-card">
+      <div style="font-size:2.5rem;" id="result-icon">🎉</div>
+      <h2 id="result-title">Victory!</h2>
+      <div class="big" id="result-score">0</div>
+      <p id="result-msg"></p>
+      <div id="result-accuracy" style="color:#a78bfa;font-size:0.82rem;margin:8px 0;"></div>
+      <div id="result-systems" style="margin:10px 0;"></div>
+      <button class="btn gold" onclick="quitGame(true)" style="margin-top:12px;">CLAIM REWARD</button>
+      <button class="btn green" onclick="showLevelSelect()" style="margin-top:4px;">▶ Play Again</button>
+      <button class="btn" onclick="show('title-screen')" style="margin-top:4px;background:#1e1b4b;border:1px solid #4c1d95;">🏠 Home</button>
+    </div>
+  </div>
+
+  <div class="screen" id="hs-screen">
+    <h2 style="color:#fbbf24;">🏆 High Scores</h2>
+    <div id="hs-list" style="margin:16px 0;width:100%;max-width:300px;"></div>
+    <button class="btn" onclick="show('title-screen')">← Back</button>
+  </div>
+</div>
+
+<script>
+const SYSTEMS={
+  circulatory:{name:"Circulatory",emoji:"🫀",color:"#f87171"},
+  respiratory:{name:"Respiratory",emoji:"🫁",color:"#60a5fa"},
+  digestive:{name:"Digestive",emoji:"🦷",color:"#fbbf24"},
+  nervous:{name:"Nervous",emoji:"🧠",color:"#a78bfa"},
+  muscular:{name:"Muscular",emoji:"💪",color:"#4ade80"},
+  skeletal:{name:"Skeletal",emoji:"🦴",color:"#fb923c"}
+};
+
+const ALL_Q=[
+  {s:"circulatory",q:"What is the main job of the heart?",a:"Pump blood through the body",w:["Filter toxins","Produce hormones","Make red blood cells"],f:"Your heart pumps about 2,000 gallons of blood every day!"},
+  {s:"circulatory",q:"Which blood vessels carry blood AWAY from the heart?",a:"Arteries",w:["Veins","Capillaries","Lymph nodes"],f:"Arteries have thick walls to handle the high pressure from the heart."},
+  {s:"circulatory",q:"What carries oxygen in red blood cells?",a:"Hemoglobin",w:["Plasma","Platelets","Insulin"],f:"Hemoglobin contains iron, which is why blood is red!"},
+  {s:"circulatory",q:"Which chamber of the heart pumps blood to the body?",a:"Left ventricle",w:["Right atrium","Left atrium","Right ventricle"],f:"The left ventricle has the thickest walls because it works the hardest."},
+  {s:"circulatory",q:"What is the liquid part of blood called?",a:"Plasma",w:["Serum","Lymph","Mucus"],f:"Plasma makes up about 55% of your blood volume."},
+  {s:"respiratory",q:"What is the main function of the lungs?",a:"Exchange oxygen and carbon dioxide",w:["Filter blood","Produce antibodies","Digest food"],f:"Your lungs have about 600 million tiny air sacs called alveoli!"},
+  {s:"respiratory",q:"Which muscle helps you breathe?",a:"Diaphragm",w:["Bicep","Deltoid","Trapezius"],f:"The diaphragm is a dome-shaped muscle below your lungs."},
+  {s:"respiratory",q:"What passes through the trachea?",a:"Air",w:["Blood","Food","Lymph fluid"],f:"The trachea is also called the windpipe and is about 4 inches long."},
+  {s:"respiratory",q:"What are the tiny air sacs in the lungs called?",a:"Alveoli",w:["Bronchi","Capillaries","Pleura"],f:"Alveoli look like tiny grapes and allow oxygen to enter the blood."},
+  {s:"digestive",q:"Where does chemical digestion of food mainly occur?",a:"Small intestine",w:["Stomach","Large intestine","Mouth"],f:"The small intestine is about 20 feet long despite its name!"},
+  {s:"digestive",q:"What organ produces insulin to control blood sugar?",a:"Pancreas",w:["Liver","Kidney","Spleen"],f:"The pancreas has both digestive and hormonal functions."},
+  {s:"digestive",q:"What does the large intestine mainly absorb?",a:"Water",w:["Proteins","Fats","Vitamins"],f:"The large intestine absorbs water to prevent dehydration."},
+  {s:"digestive",q:"Which organ produces bile to break down fats?",a:"Liver",w:["Gallbladder","Pancreas","Stomach"],f:"The liver is the largest internal organ and performs over 500 functions!"},
+  {s:"nervous",q:"What is the brain's protective fluid called?",a:"Cerebrospinal fluid",w:["Lymph","Plasma","Synovial fluid"],f:"Cerebrospinal fluid acts as a cushion protecting the brain."},
+  {s:"nervous",q:"What is the basic unit of the nervous system?",a:"Neuron",w:["Axon","Synapse","Dendrite"],f:"Your brain has about 86 billion neurons!"},
+  {s:"nervous",q:"Which part of the brain controls balance?",a:"Cerebellum",w:["Cerebrum","Brain stem","Thalamus"],f:"The cerebellum coordinates movement and balance automatically."},
+  {s:"nervous",q:"What carries signals FROM the brain to muscles?",a:"Motor neurons",w:["Sensory neurons","Interneurons","Glial cells"],f:"Motor neurons can transmit signals at up to 250 mph!"},
+  {s:"muscular",q:"What type of muscle is the heart?",a:"Cardiac muscle",w:["Smooth muscle","Skeletal muscle","Voluntary muscle"],f:"Cardiac muscle never gets tired — it beats your whole life!"},
+  {s:"muscular",q:"What energy molecule do muscles use to contract?",a:"ATP",w:["DNA","RNA","ADP"],f:"ATP stands for adenosine triphosphate — the body's energy currency."},
+  {s:"muscular",q:"Muscles can only PULL, not push. How do they create movement?",a:"Working in opposing pairs",w:["Stretching outward","Pushing against bones","Contracting alone"],f:"Biceps and triceps are an example of an opposing muscle pair."},
+  {s:"skeletal",q:"How many bones does the adult human body have?",a:"206",w:["156","300","250"],f:"Babies are born with about 270 bones — many fuse together as we grow!"},
+  {s:"skeletal",q:"What is the soft tissue inside bones called?",a:"Bone marrow",w:["Cartilage","Periosteum","Tendon"],f:"Red bone marrow produces millions of blood cells every second!"},
+  {s:"skeletal",q:"What connects bones to other bones?",a:"Ligaments",w:["Tendons","Cartilage","Fascia"],f:"Unlike tendons, ligaments connect bone to bone at joints."},
+  {s:"skeletal",q:"Which is the longest bone in the body?",a:"Femur",w:["Tibia","Humerus","Fibula"],f:"The femur (thigh bone) is about 1/4 of your total height."},
+  {s:"circulatory",q:"What do white blood cells do?",a:"Fight infections and disease",w:["Carry oxygen","Clot blood","Transport nutrients"],f:"White blood cells are your body's immune soldiers!"},
+  {s:"respiratory",q:"What happens when you inhale?",a:"Diaphragm contracts and moves down",w:["Lungs shrink","Diaphragm relaxes","Ribcage collapses"],f:"When the diaphragm moves down, it creates space for lungs to expand."},
+  {s:"nervous",q:"The spinal cord is part of which system?",a:"Central nervous system",w:["Peripheral nervous system","Endocrine system","Lymphatic system"],f:"The central nervous system includes the brain and spinal cord."},
+  {s:"digestive",q:"Where does digestion begin?",a:"Mouth",w:["Stomach","Esophagus","Small intestine"],f:"Saliva contains enzymes that start breaking down starch right away!"},
+];
+
+let state={level:1,lives:3,score:0,combo:1,qIdx:0,questions:[],enemyHp:0,enemyMaxHp:0,playerMaxLives:3,answered:false,timerVal:0,timerMax:0,timerInterval:null,correct:0,wrong:0,sessionSystems:{},wonState:false};
+
+const LEVELS=[
+  {n:1,qs:8,timeMax:15,enemy:"🦠",eName:"GERM BLOB",eHp:8},
+  {n:2,qs:10,timeMax:12,enemy:"🧟",eName:"ZOMBIE VIRUS",eHp:10},
+  {n:3,qs:12,timeMax:9,enemy:"👾",eName:"ALIEN PATHOGEN",eHp:12},
+  {n:4,qs:15,timeMax:7,enemy:"💀",eName:"MEGA BOSS",eHp:15}
+];
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showLevelSelect(){show('level-select');}
+function showHighScores(){
+  show('hs-screen');
+  let hs=JSON.parse(localStorage.getItem('bodyBattleHS')||'[]');
+  let el=document.getElementById('hs-list');
+  if(!hs.length){el.innerHTML='<p style="color:#94a3b8">No scores yet. Play to set one!</p>';return;}
+  el.innerHTML=hs.map((h,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 12px;background:#1e1b4b;border-radius:8px;margin:4px 0;"><span>${i===0?'🥇':i===1?'🥈':'🥉'} Lvl ${h.level}</span><span style="color:#fbbf24;font-weight:700;">${h.score}</span></div>`).join('');
+}
+
+function shuffle(arr){return arr.sort(()=>Math.random()-.5);}
+
+function startLevel(lv){
+  let cfg=LEVELS[lv-1];
+  state={level:lv,lives:3,score:0,combo:1,qIdx:0,answered:false,correct:0,wrong:0,sessionSystems:{}, wonState:false,
+    questions:shuffle([...ALL_Q]).slice(0,cfg.qs),
+    enemyHp:cfg.eHp,enemyMaxHp:cfg.eHp,playerMaxLives:3,
+    timerMax:cfg.timeMax,timerVal:cfg.timeMax,timerInterval:null};
+  document.getElementById('enemy-sprite').textContent=cfg.enemy;
+  document.getElementById('enemy-name').textContent=cfg.eName;
+  document.getElementById('level-label').textContent='LVL '+lv;
+  updateHud();
+  buildProgressDots();
+  show('battle-screen');
+  nextQuestion();
+}
+
+function buildProgressDots(){
+  let row=document.getElementById('progress-row');
+  row.innerHTML=state.questions.map((_,i)=>`<div class="prog-dot${i===0?' current':''}" id="dot-${i}"></div>`).join('');
+}
+
+function updateDots(){
+  state.questions.forEach((_,i)=>{
+    let d=document.getElementById('dot-'+i);
+    if(!d)return;
+    d.className='prog-dot'+(i<state.qIdx?' done':i===state.qIdx?' current':'');
+  });
+}
+
+function updateHud(){
+  let livesEl=document.getElementById('lives');
+  livesEl.innerHTML='';
+  for(let i=0;i<state.playerMaxLives;i++){
+    let h=document.createElement('span');h.className='heart';
+    h.textContent=i<state.lives?'❤️':'🖤';livesEl.appendChild(h);
+  }
+  document.getElementById('combo-val').textContent='x'+state.combo;
+  document.getElementById('score-display').textContent=state.score;
+  let pp=(state.lives/state.playerMaxLives)*100;
+  document.getElementById('player-hp-fill').style.width=pp+'%';
+  document.getElementById('player-hp-text').textContent=state.lives+' / '+state.playerMaxLives;
+  let ep=(state.enemyHp/state.enemyMaxHp)*100;
+  document.getElementById('enemy-hp-fill').style.width=ep+'%';
+  document.getElementById('enemy-hp-text').textContent=state.enemyHp+' / '+state.enemyMaxHp;
+}
+
+function nextQuestion(){
+  if(state.qIdx>=state.questions.length){endGame(true);return;}
+  state.answered=false;
+  let q=state.questions[state.qIdx];
+  let sys=SYSTEMS[q.s];
+  document.getElementById('q-sys-label').textContent=sys.emoji+' '+sys.name.toUpperCase()+' SYSTEM';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('feedback').textContent='';
+  document.getElementById('fact-box').textContent='';
+  document.getElementById('combo-display').textContent='';
+  let opts=shuffle([q.a,...q.w]);
+  let ch=document.getElementById('choices');
+  ch.innerHTML='';
+  opts.forEach(opt=>{
+    let btn=document.createElement('button');
+    btn.className='choice';btn.textContent=opt;
+    btn.onclick=()=>answer(btn,opt,q);
+    ch.appendChild(btn);
+  });
+  updateDots();
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(state.timerInterval);
+  state.timerVal=state.timerMax;
+  updateTimerBar();
+  state.timerInterval=setInterval(()=>{
+    state.timerVal--;
+    updateTimerBar();
+    if(state.timerVal<=0){clearInterval(state.timerInterval);timeUp();}
+  },1000);
+}
+
+function updateTimerBar(){
+  let pct=(state.timerVal/state.timerMax)*100;
+  let fill=document.getElementById('timer-fill');
+  fill.style.width=pct+'%';
+  fill.style.background=pct>50?'linear-gradient(90deg,#7c3aed,#a78bfa)':pct>25?'linear-gradient(90deg,#d97706,#fbbf24)':'linear-gradient(90deg,#dc2626,#f87171)';
+}
+
+function timeUp(){
+  if(state.answered)return;
+  state.answered=true;
+  let q=state.questions[state.qIdx];
+  document.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.a)b.classList.add('correct');});
+  document.getElementById('feedback').textContent='⏰ Time\'s up!';
+  document.getElementById('feedback').style.color='#f87171';
+  document.getElementById('fact-box').textContent=q.f;
+  state.combo=1;state.wrong++;
+  loseLife();
+  setTimeout(()=>{state.qIdx++;nextQuestion();},2200);
+}
+
+function answer(btn,opt,q){
+  if(state.answered)return;
+  state.answered=true;
+  clearInterval(state.timerInterval);
+  let correct=opt===q.a;
+  if(!state.sessionSystems[q.s])state.sessionSystems[q.s]={c:0,w:0};
+  if(correct){
+    state.sessionSystems[q.s].c++;
+    btn.classList.add('correct');
+    let dmg=Math.ceil(state.combo*1.5);
+    state.enemyHp=Math.max(0,state.enemyHp-dmg);
+    let pts=100*state.combo+(state.timerVal*5);
+    state.score+=pts;
+    state.combo=Math.min(state.combo+1,5);
+    state.correct++;
+    document.getElementById('feedback').textContent='✅ Correct! +'+pts+' pts';
+    document.getElementById('feedback').style.color='#4ade80';
+    document.getElementById('fact-box').textContent='💡 '+q.f;
+    showDmg('-'+dmg+'💥','#fbbf24',false);
+    anim('player-sprite','attack');anim('enemy-sprite','hurt');
+    if(state.combo>=3){showStreakFlash('🔥 COMBO x'+state.combo+'!');};
+    if(state.combo>1)document.getElementById('combo-display').textContent='🔥 COMBO x'+state.combo+'!';
+    updateHud();
+    if(state.enemyHp<=0){setTimeout(()=>endGame(true),1500);return;}
+  }else{
+    state.sessionSystems[q.s].w++;
+    btn.classList.add('wrong');
+    document.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.a)b.classList.add('correct');});
+    state.combo=1;state.wrong++;
+    document.getElementById('feedback').textContent='❌ Wrong!';
+    document.getElementById('feedback').style.color='#f87171';
+    document.getElementById('fact-box').textContent='💡 '+q.f;
+    showDmg('-❤️','#f87171',true);
+    anim('enemy-sprite','attack');anim('player-sprite','hurt');
+    loseLife();
+    if(state.lives<=0){setTimeout(()=>endGame(false),1500);return;}
+  }
+  setTimeout(()=>{state.qIdx++;nextQuestion();},2400);
+}
+
+function loseLife(){
+  state.lives=Math.max(0,state.lives-1);
+  updateHud();
+}
+
+function anim(id,cls){
+  let el=document.getElementById(id);
+  el.classList.remove('attack','hurt');
+  void el.offsetWidth;
+  el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls),400);
+}
+
+function showDmg(text,color,isPlayer){
+  let p=document.getElementById('damage-popup');
+  p.style.animation='none';
+  p.textContent=text;p.style.color=color;
+  p.style.left=isPlayer?'18%':'72%';
+  p.style.top='35%';
+  void p.offsetWidth;
+  p.style.animation='popUp 0.8s ease forwards';
+}
+
+function showStreakFlash(msg){
+  let el=document.getElementById('streak-flash');
+  el.textContent=msg;el.style.animation='none';
+  void el.offsetWidth;
+  el.style.animation='popUp 1s ease forwards';
+}
+
+function endGame(won){
+  clearInterval(state.timerInterval);
+  state.wonState = won;
+  let acc=state.correct+state.wrong>0?Math.round(state.correct/(state.correct+state.wrong)*100):0;
+  document.getElementById('result-icon').textContent=won?'🎉':'💀';
+  document.getElementById('result-title').textContent=won?'Victory!':'Defeated!';
+  document.getElementById('result-score').textContent=state.score;
+  document.getElementById('result-msg').textContent=won?'You defeated the boss!':'Better luck next time!';
+  document.getElementById('result-accuracy').textContent='Accuracy: '+acc+'% | '+state.correct+' correct, '+state.wrong+' wrong';
+  let sys=Object.entries(state.sessionSystems).map(([k,v])=>{
+    let pct=v.c+v.w>0?Math.round(v.c/(v.c+v.w)*100):0;
+    return `<span class="system-badge">${SYSTEMS[k].emoji} ${SYSTEMS[k].name}: ${pct}%</span>`;
+  }).join('');
+  document.getElementById('result-systems').innerHTML='<div style="font-size:0.75rem;color:#94a3b8;margin-bottom:6px;">System scores:</div>'+sys;
+  if(won){
+    let hs=JSON.parse(localStorage.getItem('bodyBattleHS')||'[]');
+    hs.push({level:state.level,score:state.score});
+    hs.sort((a,b)=>b.score-a.score);
+    hs=hs.slice(0,5);
+    localStorage.setItem('bodyBattleHS',JSON.stringify(hs));
+  }
+  show('results-screen');
+}
+
+function quitGame(won) {
+    if(window.parent && window.parent.currentUser) {
+        let xp = won ? 500 + state.score : Math.floor(state.score * 0.5);
+        let coins = won ? 300 + Math.floor(state.score / 10) : Math.floor(state.score / 20);
+        fetch('/api/save-gamestate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ xp: xp, coins: coins })
+        }).then(() => {
+            if(window.parent.closeGame) window.parent.closeGame(true);
+        }).catch(e => console.log(e));
+    } else if (window.parent && window.parent.closeGame) {
+        window.parent.closeGame(won);
+    }
+}
+</script>
+</body>
+</html>

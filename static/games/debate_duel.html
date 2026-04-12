@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debate Duel - Career Quest</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#dd{font-family:'Segoe UI',sans-serif;background:#0b0818;color:#fff;min-height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;text-align:center}
+.screen.active{display:flex}
+.game-title{font-size:48px;font-weight:900;color:#b388ff;letter-spacing:1px;line-height:1.1}
+.game-sub{font-size:13px;color:#7c4dff;letter-spacing:3px;text-transform:uppercase;margin:8px 0 18px;font-weight:700}
+.stage-scene{display:flex;gap:20px;justify-content:center;align-items:flex-end;margin:10px 0 16px}
+.debater{display:flex;flex-direction:column;align-items:center;gap:5px}
+.dav{font-size:40px;animation:sway .9s ease-in-out infinite alternate}
+.dav.opp{animation-delay:.45s}
+@keyframes sway{0%{transform:rotate(-3deg)}100%{transform:rotate(3deg)}}
+.dlbl{font-size:10px;color:#7c4dff;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.vs-badge{font-size:22px;font-weight:900;color:#ff6b6b;align-self:center;padding-bottom:22px}
+.intro-box{background:#0d0a1f;border:1.5px solid #3d1fa8;border-radius:14px;padding:14px 20px;max-width:390px;margin:8px 0 16px;font-size:13px;color:#ccc;line-height:1.7}
+.btn{padding:11px 26px;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .12s;letter-spacing:.4px}
+.btn:active{transform:scale(.95)}
+.btn-purple{background:#7c4dff;color:#fff}
+.btn-gold{background:#c9a227;color:#1a1200}
+.btn-red{background:#c0392b;color:#fff}
+.btn-gray{background:#252038;color:#ccc}
+.btn-green{background:#1a7a40;color:#fff}
+.btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#07050f;border-bottom:2px solid #3d1fa8;z-index:10}
+.hud-cell{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#666;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.hud-val{font-size:17px;font-weight:800;color:#b388ff;line-height:1.1}
+.hud-timer{font-size:20px;font-weight:900;color:#ff6b6b}
+.hearts{display:flex;gap:2px}
+.h{font-size:15px;color:#ff6b6b}
+.h.gone{color:#251f35}
+.rnd-pill{background:#3d1fa8;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;color:#b388ff}
+.diff-row{display:flex;gap:4px;justify-content:center;margin-top:2px}
+.dd{width:8px;height:8px;border-radius:50%;background:#1a1530}
+.dd.on{background:#7c4dff}
+.game-wrap{margin-top:60px;padding:14px;width:100%}
+.progress-bg{background:#0d0920;border-radius:6px;height:6px;width:100%;max-width:540px;margin:0 auto 6px}
+.progress-fill{background:#7c4dff;height:6px;border-radius:6px;transition:width .4s}
+.q-meta{font-size:11px;color:#5c4a8a;font-weight:700;letter-spacing:.5px;max-width:540px;margin:0 auto 10px;text-align:left}
+.debate-stage{max-width:540px;margin:0 auto}
+.motion-banner{background:#10092a;border:1.5px solid #3d1fa8;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.motion-icon{font-size:26px;flex-shrink:0}
+.motion-label{font-size:10px;color:#7c4dff;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:left;}
+.motion-text{font-size:13px;font-weight:700;color:#fff;margin-top:2px;line-height:1.35;text-align:left;}
+.argument-box{background:#10092a;border:1.5px solid #3d1fa8;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.opponent-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.opp-avatar{font-size:22px}
+.opp-name{font-size:12px;font-weight:700;color:#ff6b6b;text-align:left;}
+.opp-role{font-size:10px;color:#666;letter-spacing:.5px;text-transform:uppercase;text-align:left;}
+.opp-says{font-size:13px;color:#ddd;line-height:1.55;font-style:italic;border-left:3px solid #7c4dff;padding-left:10px;margin-top:4px;text-align:left;}
+.task-label{font-size:11px;color:#b388ff;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;text-align:left;}
+.opts-list{display:flex;flex-direction:column;gap:7px}
+.opt{background:#140e2e;border:1.5px solid #2a1e60;border-radius:10px;padding:11px 14px;font-size:12px;font-weight:600;color:#cce;cursor:pointer;text-align:left;transition:background .15s,transform .1s;line-height:1.4}
+.opt:hover{background:#1e1548}
+.opt:active{transform:scale(.98)}
+.opt.correct{background:#0a2e18;border-color:#27ae60;color:#7dcea0}
+.opt.wrong{background:#2e0a0a;border-color:#e74c3c;color:#f1948a}
+.opt.reveal{background:#140e2e;border-color:#3d1fa8;color:#8070b0;opacity:.7}
+.pop-score{position:absolute;font-size:20px;font-weight:800;color:#b388ff;pointer-events:none;animation:floatUp 1s ease-out forwards;z-index:30}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-55px)}}
+.combo-flash{position:absolute;top:68px;left:50%;transform:translateX(-50%);font-size:17px;font-weight:800;color:#c9a227;animation:comboOut .9s ease-out forwards;z-index:25;pointer-events:none;white-space:nowrap}
+@keyframes comboOut{0%{opacity:1;transform:translateX(-50%) scale(1.1)}100%{opacity:0;transform:translateX(-50%) scale(.85) translateY(-18px)}}
+.fb-screen{display:none;flex-direction:column;align-items:center;justify-content:flex-start;flex:1;padding:0}
+.fb-screen.active{display:flex}
+.fb-wrap{margin-top:62px;padding:14px;width:100%}
+.fb-card{background:#10092a;border:1.5px solid #3d1fa8;border-radius:16px;padding:16px;max-width:520px;margin:0 auto}
+.fb-icon{font-size:40px;margin-bottom:6px}
+.fb-result{font-size:19px;font-weight:800;margin-bottom:4px}
+.fb-explain{font-size:13px;color:#ccc;line-height:1.55;margin-bottom:10px;text-align:left;}
+.fb-mentor{background:#090618;border:1.5px dashed #7c4dff;border-radius:10px;padding:10px 14px;font-size:12px;color:#d0c8f0;line-height:1.55;text-align:left;margin-bottom:10px}
+.fb-mentor b{color:#c9a227}
+.fallacy-tag{display:inline-block;background:#1a1040;border:1px solid #7c4dff;border-radius:6px;padding:2px 8px;font-size:11px;color:#b388ff;font-weight:700;margin:3px 2px}
+.lvl-up-title{font-size:28px;font-weight:900;color:#27ae60;margin-bottom:6px}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.badge{background:#140e2e;border:1.5px solid #3d1fa8;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#9b7fd4}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:320px;width:100%;margin:10px 0}
+.stat-box{background:#10092a;border:1px solid #2a1e60;border-radius:10px;padding:10px;text-align:center}
+.stat-n{font-size:22px;font-weight:800;color:#b388ff}
+.stat-l{font-size:10px;color:#666;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.over-head{font-size:32px;font-weight:900;color:#ff6b6b;margin-bottom:6px}
+.howto-box{max-width:400px;text-align:left;background:#0d0920;border-radius:14px;padding:16px;font-size:13px;line-height:1.9;color:#ddd}
+.arg-strength{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:11px;color:#7c4dff;font-weight:700}
+.strength-bar{height:6px;border-radius:4px;background:#7c4dff}
+</style>
+</head>
+<body>
+<div id="dd">
+
+<div id="s-home" class="screen active">
+  <div class="game-title">💬 Debate<br>Duel</div>
+  <div class="game-sub">Win arguments with logic</div>
+  <div class="stage-scene">
+    <div class="debater"><div class="dav">🧑🎓</div><div class="dlbl">You</div></div>
+    <div class="vs-badge">VS</div>
+    <div class="debater"><div class="dav opp">🤨</div><div class="dlbl">Opponent</div></div>
+  </div>
+  <div class="intro-box">
+    You are a <b style="color:#b388ff">Debate Champion</b> in training!<br>
+    Your opponents use <b style="color:#ff6b6b">logical fallacies</b>, <b style="color:#ff6b6b">weak arguments</b> and <b style="color:#ff6b6b">manipulation tricks</b>.<br>
+    Pick the <b style="color:#c9a227">strongest logical response</b> to win each round and become the <b style="color:#7c4dff">Grand Debater!</b>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-purple" onclick="startGame()">Take the Stage</button>
+    <button class="btn btn-gray" onclick="showScreen('s-howto')">How to Play</button>
+  </div>
+  <div style="margin-top:14px;font-size:11px;color:#444">5 Rounds • 3 Lives • Real Logic & Fallacies</div>
+</div>
+
+<div id="s-howto" class="screen">
+  <div style="font-size:26px;font-weight:800;color:#b388ff;margin-bottom:10px">💬 How to Play</div>
+  <div class="howto-box">
+    <div>🎯 <b style="color:#b388ff">Read</b> the debate motion and your opponent's argument</div>
+    <div>🧠 <b style="color:#27ae60">Spot</b> the logical fallacy or pick the strongest rebuttal</div>
+    <div>⚡ <b style="color:#ff6b6b">Be fast!</b> Timer gives bonus points for quick thinking</div>
+    <div>❤️ <b style="color:#ff6b6b">3 lives</b> — wrong rebuttals cost a life</div>
+    <div>🔥 <b style="color:#c9a227">Combo streak</b> = multiplied score</div>
+    <div>🎓 <b style="color:#9b7fd4">Mentor explains</b> the logic after every round</div>
+    <div style="margin-top:10px;color:#5c4a8a">Topics: Ad Hominem, Straw Man, False Dichotomy, Slippery Slope, Appeal to Authority, Hasty Generalisation, Circular Reasoning, Red Herring, Bandwagon, Post Hoc, Burden of Proof & more!</div>
+  </div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-purple" onclick="startGame()">Let's Debate!</button>
+    <button class="btn btn-gray" onclick="showScreen('s-home')">Back</button>
+  </div>
+</div>
+
+<div id="s-game" class="screen" style="justify-content:flex-start;padding:0">
+  <div class="hud">
+    <div class="hud-cell"><span class="hud-val" id="h-score">0</span>Score</div>
+    <div class="hud-cell"><span class="rnd-pill" id="h-round">Round 1</span><div class="diff-row" id="h-diff"></div></div>
+    <div class="hud-cell"><span class="hud-timer" id="h-timer">15</span>Secs</div>
+    <div class="hud-cell"><div class="hearts" id="h-hearts"></div>Lives</div>
+  </div>
+  <div class="game-wrap">
+    <div class="progress-bg"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <div class="q-meta" id="q-meta"></div>
+    <div class="debate-stage" id="q-area"></div>
+  </div>
+</div>
+
+<div id="s-feedback" class="fb-screen">
+  <div class="hud">
+    <div class="hud-cell"><span class="hud-val" id="fb-score">0</span>Score</div>
+    <div class="hud-cell"><span class="rnd-pill" id="fb-round">Round 1</span></div>
+    <div class="hud-cell"><span class="hud-val" id="fb-qn">1/5</span>Q</div>
+    <div class="hud-cell"><div class="hearts" id="fb-hearts"></div>Lives</div>
+  </div>
+  <div class="fb-wrap">
+    <div class="fb-card">
+      <div class="fb-icon" id="fb-icon">✅</div>
+      <div class="fb-result" id="fb-result">Point Scored!</div>
+      <div id="fb-tags" style="margin-bottom:8px"></div>
+      <div class="fb-explain" id="fb-explain"></div>
+      <div class="fb-mentor" id="fb-mentor"></div>
+      <button class="btn btn-purple" id="fb-btn" onclick="nextQ()" style="margin-top:4px">Next Argument</button>
+    </div>
+  </div>
+</div>
+
+<div id="s-levelup" class="screen">
+  <div class="lvl-up-title">Round Won! 🎉</div>
+  <div style="font-size:44px;margin:6px 0" id="lu-trophy">🏆</div>
+  <div style="font-size:15px;font-weight:700;color:#b388ff;margin-bottom:10px" id="lu-title"></div>
+  <div class="badges" id="lu-badges"></div>
+  <div style="font-size:13px;color:#c9a227;font-weight:700;margin:6px 0" id="lu-bonus"></div>
+  <div style="font-size:12px;color:#555;margin:4px 0" id="lu-next"></div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-purple" id="lu-btn" onclick="nextLevel()">Next Round</button>
+  </div>
+</div>
+
+<div id="s-over" class="screen">
+  <div class="over-head" id="ov-head">Debate Lost!</div>
+  <div style="font-size:42px;margin:6px 0" id="ov-icon">💬</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-n" id="ov-score">0</div><div class="stat-l">Score</div></div>
+    <div class="stat-box"><div class="stat-n" id="ov-round">1</div><div class="stat-l">Round Reached</div></div>
+    <div class="stat-box"><div class="stat-n" id="ov-correct">0</div><div class="stat-l">Points Won</div></div>
+    <div class="stat-box"><div class="stat-n" id="ov-combo">0x</div><div class="stat-l">Best Combo</div></div>
+  </div>
+  <div style="font-size:13px;color:#9b7fd4;margin:12px 0;max-width:320px;line-height:1.6" id="ov-msg"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn btn-purple" onclick="startGame()">Rematch!</button>
+    <button class="btn btn-gray" onclick="quitGameNow()">Exit Stage</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const ROUNDS=[
+  {name:"Spotting Fallacies",time:18,qCount:4,diff:1,trophy:"🔍",theme:"Identify common logical fallacies"},
+  {name:"Rebuttal Master",time:15,qCount:5,diff:2,trophy:"🗣️",theme:"Pick the strongest counter-argument"},
+  {name:"Evidence & Proof",time:13,qCount:5,diff:3,trophy:"📊",theme:"Distinguish strong evidence from weak"},
+  {name:"Manipulation Traps",time:11,qCount:6,diff:4,trophy:"🧩",theme:"Detect emotional manipulation and bias"},
+  {name:"Grand Debate Final",time:9,qCount:6,diff:5,trophy:"🏆",theme:"Complex multi-layered logical reasoning"}
+];
+
+const QS=[
+  {r:1,emoji:"🏋️",motion:"Should junk food be banned in schools?",opp:"Ravi",oppEmoji:"😤",oppSays:"You can't argue against banning junk food — you eat chips every day yourself! Your opinion doesn't count.",task:"What logical fallacy is Ravi using?",opts:["Straw Man — misrepresenting your argument","Ad Hominem — attacking the person not the argument","False Dichotomy — only two choices","Slippery Slope — chain of bad events"],ans:1,tags:["Ad Hominem","Personal Attack","Invalid"],explain:"Ravi attacks YOU personally instead of addressing the actual argument about junk food policy. Whether you eat chips is irrelevant to whether banning junk food is good policy.",mentor:"Ad Hominem means 'against the person' in Latin. It is one of the oldest tricks — when someone can't beat your argument, they attack you instead. Always bring it back to the TOPIC, not the person!"},
+  {r:1,emoji:"📱",motion:"Should students use phones in class?",opp:"Priya",oppEmoji:"🙄",oppSays:"If we allow phones in class, next students will be gaming, then they'll fail all exams, then no one will get jobs and the country's economy will collapse!",task:"Which fallacy is Priya using?",opts:["Hasty Generalisation","Bandwagon Appeal","Slippery Slope — assuming one step leads to disaster","Appeal to Authority"],ans:2,tags:["Slippery Slope","Chain Assumption","Invalid"],explain:"Priya assumes that allowing phones automatically leads to a chain of disasters. Each step in the chain is an unproven assumption — phones don't automatically cause failing, which doesn't automatically cause unemployment.",mentor:"Slippery Slope says 'if A happens, then B, C, D, Z will all happen.' The flaw is that each link in the chain is just assumed — not proven. Demand evidence for EACH step!"},
+  {r:1,emoji:"🌱",motion:"Should trees be cut for a new highway?",opp:"Deepak",oppEmoji:"😏",oppSays:"Either we cut the trees and build the highway, or we stay a backward country with no development. There's no other option.",task:"Deepak is using which fallacy?",opts:["Red Herring","False Dichotomy — ignoring middle-ground options","Circular Reasoning","Post Hoc Fallacy"],ans:1,tags:["False Dichotomy","Either-Or Fallacy","Invalid"],explain:"Deepak presents only TWO options — cut trees OR stay backward. But there are many other options: elevated highways, alternative routes, tunnels, better public transport. This 'either-or' framing is a classic fallacy.",mentor:"False Dichotomy = False Choice. The world almost never has just TWO options. When someone says 'either X or Y', ask yourself: are there other possibilities they are hiding?"},
+  {r:1,emoji:"🍕",motion:"Is vegetarianism healthier than eating meat?",opp:"Anjali",oppEmoji:"🤔",oppSays:"My uncle has been vegetarian for 30 years and he's perfectly healthy. Therefore vegetarianism is definitely healthier for everyone.",task:"What reasoning error is Anjali making?",opts:["Ad Hominem","False Dichotomy","Hasty Generalisation — one example proves nothing","Circular Reasoning"],ans:2,tags:["Hasty Generalisation","Anecdote vs Evidence","Invalid"],explain:"One person's experience (her uncle) cannot prove a rule for ALL people. This is called Hasty Generalisation — jumping to a broad conclusion from one or very few examples.",mentor:"Anecdotes are stories, not data! One uncle's health tells us nothing about what's healthier for millions of people. Always ask: how many cases? Was it a controlled study? What does peer-reviewed research say?"},
+  {r:2,emoji:"📺",motion:"Social media does more harm than good",opp:"Meera",oppEmoji:"😡",oppSays:"Social media connects millions of people, helps businesses grow, and spreads important news instantly. It is clearly more good than harm.",task:"Meera gave ONE side. What is the STRONGEST logical rebuttal?",opts:["Social media is wrong and Meera is biased","While those benefits are real, we must also weigh harms like cyberbullying, misinformation, addiction and mental health damage — a balanced analysis is needed","Social media should be banned","Meera's examples are too old"],ans:1,tags:["Balanced Argument","Weighing Evidence","Strong Rebuttal"],explain:"The strongest rebuttal acknowledges Meera's valid points but shows they are INCOMPLETE. A good debater doesn't dismiss evidence — they show the full picture by adding the other side.",mentor:"Always acknowledge what is TRUE in the opponent's argument. Then show what is MISSING. This is called 'concede and extend' — it makes you look fair AND exposes the gap in their reasoning!"},
+  {r:2,emoji:"🤖",motion:"AI will take away all human jobs",opp:"Rohan",oppEmoji:"😤",oppSays:"AI took some jobs in manufacturing. Therefore AI will definitely take ALL jobs in every sector very soon.",task:"Which is the best rebuttal to Rohan's claim?",opts:["AI is not real so this is wrong","While AI has displaced some manufacturing jobs, history shows technology also creates NEW job categories — the net effect requires careful sector-by-sector analysis","All technology is bad","We should ban AI completely"],ans:1,tags:["Historical Evidence","Nuanced Rebuttal","Strong Logic"],explain:"The best rebuttal uses historical evidence (technology always creates jobs too) and shows Rohan is over-generalising from manufacturing to ALL sectors. It avoids extremes and demands precise analysis.",mentor:"When someone overgeneralises, counter with SPECIFICS and HISTORY. The industrial revolution eliminated some jobs but created far more. Demand sector-specific evidence rather than accepting sweeping claims!"},
+  {r:2,emoji:"🏫",motion:"Homework should be abolished",opp:"Kavya",oppEmoji:"🙄",oppSays:"Abolishing homework is popular with students. A survey of 500 students shows 90% want homework abolished. So we should abolish it.",task:"What is wrong with Kavya's argument?",opts:["Surveys are always unreliable","Bandwagon and Biased Sample — 500 students wanting something doesn't make it educationally sound policy","Kavya speaks too fast","Homework has always been done so it must continue"],ans:1,tags:["Bandwagon","Biased Sample","Appeal to Popularity"],explain:"Just because something is popular doesn't make it correct or effective. The survey only asks students — not teachers, parents, or researchers. Popularity is NOT the same as effectiveness.",mentor:"'Everyone wants it' is the Bandwagon fallacy. AND the sample is biased — only students who benefit from abolishing were asked! Good evidence requires unbiased samples and measures the RIGHT outcomes."},
+  {r:2,emoji:"🌍",motion:"Developed countries should pay for climate change",opp:"Arjun",oppEmoji:"😏",oppSays:"India is a developing country, so we don't need to do anything about climate change. It's only the West's problem.",task:"What is the strongest rebuttal?",opts:["India is perfect and has no responsibility","While historical emissions are higher in developed nations giving them greater responsibility, climate change affects everyone and solutions require global cooperation — even developing nations benefit from acting","The topic is too complicated","Arjun is not a scientist"],ans:1,tags:["Nuanced Position","Global Responsibility","Strong Rebuttal"],explain:"The strongest argument acknowledges the valid point (historical emissions) while showing why complete non-responsibility is flawed — climate change is global and inaction harms India too. It is both fair and logically complete.",mentor:"Great debaters find the TRUTH inside the opponent's claim and build on it rather than completely rejecting it. Conceding the valid part makes your overall argument MORE persuasive, not less!"},
+  {r:2,emoji:"🎮",motion:"Video games cause real-world violence",opp:"Nisha",oppEmoji:"🤔",oppSays:"Video games definitely cause violence. Just look — after violent games became popular in the 1990s, school shootings increased.",task:"Which fallacy does Nisha commit?",opts:["Ad Hominem","Post Hoc Ergo Propter Hoc — correlation is not causation","False Dichotomy","Circular Reasoning"],ans:1,tags:["Post Hoc","Correlation ≠ Causation","Invalid"],explain:"Post Hoc means 'after this, therefore because of this.' Just because two things happened around the same time doesn't mean one CAUSED the other. Many other factors changed in the 1990s too.",mentor:"Correlation is NOT causation — this is one of the most important rules of logic! Ice cream sales and drowning rates both rise in summer. Does ice cream cause drowning? Of course not — both are caused by hot weather!"},
+  {r:3,emoji:"💊",motion:"Vaccines are safe and effective",opp:"Suresh",oppEmoji:"😤",oppSays:"My neighbour's child got a vaccine and got fever the next day. Vaccines are clearly dangerous!",task:"What is wrong with using this as evidence against vaccines?",opts:["Doctors are always right so vaccines are fine","Anecdotal evidence — one case of fever (a common mild side effect) cannot override thousands of clinical trials with millions of participants","Vaccines have no side effects","Suresh is not a doctor so he can't comment"],ans:1,tags:["Anecdote vs Data","Evidence Hierarchy","Scientific Consensus"],explain:"One personal story cannot override massive scientific evidence. Fever after a vaccine is a known, mild, short-term immune response — not proof of danger. Evidence quality matters: clinical trials beat personal stories.",mentor:"Evidence has a HIERARCHY: at the top is systematic reviews of multiple studies, then randomised controlled trials, then observational studies, then expert opinion, and at the bottom — anecdotes. One neighbour's fever doesn't beat 40 years of global vaccine safety data!"},
+  {r:3,emoji:"📰",motion:"Should newspapers be trusted?",opp:"Tara",oppEmoji:"😏",oppSays:"I read in a newspaper that a politician did something wrong. Therefore it must be true — newspapers never lie.",task:"What reasoning error is this?",opts:["Appeal to Authority — newspaper is not an infallible source","Hasty Generalisation","Red Herring","Circular Reasoning"],ans:0,tags:["Appeal to Authority","Source Evaluation","Critical Thinking"],explain:"Citing a newspaper as an absolute authority is Appeal to Authority — assuming something is true simply because a respected source says so. Newspapers can be biased, factually wrong, or agenda-driven. Always verify.",mentor:"Authority matters but is NOT proof! Even prestigious sources can be wrong. Ask: What is the journalist's source? Is there independent verification? Could there be bias? Healthy scepticism is NOT the same as denying everything."},
+  {r:3,emoji:"🔬",motion:"Alternative medicine vs modern medicine",opp:"Vikram",oppEmoji:"🙄",oppSays:"Modern medicine has cured many diseases, therefore alternative medicine cannot possibly work at all.",task:"What logical error does Vikram make?",opts:["He is correct — modern medicine is perfect","False Dichotomy and Overgeneralisation — success in one area doesn't mean the other has zero value","He is using emotional language","His argument is too short"],ans:1,tags:["False Dichotomy","Overgeneralisation","Nuanced Thinking"],explain:"Vikram uses False Dichotomy (either modern medicine works OR alternative does) and overgeneralises from 'modern medicine works for X' to 'nothing else works at all.' Some alternative practices have evidence; others don't — it requires case-by-case evaluation.",mentor:"Strong thinkers avoid absolute statements like 'never' and 'impossible.' The world is full of nuance. Something being effective doesn't make all alternatives worthless. Ask for SPECIFIC evidence for EACH claim!"},
+  {r:3,emoji:"🌊",motion:"Is climate change caused by humans?",opp:"Pooja",oppEmoji:"😤",oppSays:"Scientists disagree about climate change, so there's no reason to act. We should wait until science is 100% certain.",task:"What is wrong with waiting for 100% certainty?",opts:["Scientists must all agree before we act","Scientific consensus at 97% is sufficient for policy; waiting for 100% certainty is an impossible and dangerous standard — we act on probabilities in medicine, engineering and law all the time","Climate change is not real","Scientists are always wrong"],ans:1,tags:["Burden of Proof","Scientific Consensus","Risk Logic"],explain:"No scientific claim ever achieves 100% certainty — not in medicine, engineering, or law. We act on the best available evidence. 97% of climate scientists agreeing is an extraordinarily high consensus. Demanding perfect certainty is a rhetorical trick to delay action.",mentor:"100% certainty is an impossible standard used to paralyse action. Doctors don't wait for certainty before treating cancer. Engineers use probabilities. Policy makers use best available evidence. Demanding impossible certainty is itself a logical trap!"},
+  {r:3,emoji:"🏥",motion:"Should healthcare be free for all?",opp:"Anil",oppEmoji:"🤔",oppSays:"Free healthcare works in Scandinavia, therefore it will definitely work the same way in India.",task:"What is the flaw in Anil's reasoning?",opts:["Free healthcare is always bad","False Analogy — different countries have very different populations, tax systems, infrastructure and budgets making direct comparison invalid","Scandinavian countries are wrong","India is better than Scandinavia"],ans:1,tags:["False Analogy","Context Matters","Comparative Reasoning"],explain:"Just because a policy works in one context doesn't mean it works everywhere. Scandinavia has very different population sizes, income levels, existing infrastructure, and tax capacity compared to India. Direct comparison ignores crucial context.",mentor:"False Analogy is comparing two things as if they are the same when key differences make the comparison misleading. Always ask: what are the KEY DIFFERENCES between the cases being compared? Do those differences matter?"},
+  {r:4,emoji:"😭",motion:"Should India help refugees?",opp:"Rahul",oppEmoji:"😡",oppSays:"Think of those poor children freezing in camps! How can you even CONSIDER not helping refugees? Only a heartless monster would say no.",task:"Rahul is using which manipulation technique?",opts:["A very good argument based on evidence","Appeal to Emotion — using guilt and exaggerated imagery to bypass rational discussion","A valid statistical argument","Circular Reasoning"],ans:1,tags:["Appeal to Emotion","Emotional Manipulation","Invalid Logic"],explain:"Rahul uses vivid emotional imagery to make you feel guilty rather than presenting actual data, policy analysis, or logical reasoning. Emotions can motivate action but are not logical arguments for or against a specific policy.",mentor:"Appeal to Emotion manipulates rather than persuades. Notice the words — 'heartless monster', 'poor children freezing'. These are designed to make you FEEL rather than THINK. Emotions are valid, but policy needs evidence and logic too!"},
+  {r:4,emoji:"🎓",motion:"Should university be free?",opp:"Shruti",oppEmoji:"😏",oppSays:"Free university education is obviously socialist. And socialism always leads to dictatorship and poverty. So free education destroys freedom.",task:"Identify ALL the fallacies in Shruti's argument",opts:["She is completely correct","She makes a valid comparison","Loaded language ('socialist'), Slippery Slope (free education → dictatorship) and False Equivalence — free education ≠ socialist economic system","She uses good statistics"],ans:2,tags:["Loaded Language","Slippery Slope","Multiple Fallacies"],explain:"Multiple fallacies in one argument! 'Socialist' is used as a scare word (loaded language). The chain from free education to dictatorship is unproven slippery slope. And free education exists in many democracies — calling it 'socialism' is a false equivalence.",mentor:"Watch out for LOADED LANGUAGE — words chosen to trigger emotional reactions rather than describe facts accurately. Combine this with other fallacies and you have a very manipulative argument. Always translate loaded words into neutral language first!"},
+  {r:4,emoji:"🔫",motion:"Should India tighten gun laws?",opp:"Karan",oppEmoji:"😤",oppSays:"You want stricter gun laws? So you want criminals to have all the guns while law-abiding citizens are defenceless! You want good people to die!",task:"Karan is using which technique?",opts:["A logical argument based on crime statistics","Straw Man — he invented a position you never took and argues against that instead","Ad Hominem","False Dichotomy only"],ans:1,tags:["Straw Man","Misrepresentation","Invalid"],explain:"You said 'tighten gun laws' — not 'disarm all citizens'. Karan invented an extreme version of your argument ('you want criminals armed') and is attacking THAT instead of what you actually said.",mentor:"Straw Man = burn a fake version of the opponent's argument. The steps are: (1) Exaggerate or distort the opponent's view, (2) Argue against the distorted version, (3) Claim victory. The defence: 'I never said that — here is what I actually said.'"},
+  {r:4,emoji:"🌐",motion:"Should India adopt a Universal Basic Income?",opp:"Maya",oppEmoji:"🙄",oppSays:"Giving everyone money for free — we have always worked hard in India. This goes against our culture and values. Our ancestors never had this.",task:"What fallacies does Maya use?",opts:["A good cultural argument","Appeal to Tradition — claiming something is wrong just because it is new or different from the past","She provides economic evidence","A valid statistical argument"],ans:1,tags:["Appeal to Tradition","Genetic Fallacy","Resistance to Change"],explain:"'We have always done X' does not prove X is right or that changing it is wrong. This is Appeal to Tradition. Our ancestors also didn't have vaccines, smartphones, or democracy — newness alone doesn't determine merit.",mentor:"Appeal to Tradition says 'old = good, new = bad.' But progress requires change! The question is not 'did we always do this?' but 'does evidence show this works?' History is a data source, not a final authority!"},
+  {r:4,emoji:"🏦",motion:"Should India have a wealth tax?",opp:"Dev",oppEmoji:"🤨",oppSays:"Economists at top universities support a wealth tax. Three Nobel Prize winners endorse it. It must be right.",task:"What is the problem with Dev's argument?",opts:["Nobel Prize winners are always correct","Appeal to Authority — expert opinion is evidence but not proof; experts can disagree and be wrong, especially in complex social policy","Dev is correct and we should agree","Only scientists should debate economics"],ans:1,tags:["Appeal to Authority","Expert Opinion","Not Proof"],explain:"Expert opinion is EVIDENCE but not PROOF. Nobel Prize winners can and do disagree — several have argued AGAINST wealth taxes. In complex policy, expertise informs but doesn't end debate. Always ask for the actual evidence they cite.",mentor:"Experts deserve respect but not blind obedience. Science advances by questioning experts! Ask: which experts? Do all experts agree? What evidence do THEY cite? What do opposing experts say? Authority supports an argument — it doesn't replace the argument."},
+  {r:5,emoji:"⚡",motion:"Nuclear energy is the solution to climate change",opp:"Sonia",oppEmoji:"😤",oppSays:"Nuclear energy produces low carbon emissions. Countries using nuclear have lower emissions. Therefore India must immediately go 100% nuclear.",task:"Identify the logical gaps in Sonia's argument",opts:["She is completely correct","While her evidence about emissions is valid, she commits Hasty Generalisation and ignores counterevidence — cost, safety, waste disposal, India's geography, and time to build make '100% nuclear immediately' unsupported by her evidence","Nuclear is impossible in India","She should only use solar"],ans:1,tags:["Hasty Generalisation","Ignoring Counterevidence","Proportionality"],explain:"Sonia's evidence (low carbon, lower emissions) is real but supports only 'nuclear CAN help reduce emissions' — not '100% nuclear immediately.' The leap from partial evidence to an absolute conclusion is a major logical gap.",mentor:"The conclusion must be PROPORTIONAL to the evidence. Strong evidence → strong conclusion. Weak or partial evidence → cautious conclusion. '100% immediately' requires MUCH stronger evidence than 'lower emissions in some countries.' Match your certainty to your data!"},
+  {r:5,emoji:"🧬",motion:"GMO foods should be allowed",opp:"Rishi",oppEmoji:"😏",oppSays:"GMO foods are unnatural. Humans were not designed to eat unnatural things. Therefore GMOs are harmful.",task:"What is fundamentally wrong with this reasoning?",opts:["GMOs are always dangerous","Appeal to Nature fallacy — 'natural' does not mean safe and 'unnatural' does not mean harmful; this proves nothing without evidence","He is biased against science","He needs more emotion in his argument"],ans:1,tags:["Appeal to Nature","Natural ≠ Safe","Invalid Assumption"],explain:"'Natural' is not the same as 'safe' or 'good'. Arsenic is natural; penicillin is synthetic. Assuming 'natural = good' and 'unnatural = bad' is a fundamental logical error. Safety requires scientific evidence, not classifications of natural vs. artificial.",mentor:"Appeal to Nature is everywhere in advertising — 'all natural', 'chemical-free.' But EVERYTHING is made of chemicals! Snake venom is natural. Chemotherapy is artificial. Neither 'natural' nor 'synthetic' determines safety. Only evidence determines safety!"},
+  {r:5,emoji:"🤝",motion:"Reservation policy should continue in India",opp:"Priti",oppEmoji:"😤",oppSays:"Reservation leads to lower merit in institutions. Lower merit means poor doctors and engineers. Poor professionals means more people die. Therefore reservation kills people.",task:"Dismantle Priti's full argument chain",opts:["She is completely correct","Her argument has THREE flaws: Slippery Slope (unproven chain), Loaded Definition of 'merit' ignoring systemic inequality, and ignores evidence that diverse teams often outperform homogenous ones","Reservation has no defenders","She should use more emotion"],ans:1,tags:["Slippery Slope","Loaded Definition","Missing Counter-Evidence"],explain:"Multiple flaws: (1) The chain of events is each an unproven assumption — Slippery Slope. (2) 'Merit' in her usage ignores that historical inequality skews starting points. (3) She ignores research showing diverse institutions improve outcomes. One chain of logic with three separate fallacies.",mentor:"Complex arguments can hide MULTIPLE fallacies — one on top of another! Train yourself to slow down and test EACH link in the chain separately. Does Step 1 prove Step 2? Does Step 2 prove Step 3? One broken link breaks the whole chain."},
+  {r:5,emoji:"💬",motion:"Freedom of speech has no limits",opp:"Alok",oppEmoji:"🙄",oppSays:"Either we have total freedom of speech with zero restrictions, or we live in a dictatorship with no freedom at all. There is no middle ground.",task:"Identify AND provide the strongest rebuttal",opts:["This is a strong argument for free speech","Classic False Dichotomy — virtually all functioning democracies have limited free speech (incitement laws, defamation, national security) while NOT being dictatorships; the middle ground is the actual reality","Free speech should be banned","Alok is too extreme so ignore him"],ans:1,tags:["False Dichotomy","False Binary","Real-World Counter-Evidence"],explain:"The entire argument rests on a false binary. The strongest rebuttal is not abstract — it gives REAL examples of countries that limit certain speech (hate speech laws, defamation) while remaining fully democratic. The middle ground isn't theoretical — it's the norm.",mentor:"The antidote to False Dichotomy is always REAL EXAMPLES of the middle ground. Don't just say 'there are other options' — NAME them! India, Germany, UK all restrict certain speech and are democracies. Reality defeats the false binary."},
+  {r:5,emoji:"🌏",motion:"Globalisation benefits all countries equally",opp:"Neeraj",oppEmoji:"😤",oppSays:"Globalisation has increased world GDP. World GDP going up means everyone benefits. Therefore globalisation benefits everyone equally.",task:"Find the circular and distributional flaw",opts:["He is correct — GDP proves everything","Two flaws: Circular Reasoning (assumes his conclusion) AND Distributional Fallacy — aggregate growth (GDP) can rise while most people get poorer if gains are concentrated; average hides inequality","GDP is not a real measure","He should study more economics"],ans:1,tags:["Circular Reasoning","Distributional Fallacy","GDP Critique"],explain:"GDP rising doesn't prove everyone benefits — if 10 billionaires each gain $1 billion while millions lose income, GDP goes up but most people are worse off. This is the Distributional Fallacy. AND saying 'GDP up = everyone benefits' just assumes what it tries to prove.",mentor:"AVERAGES HIDE INEQUALITY! Average income in a country can rise while the median person gets poorer — because a few very rich people pull the average up. Always ask: who benefits? Is it evenly distributed? What does the MEDIAN show, not just the mean?"}
+];
+
+let G={};
+let timerID=null;
+
+function initG(){G={score:0,lives:3,level:0,qi:0,qset:[],combo:0,maxCombo:0,correct:0,answered:false};}
+
+function buildSet(lv){
+  const pool=QS.filter(q=>q.r===lv+1);
+  return [...pool].sort(()=>Math.random()-.5).slice(0,ROUNDS[lv].qCount);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen,.fb-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame(){
+  initG();
+  G.qset=buildSet(0);
+  showScreen('s-game');
+  renderHUD();
+  renderQ();
+}
+
+function renderHUD(){
+  const rv=ROUNDS[G.level];
+  document.getElementById('h-score').textContent=G.score;
+  document.getElementById('h-round').textContent='Round '+(G.level+1);
+  document.getElementById('h-timer').textContent=rv.time;
+  const hh=document.getElementById('h-hearts');hh.innerHTML='';
+  for(let i=0;i<3;i++){const s=document.createElement('span');s.className='h'+(i>=G.lives?' gone':'');s.textContent='♥';hh.appendChild(s);}
+  const dd=document.getElementById('h-diff');dd.innerHTML='';
+  for(let i=0;i<5;i++){const d=document.createElement('div');d.className='dd'+(i<rv.diff?' on':'');dd.appendChild(d);}
+  document.getElementById('q-meta').textContent='Round '+(G.level+1)+' — '+rv.name+' | Question '+(G.qi+1)+' of '+G.qset.length;
+  document.getElementById('prog').style.width=Math.round((G.qi/G.qset.length)*100)+'%';
+}
+
+function renderQ(){
+  clearInterval(timerID);
+  G.answered=false;
+  const q=G.qset[G.qi];
+  const rv=ROUNDS[G.level];
+  let t=rv.time;
+  document.getElementById('h-timer').textContent=t;
+  renderHUD();
+
+  document.getElementById('q-area').innerHTML=`
+    <div class="motion-banner">
+      <div class="motion-icon">${q.emoji}</div>
+      <div><div class="motion-label">Debate Motion</div><div class="motion-text">${q.motion}</div></div>
+    </div>
+    <div class="argument-box">
+      <div class="opponent-row">
+        <div class="opp-avatar">${q.oppEmoji}</div>
+        <div><div class="opp-name">${q.opp} argues:</div><div class="opp-role">Your Opponent</div></div>
+      </div>
+      <div class="opp-says">"${q.oppSays}"</div>
+      <div class="arg-strength">
+        <div class="strength-bar" style="width:${20+G.level*12}px"></div>
+        Argument strength: ${['Very Weak','Weak','Moderate','Strong-seeming','Complex'][G.level]}
+      </div>
+    </div>
+    <div style="max-width:540px;margin:0 auto">
+      <div class="task-label">Your task: ${q.task}</div>
+      <div class="opts-list" id="opts"></div>
+    </div>
+  `;
+
+  const og=document.getElementById('opts');
+  const letters=['A','B','C','D'];
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt';
+    b.textContent=letters[i]+'. '+o;
+    b.onclick=()=>answerQ(i,q,b,t);
+    og.appendChild(b);
+  });
+
+  timerID=setInterval(()=>{
+    t--;
+    document.getElementById('h-timer').textContent=t;
+    if(t<=0){clearInterval(timerID);if(!G.answered)answerQ(-1,q,null,0);}
+  },1000);
+}
+
+function answerQ(chosen,q,btnEl,tLeft){
+  if(G.answered)return;
+  G.answered=true;
+  clearInterval(timerID);
+  const ok=chosen===q.ans;
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    if(i===q.ans)b.className='opt correct';
+    else if(i===chosen)b.className='opt wrong';
+    else b.className='opt reveal';
+  });
+  if(ok){
+    G.correct++;G.combo++;
+    if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+    const tb=Math.round(tLeft*6);
+    const cb=G.combo>1?G.combo*15:0;
+    const pts=120+tb+cb;
+    G.score+=pts;
+    document.getElementById('h-score').textContent=G.score;
+    spawnPop('+'+pts);
+    if(G.combo>1)spawnCombo(G.combo+'x Combo!');
+  } else {
+    G.combo=0;G.lives--;
+    updateHudHearts();
+    if(chosen===-1)spawnCombo('⏰ Time Up!');
+  }
+  setTimeout(()=>showFB(ok,q,chosen),400);
+}
+
+function updateHudHearts(){
+  const hh=document.getElementById('h-hearts');hh.innerHTML='';
+  for(let i=0;i<3;i++){const s=document.createElement('span');s.className='h'+(i>=G.lives?' gone':'');s.textContent='♥';hh.appendChild(s);}
+}
+
+function spawnPop(txt){
+  const el=document.createElement('div');el.className='pop-score';
+  el.textContent=txt;el.style.left=Math.round(Math.random()*60+20)+'%';el.style.top='28%';
+  document.getElementById('dd').appendChild(el);setTimeout(()=>el.remove(),1000);
+}
+
+function spawnCombo(txt){
+  const el=document.createElement('div');el.className='combo-flash';
+  el.textContent=txt;if(!txt.includes('Combo'))el.style.color='#ff6b6b';
+  document.getElementById('dd').appendChild(el);setTimeout(()=>el.remove(),900);
+}
+
+function showFB(ok,q,chosen){
+  showScreen('s-feedback');
+  document.getElementById('fb-score').textContent=G.score;
+  document.getElementById('fb-round').textContent='Round '+(G.level+1);
+  document.getElementById('fb-qn').textContent=(G.qi+1)+'/'+G.qset.length;
+  const fbh=document.getElementById('fb-hearts');fbh.innerHTML='';
+  for(let i=0;i<3;i++){const s=document.createElement('span');s.className='h'+(i>=G.lives?' gone':'');s.textContent='♥';fbh.appendChild(s);}
+  document.getElementById('fb-icon').textContent=ok?'🎯':chosen===-1?'⏰':'❌';
+  document.getElementById('fb-result').textContent=ok?'Point to you!':chosen===-1?'Time Expired!':'Point lost!';
+  document.getElementById('fb-result').style.color=ok?'#27ae60':'#ff6b6b';
+  document.getElementById('fb-tags').innerHTML=(q.tags||[]).map(t=>`<span class="fallacy-tag">${t}</span>`).join('');
+  document.getElementById('fb-explain').textContent=q.explain;
+  document.getElementById('fb-mentor').innerHTML='<b>Logic Mentor:</b> '+q.mentor;
+  const isLast=G.qi>=G.qset.length-1;
+  document.getElementById('fb-btn').textContent=isLast?'See Round Result':'Next Argument';
+}
+
+function nextQ(){
+  G.qi++;
+  if(G.lives<=0){endGame(false);return;}
+  if(G.qi>=G.qset.length){showLevelUp();return;}
+  showScreen('s-game');
+  renderQ();
+}
+
+function showLevelUp(){
+  const rv=ROUNDS[G.level];
+  showScreen('s-levelup');
+  document.getElementById('lu-trophy').textContent=rv.trophy;
+  document.getElementById('lu-title').textContent='Round mastered: '+rv.name;
+  const bd=document.getElementById('lu-badges');bd.innerHTML='';
+  const bnames=['Logic Spotter','Rebuttal Rookie','Evidence Expert','Fallacy Hunter','Grand Debater'];
+  for(let i=0;i<=G.level;i++){const b=document.createElement('div');b.className='badge';b.textContent=bnames[i];bd.appendChild(b);}
+  const bon=G.combo>1?G.combo*20:0;
+  if(bon>0){G.score+=bon;document.getElementById('lu-bonus').textContent='Streak Bonus +'+bon+' pts!';}
+  else document.getElementById('lu-bonus').textContent='Score: '+G.score;
+  const nxt=G.level+1;
+  if(nxt<ROUNDS.length){document.getElementById('lu-next').textContent='Next: Round '+(nxt+1)+' — '+ROUNDS[nxt].name;document.getElementById('lu-btn').textContent='Next Round';}
+  else{document.getElementById('lu-next').textContent='You cleared ALL 5 rounds!';document.getElementById('lu-btn').textContent='Final Score';}
+}
+
+function nextLevel(){
+  G.level++;
+  if(G.level>=ROUNDS.length){endGame(true);return;}
+  G.qset=buildSet(G.level);G.qi=0;G.combo=0;
+  showScreen('s-game');renderHUD();renderQ();
+}
+
+function endGame(won){
+  showScreen('s-over');
+  document.getElementById('ov-head').textContent=won?'Grand Debater!':'Debate Lost!';
+  document.getElementById('ov-icon').textContent=won?'🏆':'💬';
+  document.getElementById('ov-score').textContent=G.score;
+  document.getElementById('ov-round').textContent=G.level+1;
+  document.getElementById('ov-correct').textContent=G.correct;
+  document.getElementById('ov-combo').textContent=G.maxCombo+'x';
+  document.getElementById('ov-msg').textContent=won?'Outstanding! You can spot every logical fallacy and construct airtight rebuttals. You are a true Grand Debater!':G.score>400?'Strong logical thinking! A little more practice and you will defeat any opponent.':'Keep learning — spotting fallacies is a superpower that will help you in every argument in life!';
+  
+  if (won) {
+      document.querySelector('#s-over button.btn-purple').style.display = 'none';
+      document.querySelector('#s-over button[onclick="quitGameNow()"]').textContent = 'Claim Rewards & Exit';
+      document.querySelector('#s-over button[onclick="quitGameNow()"]').style.background = '#27ae60';
+  }
+}
+
+function quitGameNow() {
+    let won = G.level >= ROUNDS.length;
+    let xp = won ? 500 + G.score : Math.floor(G.score * 0.5);
+    let coins = won ? 300 + Math.floor(G.score / 10) : Math.floor(G.score / 20);
+    
+    if(window.parent && window.parent.currentUser) {
+        fetch('/api/save-gamestate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ xp: xp, coins: coins })
+        }).then(() => {
+            if(window.parent.closeGame) window.parent.closeGame(won);
+        }).catch(e => console.log(e));
+    } else if (window.parent && window.parent.closeGame) {
+        window.parent.closeGame(won);
+    }
+}
+</script>
+</body>
+</html>

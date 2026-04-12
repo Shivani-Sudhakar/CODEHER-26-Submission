@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Courtroom Drama - Career Quest</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#cd{font-family:'Segoe UI',sans-serif;background:#0e0b1a;color:#fff;min-height:100vh;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.screen{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:20px;text-align:center}
+.screen.active{display:flex}
+.title-main{font-size:46px;font-weight:900;color:#c9a227;letter-spacing:1px;line-height:1.1}
+.title-sub{font-size:14px;color:#9b7fd4;margin:8px 0 20px;font-weight:600;letter-spacing:2px;text-transform:uppercase}
+.court-scene{display:flex;gap:16px;justify-content:center;margin:12px 0;align-items:flex-end}
+.char-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.char-avatar{font-size:38px;animation:bob .8s ease-in-out infinite alternate}
+@keyframes bob{0%{transform:translateY(0)}100%{transform:translateY(-5px)}}
+.char-lbl{font-size:10px;color:#888;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.btn{padding:11px 26px;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .12s,opacity .12s;letter-spacing:.5px}
+.btn:active{transform:scale(.95)}
+.btn-gold{background:#c9a227;color:#1a1200}
+.btn-purple{background:#6c3fc5;color:#fff}
+.btn-red{background:#c0392b;color:#fff}
+.btn-green{background:#1e8449;color:#fff}
+.btn-gray{background:#2c2c3e;color:#ddd}
+.btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.hud{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#07050f;border-bottom:2px solid #3a1f6e;z-index:10}
+.hud-cell{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#888;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.hud-val{font-size:17px;font-weight:800;color:#c9a227;line-height:1.1}
+.hud-timer{font-size:20px;font-weight:900;color:#e74c3c}
+.hearts{display:flex;gap:2px}
+.h{font-size:15px;color:#e74c3c}
+.h.gone{color:#2c2c2c}
+.lvl-pill{background:#3a1f6e;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;color:#c9a227}
+.game-wrap{margin-top:60px;padding:14px;width:100%}
+.scene-banner{display:flex;align-items:center;gap:10px;background:#120d25;border:1.5px solid #3a1f6e;border-radius:12px;padding:10px 14px;max-width:520px;margin:0 auto 12px}
+.scene-emoji{font-size:28px;flex-shrink:0}
+.scene-info{text-align:left;}
+.scene-case{font-size:12px;color:#9b7fd4;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.scene-title{font-size:14px;font-weight:700;color:#fff;margin:1px 0}
+.scenario-box{background:#120d25;border:1.5px solid #3a1f6e;border-radius:14px;padding:14px;max-width:520px;margin:0 auto 12px}
+.scenario-text{font-size:13px;color:#ccc;line-height:1.55;margin-bottom:10px;text-align:left;}
+.speaker{display:inline-flex;align-items:center;gap:6px;background:#1e1535;border-radius:8px;padding:5px 10px;font-size:12px;margin-bottom:8px}
+.speaker-name{font-weight:700;color:#c9a227}
+.speaker-role{color:#888;font-size:11px}
+.opts-list{display:flex;flex-direction:column;gap:7px;max-width:520px;margin:0 auto}
+.opt{background:#18133a;border:1.5px solid #2e226b;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:600;color:#cce;cursor:pointer;text-align:left;transition:background .15s,transform .1s;line-height:1.4}
+.opt:hover{background:#221a4a}
+.opt:active{transform:scale(.98)}
+.opt.correct{background:#0d3320;border-color:#27ae60;color:#82e0aa}
+.opt.wrong{background:#3b0d0d;border-color:#e74c3c;color:#f1948a}
+.opt.reveal{background:#1a1244;border-color:#6c3fc5;color:#c9b8f5}
+.progress-bg{background:#0d0a1e;border-radius:6px;height:6px;width:100%;max-width:520px;margin:0 auto 6px}
+.progress-fill{background:#6c3fc5;height:6px;border-radius:6px;transition:width .4s}
+.q-count{font-size:11px;color:#6c3fc5;font-weight:700;letter-spacing:.5px;max-width:520px;margin:0 auto 8px;text-align:left}
+.pop-score{position:absolute;font-size:20px;font-weight:800;color:#c9a227;pointer-events:none;animation:floatScore 1s ease-out forwards;z-index:30}
+@keyframes floatScore{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-55px) scale(.8)}}
+.combo-pop{position:absolute;top:68px;left:50%;transform:translateX(-50%);font-size:18px;font-weight:800;color:#e67e22;animation:comboFade .9s ease-out forwards;z-index:25;pointer-events:none;white-space:nowrap}
+@keyframes comboFade{0%{opacity:1;transform:translateX(-50%) scale(1.1)}100%{opacity:0;transform:translateX(-50%) scale(.85) translateY(-18px)}}
+.fb-screen{display:none;flex-direction:column;align-items:center;justify-content:flex-start;flex:1;padding:0}
+.fb-screen.active{display:flex}
+.fb-wrap{margin-top:64px;padding:14px;width:100%}
+.fb-card{background:#120d25;border:1.5px solid #3a1f6e;border-radius:16px;padding:16px;max-width:500px;margin:0 auto}
+.fb-icon{font-size:42px;margin-bottom:6px}
+.fb-verdict{font-size:20px;font-weight:800;margin-bottom:6px}
+.fb-law{font-size:13px;color:#ccc;line-height:1.5;margin-bottom:10px}
+.fb-judge{background:#0d0920;border:1.5px dashed #6c3fc5;border-radius:10px;padding:10px 14px;font-size:12px;color:#d5c8f5;line-height:1.5;text-align:left;margin-bottom:12px}
+.fb-judge b{color:#c9a227}
+.lvl-complete{font-size:30px;font-weight:900;color:#27ae60;margin-bottom:6px}
+.badge-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.badge{background:#18133a;border:1.5px solid #3a1f6e;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;color:#9b7fd4}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:340px;width:100%;margin:10px 0}
+.stat-box{background:#120d25;border:1px solid #2e226b;border-radius:10px;padding:10px;text-align:center}
+.stat-n{font-size:22px;font-weight:800;color:#c9a227}
+.stat-l{font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.diff-row{display:flex;gap:5px;justify-content:center;margin:3px 0}
+.dd{width:9px;height:9px;border-radius:50%;background:#2c2c2c}
+.dd.on{background:#e74c3c}
+.over-big{font-size:34px;font-weight:900;color:#e74c3c;margin-bottom:6px}
+.law-tag{display:inline-block;background:#1e1535;border:1px solid #6c3fc5;border-radius:6px;padding:2px 8px;font-size:11px;color:#9b7fd4;font-weight:700;margin:4px 2px}
+</style>
+</head>
+<body>
+<div id="cd">
+
+<div id="s-home" class="screen active">
+  <div class="title-main">⚖️ Courtroom<br>Drama</div>
+  <div class="title-sub">Argue your case with facts</div>
+  <div class="court-scene">
+    <div class="char-col"><div class="char-avatar" style="animation-delay:.1s">👨⚖️</div><div class="char-lbl">Judge</div></div>
+    <div class="char-col"><div class="char-avatar" style="animation-delay:.3s">👩💼</div><div class="char-lbl">Prosecutor</div></div>
+    <div class="char-col"><div class="char-avatar" style="animation-delay:.0s;font-size:46px">🏛️</div><div class="char-lbl">Court</div></div>
+    <div class="char-col"><div class="char-avatar" style="animation-delay:.5s">🧑💼</div><div class="char-lbl">Defence</div></div>
+    <div class="char-col"><div class="char-avatar" style="animation-delay:.2s">📋</div><div class="char-lbl">Witness</div></div>
+  </div>
+  <div style="background:#0d0920;border-radius:12px;padding:12px 18px;max-width:380px;margin:8px 0 14px;font-size:13px;color:#ccc;line-height:1.65">
+    You are a <b style="color:#c9a227">Junior Lawyer</b> in India's court system.<br>
+    Pick the right legal argument, cite the correct law, and outwit the opposition.<br>
+    Win cases to become a <b style="color:#9b7fd4">Supreme Court Advocate!</b>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-gold" onclick="startGame()">Enter the Courtroom</button>
+    <button class="btn btn-gray" onclick="showScreen('s-howto')">How to Play</button>
+  </div>
+  <div style="margin-top:14px;font-size:11px;color:#555">5 Cases • 3 Lives • Real Indian Law</div>
+</div>
+
+<div id="s-howto" class="screen">
+  <div style="font-size:28px;font-weight:800;color:#c9a227;margin-bottom:8px">⚖️ How to Play</div>
+  <div style="max-width:400px;text-align:left;background:#0d0920;border-radius:14px;padding:16px;font-size:13px;line-height:1.9;color:#ddd">
+    <div>📖 <b style="color:#c9a227">Read</b> the courtroom scenario carefully</div>
+    <div>✅ <b style="color:#27ae60">Choose</b> the strongest legal argument</div>
+    <div>⏱️ <b style="color:#e74c3c">Timer ticks</b> — faster = more points</div>
+    <div>❤️ <b style="color:#e74c3c">3 lives</b> — wrong answers cost a life!</div>
+    <div>⭐ <b style="color:#c9a227">Combo streak</b> = bonus points</div>
+    <div>👨⚖️ <b style="color:#9b7fd4">Judge's remarks</b> explain the law after each Q</div>
+    <div style="margin-top:10px;color:#6c3fc5">Topics: FIR & Bail, Fundamental Rights, Consumer Law, IPC sections, Evidence Act, POCSO, Right to Education, Domestic Violence Act, Constitutional remedies & more!</div>
+  </div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-gold" onclick="startGame()">All Rise!</button>
+    <button class="btn btn-gray" onclick="showScreen('s-home')">Back</button>
+  </div>
+</div>
+
+<div id="s-game" class="screen" style="justify-content:flex-start;padding:0">
+  <div class="hud">
+    <div class="hud-cell"><span class="hud-val" id="h-score">0</span>Score</div>
+    <div class="hud-cell"><span class="lvl-pill" id="h-level">Case 1</span><div class="diff-row" id="h-diff"></div></div>
+    <div class="hud-cell"><span class="hud-timer" id="h-timer">15</span>Secs</div>
+    <div class="hud-cell"><div class="hearts" id="h-hearts"></div>Lives</div>
+  </div>
+  <div class="game-wrap">
+    <div class="progress-bg"><div class="progress-fill" id="prog" style="width:0%"></div></div>
+    <div class="q-count" id="q-count"></div>
+    <div id="q-area"></div>
+  </div>
+</div>
+
+<div id="s-feedback" class="fb-screen">
+  <div class="hud">
+    <div class="hud-cell"><span class="hud-val" id="fb-score">0</span>Score</div>
+    <div class="hud-cell"><span class="lvl-pill" id="fb-level">Case 1</span></div>
+    <div class="hud-cell"><span class="hud-val" id="fb-qn">1/5</span>Q</div>
+    <div class="hud-cell"><div class="hearts" id="fb-hearts"></div>Lives</div>
+  </div>
+  <div class="fb-wrap">
+    <div class="fb-card">
+      <div class="fb-icon" id="fb-icon">✅</div>
+      <div class="fb-verdict" id="fb-verdict">Objection Sustained!</div>
+      <div id="fb-tags"></div>
+      <div class="fb-law" id="fb-law"></div>
+      <div class="fb-judge" id="fb-judge"></div>
+      <button class="btn btn-purple" id="fb-btn" onclick="nextQ()" style="margin-top:4px">Next Argument</button>
+    </div>
+  </div>
+</div>
+
+<div id="s-levelup" class="screen">
+  <div class="lvl-complete">Case Won!</div>
+  <div style="font-size:44px;margin:6px 0" id="lu-trophy">🏆</div>
+  <div style="font-size:15px;font-weight:700;color:#c9a227;margin-bottom:10px" id="lu-title"></div>
+  <div class="badge-row" id="lu-badges"></div>
+  <div style="font-size:13px;color:#c9a227;font-weight:700;margin:6px 0" id="lu-bonus"></div>
+  <div style="font-size:12px;color:#888;margin:4px 0" id="lu-next"></div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-gold" id="lu-btn" onclick="nextLevel()">Next Case</button>
+  </div>
+</div>
+
+<div id="s-over" class="screen">
+  <div class="over-big" id="ov-head">Case Dismissed!</div>
+  <div style="font-size:42px;margin:6px 0" id="ov-icon">⚖️</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-n" id="ov-score">0</div><div class="stat-l">Score</div></div>
+    <div class="stat-box"><div class="stat-n" id="ov-level">1</div><div class="stat-l">Case Reached</div></div>
+    <div class="stat-box"><div class="stat-n" id="ov-correct">0</div><div class="stat-l">Won</div></div>
+    <div class="stat-box"><div class="stat-n" id="ov-combo">0x</div><div class="stat-l">Best Combo</div></div>
+  </div>
+  <div style="font-size:13px;color:#aac;margin:10px 0;max-width:320px;line-height:1.5" id="ov-msg"></div>
+  <div class="btn-row" style="margin-top:12px">
+    <button class="btn btn-gold" onclick="startGame()">Retry Case</button>
+    <button class="btn btn-gray" onclick="quitGameNow()">Exit Court</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const CASES=[
+  {name:"FIR & Bail Rights",time:18,qCount:4,diff:1,trophy:"📋",theme:"Police, FIR, arrest and bail basics"},
+  {name:"Fundamental Rights",time:15,qCount:5,diff:2,trophy:"📜",theme:"Articles 14-32 of the Constitution"},
+  {name:"Consumer & Civil Law",time:13,qCount:5,diff:3,trophy:"🛒",theme:"Consumer courts, contracts, property"},
+  {name:"Criminal Law IPC",time:11,qCount:6,diff:4,trophy:"🔒",theme:"IPC sections, evidence, witnesses"},
+  {name:"Constitutional Remedies",time:9,qCount:6,diff:5,trophy:"⚖️",theme:"Writs, Supreme Court, High Court powers"}
+];
+
+const QS=[
+  {c:1,emoji:"🚨",case:"State v. Ramesh",speaker:"Defence Lawyer",role:"Representing the accused",q:"Police arrested Ramesh WITHOUT showing a warrant and refused to tell him the reason. Which Fundamental Right is violated?",opts:["Right to Equality (Art 14)","Right against Arbitrary Arrest (Art 22)","Right to Education (Art 21A)","Right to Property"],ans:1,law:"Article 22 of the Indian Constitution protects every person from arbitrary arrest. Police MUST inform the arrested person of the grounds and allow them to consult a lawyer.",tags:["Art 22","Fundamental Rights","Arrest"],judge:"The law is crystal clear — no person can be detained without being told WHY. This is not a favour, it is a constitutional guarantee!"},
+  {c:1,emoji:"📋",case:"In re: Sita Devi",speaker:"Magistrate",role:"First Class Judicial Magistrate",q:"Sita was arrested and kept in custody for 3 days without being produced before a Magistrate. What is the maximum time allowed by law before producing an arrested person?",opts:["7 days","48 hours (2 days)","24 hours","72 hours"],ans:2,law:"Under Article 22(2) and Section 57 CrPC, an arrested person must be produced before a Magistrate within 24 hours of arrest, excluding travel time.",tags:["Art 22","CrPC S.57","24 Hours Rule"],judge:"24 hours — not 48, not 72. The clock starts ticking the moment of arrest. This rule prevents illegal detention!"},
+  {c:1,emoji:"🏠",case:"Sharma v. State of UP",speaker:"Prosecutor",role:"Public Prosecutor",q:"Deepak was granted BAIL but the police re-arrested him the same evening without new evidence. The correct legal remedy is:",opts:["File a new FIR against police","Approach High Court for Habeas Corpus","Write to the President","File complaint with the SHO"],ans:1,law:"Habeas Corpus ('produce the body') is a writ under Article 32/226 that commands the detaining authority to produce the person before court and justify the detention.",tags:["Habeas Corpus","Art 32","Bail"],judge:"Habeas Corpus is the most powerful safeguard against illegal detention. The court can ORDER immediate release if detention is unlawful!"},
+  {c:1,emoji:"📞",case:"FIR Registration",speaker:"Complainant",role:"Victim's family member",q:"A woman reports a cognizable offence at the police station but the SHO refuses to register the FIR. What is her LEGAL remedy?",opts:["Accept the refusal","Send a registered letter to the Superintendent of Police or approach Magistrate","Only approach the State Human Rights Commission","Wait 30 days"],ans:1,law:"Under Section 154(3) CrPC, if a police officer refuses to register an FIR for a cognizable offence, the complainant can approach the Superintendent of Police (SP) or the Magistrate directly.",tags:["CrPC S.154","FIR","SP Complaint"],judge:"Every cognizable offence MUST be registered as FIR — the police have no discretion to refuse. The SP and Magistrate can compel registration!"},
+  {c:2,emoji:"🗺️",case:"Mohini Jain v. Karnataka",speaker:"Petitioner",role:"Student denied admission",q:"A private college charges 5x the normal fee making education unaffordable. Which Fundamental Right does this potentially violate?",opts:["Art 19 - Freedom of Speech","Art 21 - Right to Life (includes right to education)","Art 25 - Freedom of Religion","Art 32 - Right to Remedies"],ans:1,law:"The Supreme Court in Mohini Jain v State of Karnataka held that Right to Education flows from Right to Life and Dignity under Article 21. Capitation fees violate this right.",tags:["Art 21","Right to Education","SC Ruling"],judge:"Right to Life under Art 21 is not just the right to breathe — it includes right to live with dignity, which requires education!"},
+  {c:2,emoji:"🗣️",case:"Romesh Thappar v. Madras",speaker:"Petitioner",role:"Newspaper Editor",q:"The government bans a newspaper without any hearing. Which article protects the freedom of press?",opts:["Article 14","Article 19(1)(a) — Freedom of Speech and Expression","Article 15","Article 29"],ans:1,law:"Article 19(1)(a) guarantees freedom of speech and expression, which the Supreme Court has held includes freedom of the press. Restrictions must satisfy the tests in Art 19(2).",tags:["Art 19(1)(a)","Freedom of Press","Expression"],judge:"Press freedom is the watchdog of democracy. Banning a newspaper without due process is a direct assault on Art 19(1)(a)!"},
+  {c:2,emoji:"⚖️",case:"State v. Anwar Ali",speaker:"Defence",role:"Defence Advocate",q:"Two persons commit the same offence but one is punished more severely because of their religion. This violates:",opts:["Art 21 only","Art 14 — Right to Equality before law","Art 25 only","No constitutional violation"],ans:1,law:"Article 14 guarantees equality before law and equal protection of laws. Classification must be reasonable and have nexus with the object of the law. Discrimination on religion alone is unconstitutional.",tags:["Art 14","Equality","Reasonable Classification"],judge:"The law must treat equals equally! Art 14 is the golden thread running through our entire Constitution."},
+  {c:2,emoji:"🏫",case:"In re: Lakshmi v. School",speaker:"Parent",role:"Mother of 9-year-old",q:"A private school expels a 9-year-old child for non-payment of fees. Under RTE Act, which provision protects this child?",opts:["Schools can expel for non-payment","RTE 2009: No child aged 6-14 can be expelled or denied admission","Only government schools follow RTE","Parents must pay or child leaves"],ans:1,law:"The Right to Education Act 2009 (Art 21A) mandates free and compulsory education for all children aged 6-14 years. No child can be expelled, detained, or denied admission in this age group.",tags:["RTE 2009","Art 21A","6-14 Years"],judge:"Under RTE, expelling a child between 6 and 14 is ILLEGAL. 25% of private school seats must also be reserved for economically weaker sections!"},
+  {c:2,emoji:"🚫",case:"Untouchability Case",speaker:"Prosecutor",role:"Government Counsel",q:"A person is denied entry to a public temple based on caste. Which article is directly violated and what is the punishment?",opts:["Art 17 — Abolition of Untouchability (punishable offence)","Art 21 only","Art 25 only","No law applies to temples"],ans:0,law:"Article 17 abolishes untouchability in ALL forms and makes its practice a PUNISHABLE offence. The Protection of Civil Rights Act 1955 provides imprisonment for such acts.",tags:["Art 17","Untouchability","PCR Act"],judge:"Untouchability was abolished by the Constitution itself on Day 1. Practicing it is a criminal offence — not just immoral!"},
+  {c:3,emoji:"📱",case:"Mehta v. Flipkart",speaker:"Consumer",role:"Complainant",q:"Rohan bought a defective phone. The company refuses to replace it. Under Consumer Protection Act 2019, he should approach:",opts:["Civil Court directly","District Consumer Disputes Redressal Commission (up to ₹1 crore)","National Commission only","Police station"],ans:1,law:"Consumer Protection Act 2019 establishes a 3-tier redressal system. District Commission handles claims up to ₹1 crore. State Commission up to ₹10 crore. National Commission above ₹10 crore.",tags:["CPA 2019","District Commission","Consumer Rights"],judge:"Consumer courts are fast, cheap, and consumer-friendly! You don't even need a lawyer. File your complaint and the burden shifts to the seller!"},
+  {c:3,emoji:"🏘️",case:"Land Acquisition Dispute",speaker:"Landowner",role:"Farmer whose land was acquired",q:"The government acquires farmland for a highway but pays much less than market value. The correct legal remedy under the Land Acquisition Act is:",opts:["Accept whatever is offered","Challenge compensation before the Land Acquisition Collector and then civil court","Only file RTI","Write to the PM"],ans:1,law:"The Right to Fair Compensation and Transparency in Land Acquisition Act 2013 guarantees market value plus solatium. The affected party can challenge compensation before the LA Collector and escalate to courts.",tags:["LARR Act 2013","Fair Compensation","Solatium"],judge:"Land is a farmer's life. The 2013 Act ensures not just market rate but also additional solatium — the State cannot short-change farmers!"},
+  {c:3,emoji:"🏦",case:"Banking Fraud Case",speaker:"Complainant",role:"Bank account holder",q:"A bank debited Priya's account without her consent. Under which Act can she approach the Banking Ombudsman?",opts:["Consumer Protection Act only","Banking Ombudsman Scheme under RBI Act 1934","IPC only","Civil court only"],ans:1,law:"The Banking Ombudsman Scheme (under RBI Act 1934) provides a free, fast mechanism to resolve complaints against banks. It covers unauthorized debits, failed transactions, and service deficiencies.",tags:["Banking Ombudsman","RBI Act","Free Remedy"],judge:"The Banking Ombudsman is FREE and decisions are binding on banks! Always try the Ombudsman before going to consumer court."},
+  {c:3,emoji:"📄",case:"Contract Breach",speaker:"Plaintiff",role:"Small business owner",q:"A supplier signed a contract to deliver goods by March but delivered 3 months late causing losses. The legal principle that applies is:",opts:["The contract is automatically void","Breach of contract — plaintiff can claim damages under Indian Contract Act 1872","No legal remedy exists","File criminal case only"],ans:1,law:"Indian Contract Act 1872 governs breach of contract. When a party fails to perform, the other party can sue for damages. Section 73 allows compensation for losses arising from breach.",tags:["ICA 1872","Breach","S.73 Damages"],judge:"A contract is a legal promise! Break it and you must compensate. Section 73 is the backbone of commercial justice in India."},
+  {c:3,emoji:"👩👧",case:"Domestic Violence Case",speaker:"Victim's Counsel",role:"Advocate for the survivor",q:"Preethi faces physical and economic abuse at home. Her husband controls all her money and restricts her movements. Which Act protects her?",opts:["Only IPC Section 498A","Protection of Women from Domestic Violence Act 2005 — includes economic abuse","Only Civil Court","She must approach police only"],ans:1,law:"PWDVA 2005 covers physical, sexual, verbal, emotional AND economic abuse. It provides protection orders, residence orders, and monetary relief. Both criminal and civil remedies are available.",tags:["PWDVA 2005","Economic Abuse","Protection Orders"],judge:"Domestic violence is not just physical. Controlling money, restricting freedom — these are ALL forms of abuse under PWDVA 2005!"},
+  {c:4,emoji:"🔪",case:"State v. Accused",speaker:"Judge",role:"Sessions Court Judge",q:"Anand is charged under IPC Section 302. What offence is this?",opts:["Theft","Murder — punishment: death penalty or life imprisonment","Assault","Cheating"],ans:1,law:"IPC Section 302 deals with Punishment for Murder. It prescribes death or imprisonment for life and fine. It is cognizable, non-bailable, and triable by Sessions Court.",tags:["IPC S.302","Murder","Sessions Court"],judge:"Section 302 is the most serious penal provision. The prosecution must prove beyond reasonable doubt — any doubt favours the accused!"},
+  {c:4,emoji:"🧾",case:"Evidence Act Question",speaker:"Defence Lawyer",role:"Cross-examining a witness",q:"A witness in court claims to have seen the accused from 200 metres at night. Defence wants to challenge this testimony. Under Indian Evidence Act, witness testimony is:",opts:["Always 100% accepted","Oral evidence — court must assess its reliability; circumstances can impeach it","Rejected if witness is nervous","Only valid with video proof"],ans:1,law:"Indian Evidence Act 1872 Section 59 deals with oral evidence. Courts assess witness credibility, consistency, and corroboration. Contradictory or improbable testimony can be discredited.",tags:["IEA 1872","Oral Evidence","Cross Examination"],judge:"Cross-examination is the 'greatest engine for truth' — a good defence lawyer can expose inconsistencies in even the most confident witness!"},
+  {c:4,emoji:"👶",case:"POCSO Case",speaker:"Special Court Judge",role:"POCSO Special Court",q:"A 13-year-old child is sexually assaulted. Under POCSO Act, the trial must be completed in:",opts:["5 years","1 year — in a Special Court with child-friendly procedures","No time limit","Only after the child turns 18"],ans:1,law:"Protection of Children from Sexual Offences Act 2012 mandates time-bound trial in Special Courts. The trial should be completed within 1 year. Child-friendly procedures protect the child's dignity.",tags:["POCSO 2012","Special Court","1 Year Trial"],judge:"Speed is justice for child victims. Special Courts under POCSO ensure the child doesn't re-live trauma through prolonged trials!"},
+  {c:4,emoji:"🔍",case:"Circumstantial Evidence",speaker:"Prosecutor",role:"Additional Public Prosecutor",q:"There are no eyewitnesses to the crime. Prosecution relies only on circumstantial evidence. Can conviction happen?",opts:["No — eyewitness is always needed","Yes — if the chain of circumstantial evidence is complete and points only to the accused's guilt"],ans:1,law:"The Supreme Court has consistently held that conviction can be based on circumstantial evidence if: (1) facts are established, (2) consistent only with guilt, (3) exclude every other hypothesis.",tags:["Circumstantial Evidence","SC Ruling","Conviction"],judge:"Panchkari Datta v State — the complete chain test! Circumstantial evidence, when watertight, is as strong as direct evidence."},
+  {c:4,emoji:"👊",case:"Self Defence Plea",speaker:"Defence",role:"Advocate for the accused",q:"Vikram hit an intruder who broke into his home at night and threatened his family with a knife. He claims private defence. Under IPC, this is:",opts:["Always a crime","Right to Private Defence under IPC Section 96-106 — lawful if proportionate","Only police can use force","Illegal self-help"],ans:1,law:"IPC Sections 96-106 codify the Right to Private Defence. Every person has the right to defend their body and property against unlawful aggression. Force used must be proportionate to the threat.",tags:["IPC S.96-106","Private Defence","Proportionate Force"],judge:"The right to self-defence is as old as humanity itself. IPC recognises it — but the force used must match the threat, no more!"},
+  {c:5,emoji:"📜",case:"Writ Petition",speaker:"Petitioner",role:"Citizen challenging a government order",q:"A government order violates Fundamental Rights. Which writ should be filed in the HIGH COURT to quash that order?",opts:["Habeas Corpus","Certiorari — to quash an illegal order of an inferior court or authority","Mandamus","Quo Warranto"],ans:1,law:"Certiorari is issued by a Superior Court to quash the order of an inferior court, tribunal, or administrative authority that acts without jurisdiction or against natural justice.",tags:["Certiorari","Art 226","Writ Jurisdiction"],judge:"Certiorari is the court saying: that order is illegal and it is ERASED. Art 226 gives High Courts broader writ jurisdiction than even the Supreme Court!"},
+  {c:5,emoji:"🏛️",case:"Mandamus Petition",speaker:"Petitioner",role:"Employee denied promotion",q:"A government officer is entitled to promotion but the department is sitting on the file for 3 years. The BEST writ remedy is:",opts:["Habeas Corpus","Certiorari","Mandamus — to direct a public authority to perform its legal duty","Prohibition"],ans:2,law:"Mandamus ('we command') is issued to compel a public official or body to perform a duty that they are legally obligated to do but are refusing or neglecting.",tags:["Mandamus","Art 32/226","Public Duty"],judge:"Mandamus makes the government MOVE. When a public servant sits on their legal duty, the court commands them to act — immediately!"},
+  {c:5,emoji:"🗳️",case:"Election Petition",speaker:"Losing Candidate",role:"Election Petitioner",q:"A winning candidate used corrupt electoral practices. The election petition challenging the result must be filed in:",opts:["Supreme Court directly","High Court of the state under Representation of People Act 1951","Election Commission of India","District Court"],ans:1,law:"Under Representation of People Act 1951, election petitions for Parliamentary and State Assembly elections are filed before the concerned High Court. Supreme Court handles Presidential/VP elections.",tags:["RPA 1951","High Court","Election Petition"],judge:"Our democracy's integrity is protected by the High Courts! Election petitions must be filed within 45 days of the declaration of results."},
+  {c:5,emoji:"⚡",case:"Emergency Powers",speaker:"Constitutional Scholar",role:"Amicus Curiae",q:"The President proclaims National Emergency under Article 352. Which Fundamental Rights are SUSPENDED during emergency?",opts:["All Fundamental Rights including Art 20 and 21","All EXCEPT Articles 20 and 21 — right against conviction for past offences and right to life remain","Only Art 19 rights","None are suspended"],ans:1,law:"Under Article 358-359, Art 19 freedoms are auto-suspended during National Emergency. The President can suspend other FRs by order BUT Articles 20 and 21 can NEVER be suspended — not even during Emergency.",tags:["Art 352","Emergency","Art 20 & 21 Protected"],judge:"Even in the darkest emergency, the right to life and protection from retrospective punishment survive. Art 20 and 21 are the last fortress of individual liberty!"},
+  {c:5,emoji:"🔔",case:"PIL Hearing",speaker:"Chief Justice",role:"Division Bench",q:"A journalist finds a river being polluted by 50 factories but the victims are too poor to file cases. The BEST remedy for MASS justice is:",opts:["Each victim files separate cases","Public Interest Litigation (PIL) under Art 32 in Supreme Court or Art 226 in High Court","Only NGO can file","Wait for government action"],ans:1,law:"Public Interest Litigation allows any public-spirited citizen to approach the Supreme Court (Art 32) or High Court (Art 226) on behalf of those who cannot access justice themselves.",tags:["PIL","Art 32","Art 226","Epistolary Jurisdiction"],judge:"PIL transformed Indian justice! Even a postcard to the Chief Justice can become a case. The court itself becomes the champion of the voiceless!"}
+];
+
+let G={};
+let timerID=null;
+
+function initG(){G={score:0,lives:3,level:0,qi:0,qset:[],combo:0,maxCombo:0,correct:0,answered:false};}
+
+function buildSet(lv){
+  const pool=QS.filter(q=>q.c===lv+1);
+  return [...pool].sort(()=>Math.random()-.5).slice(0,CASES[lv].qCount);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen,.fb-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startGame(){
+  initG();
+  G.qset=buildSet(0);
+  showScreen('s-game');
+  renderHUD();
+  renderQ();
+}
+
+function renderHUD(){
+  const lv=CASES[G.level];
+  document.getElementById('h-score').textContent=G.score;
+  document.getElementById('h-level').textContent='Case '+(G.level+1);
+  document.getElementById('h-timer').textContent=lv.time;
+  const hh=document.getElementById('h-hearts');
+  hh.innerHTML='';
+  for(let i=0;i<3;i++){const s=document.createElement('span');s.className='h'+(i>=G.lives?' gone':'');s.textContent='♥';hh.appendChild(s);}
+  const dd=document.getElementById('h-diff');
+  dd.innerHTML='';
+  for(let i=0;i<5;i++){const d=document.createElement('div');d.className='dd'+(i<lv.diff?' on':'');dd.appendChild(d);}
+  document.getElementById('q-count').textContent='Question '+(G.qi+1)+' of '+G.qset.length+' — '+lv.name;
+  document.getElementById('prog').style.width=Math.round((G.qi/G.qset.length)*100)+'%';
+}
+
+function renderQ(){
+  clearInterval(timerID);
+  G.answered=false;
+  const q=G.qset[G.qi];
+  const lv=CASES[G.level];
+  let t=lv.time;
+  document.getElementById('h-timer').textContent=t;
+  renderHUD();
+
+  const qa=document.getElementById('q-area');
+  qa.innerHTML=`
+    <div class="scene-banner">
+      <div class="scene-emoji">${q.emoji}</div>
+      <div class="scene-info">
+        <div class="scene-case">Case: ${q.case}</div>
+        <div class="scene-title">${q.q.length>80?q.q.substring(0,0):''}</div>
+      </div>
+    </div>
+    <div class="scenario-box">
+      <div class="speaker">
+        <span style="font-size:14px">${q.speaker.includes('Judge')?'👨⚖️':q.speaker.includes('Defence')||q.speaker.includes('Petitioner')||q.speaker.includes('Parent')||q.speaker.includes('Consumer')||q.speaker.includes('Complainant')||q.speaker.includes('Victim')||q.speaker.includes('Landowner')||q.speaker.includes('Plaintiff')||q.speaker.includes('Student')||q.speaker.includes('Employee')||q.speaker.includes('Journalist')||q.speaker.includes('Constitutional')||q.speaker.includes('Chief')||q.speaker.includes('Losing')?'🧑💼':'👩💼'}</span>
+        <div><div class="speaker-name">${q.speaker}</div><div class="speaker-role">${q.role}</div></div>
+      </div>
+      <div class="scenario-text">${q.q}</div>
+    </div>
+    <div class="opts-list" id="opts"></div>
+  `;
+
+  const og=document.getElementById('opts');
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='opt';
+    b.textContent=(i===0?'A. ':i===1?'B. ':i===2?'C. ':'D. ')+o;
+    b.onclick=()=>answerQ(i,q,b,t);
+    og.appendChild(b);
+  });
+
+  timerID=setInterval(()=>{
+    t--;
+    document.getElementById('h-timer').textContent=t;
+    if(t<=0){clearInterval(timerID);if(!G.answered)answerQ(-1,q,null,0);}
+  },1000);
+}
+
+function answerQ(chosen,q,btnEl,tLeft){
+  if(G.answered)return;
+  G.answered=true;
+  clearInterval(timerID);
+  const ok=chosen===q.ans;
+  document.querySelectorAll('.opt').forEach((b,i)=>{
+    if(i===q.ans)b.className='opt correct';
+    else if(i===chosen)b.className='opt wrong';
+    else b.className='opt reveal';
+  });
+  if(ok){
+    G.correct++;G.combo++;
+    if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+    const tb=Math.round(tLeft*6);
+    const cb=G.combo>1?G.combo*15:0;
+    const pts=120+tb+cb;
+    G.score+=pts;
+    document.getElementById('h-score').textContent=G.score;
+    spawnPop('+'+pts);
+    if(G.combo>1)spawnCombo(G.combo+'x Combo!');
+  } else {
+    G.combo=0;G.lives--;
+    renderHUDHearts();
+    if(chosen===-1)spawnCombo('⏰ Time Up!');
+  }
+  setTimeout(()=>showFB(ok,q,chosen),450);
+}
+
+function renderHUDHearts(){
+  const hh=document.getElementById('h-hearts');
+  hh.innerHTML='';
+  for(let i=0;i<3;i++){const s=document.createElement('span');s.className='h'+(i>=G.lives?' gone':'');s.textContent='♥';hh.appendChild(s);}
+}
+
+function spawnPop(txt){
+  const el=document.createElement('div');el.className='pop-score';
+  el.textContent=txt;el.style.left=Math.round(Math.random()*60+20)+'%';el.style.top='30%';
+  document.getElementById('cd').appendChild(el);setTimeout(()=>el.remove(),1000);
+}
+
+function spawnCombo(txt){
+  const el=document.createElement('div');el.className='combo-pop';
+  el.textContent=txt;if(!txt.includes('Combo'))el.style.color='#e74c3c';
+  document.getElementById('cd').appendChild(el);setTimeout(()=>el.remove(),900);
+}
+
+function showFB(ok,q,chosen){
+  showScreen('s-feedback');
+  document.getElementById('fb-score').textContent=G.score;
+  document.getElementById('fb-level').textContent='Case '+(G.level+1);
+  document.getElementById('fb-qn').textContent=(G.qi+1)+'/'+G.qset.length;
+  const fbh=document.getElementById('fb-hearts');fbh.innerHTML='';
+  for(let i=0;i<3;i++){const s=document.createElement('span');s.className='h'+(i>=G.lives?' gone':'');s.textContent='♥';fbh.appendChild(s);}
+  document.getElementById('fb-icon').textContent=ok?'✅':chosen===-1?'⏰':'❌';
+  document.getElementById('fb-verdict').textContent=ok?'Objection Sustained!':chosen===-1?'Time Expired!':'Overruled!';
+  document.getElementById('fb-verdict').style.color=ok?'#27ae60':'#e74c3c';
+  const tagsEl=document.getElementById('fb-tags');
+  tagsEl.innerHTML=(q.tags||[]).map(t=>`<span class="law-tag">${t}</span>`).join('');
+  document.getElementById('fb-law').textContent=q.law;
+  document.getElementById('fb-judge').innerHTML='<b>Judge\'s Remark:</b> '+q.judge;
+  const isLast=G.qi>=G.qset.length-1;
+  document.getElementById('fb-btn').textContent=isLast?'See Verdict':'Next Argument';
+}
+
+function nextQ(){
+  G.qi++;
+  if(G.lives<=0){endGame(false);return;}
+  if(G.qi>=G.qset.length){showLevelUp();return;}
+  showScreen('s-game');
+  renderQ();
+}
+
+function showLevelUp(){
+  const lv=CASES[G.level];
+  showScreen('s-levelup');
+  document.getElementById('lu-trophy').textContent=lv.trophy;
+  document.getElementById('lu-title').textContent='You argued: '+lv.name;
+  const bd=document.getElementById('lu-badges');bd.innerHTML='';
+  const bnames=['Junior Advocate','District Lawyer','High Court Counsel','Senior Advocate','Supreme Court Legend'];
+  for(let i=0;i<=G.level;i++){const b=document.createElement('div');b.className='badge';b.textContent=bnames[i];bd.appendChild(b);}
+  const bon=G.combo>1?G.combo*25:0;
+  if(bon>0){G.score+=bon;document.getElementById('lu-bonus').textContent='Streak Bonus: +'+bon+' pts!';}
+  else document.getElementById('lu-bonus').textContent='Score: '+G.score;
+  const nxt=G.level+1;
+  if(nxt<CASES.length){document.getElementById('lu-next').textContent='Next: Case '+(nxt+1)+' — '+CASES[nxt].name;document.getElementById('lu-btn').textContent='Next Case';}
+  else{document.getElementById('lu-next').textContent='You have conquered ALL 5 cases!';document.getElementById('lu-btn').textContent='Final Verdict';}
+}
+
+function nextLevel(){
+  G.level++;
+  if(G.level>=CASES.length){endGame(true);return;}
+  G.qset=buildSet(G.level);G.qi=0;G.combo=0;
+  showScreen('s-game');renderHUD();renderQ();
+}
+
+function endGame(won){
+  showScreen('s-over');
+  document.getElementById('ov-head').textContent=won?'Supreme Court Advocate!':'Case Dismissed!';
+  document.getElementById('ov-icon').textContent=won?'🏆':'⚖️';
+  document.getElementById('ov-score').textContent=G.score;
+  document.getElementById('ov-level').textContent=G.level+1;
+  document.getElementById('ov-correct').textContent=G.correct;
+  document.getElementById('ov-combo').textContent=G.maxCombo+'x';
+  document.getElementById('ov-msg').textContent=won?'Outstanding! You know Indian law better than most adults. You are ready for Supreme Court!':G.score>400?'Great legal mind! Study a little more and you will win every case.':'Keep learning the law — justice depends on people like you who understand their rights!';
+  
+  if (won) {
+    document.querySelector('#s-over button.btn-gold').style.display = 'none';
+    document.querySelector('#s-over button.btn-gray').textContent = 'Claim Rewards & Exit';
+    document.querySelector('#s-over button.btn-gray').classList.remove('btn-gray');
+    document.querySelector('#s-over button').classList.add('btn-green');
+  } else {
+    document.querySelector('#s-over button.btn-gray').textContent = 'Exit Court';
+  }
+}
+
+function quitGameNow() {
+    let won = G.level >= CASES.length;
+    let xp = won ? 500 + G.score : Math.floor(G.score * 0.5);
+    let coins = won ? 300 + Math.floor(G.score / 10) : Math.floor(G.score / 20);
+    
+    if(window.parent && window.parent.currentUser) {
+        fetch('/api/save-gamestate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ xp: xp, coins: coins })
+        }).then(() => {
+            if(window.parent.closeGame) window.parent.closeGame(won);
+        }).catch(e => console.log(e));
+    } else if (window.parent && window.parent.closeGame) {
+        window.parent.closeGame(won);
+    }
+}
+</script>
+</body>
+</html>

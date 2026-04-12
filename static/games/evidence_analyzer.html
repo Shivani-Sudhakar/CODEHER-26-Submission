@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+    <title>Evidence Analyzer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+        body { background: #1a1a1a; color: #fff; overflow: hidden; touch-action: none; background-image: radial-gradient(circle at 50% 0%, #2a2a2a 0%, #111 60%); }
+        #app { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        .screen { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: rgba(17, 17, 17, 0.95); z-index: 50; }
+        .screen.on { display: flex; }
+        
+        .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: linear-gradient(180deg, rgba(0,0,0,0.9), transparent); border-bottom: 2px solid #b8860b; z-index: 10; pointer-events: none; }
+        .hud-item { display: flex; flex-direction: column; align-items: center; }
+        .hud-label { font-size: 10px; color: #a4a4a4; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .hud-val { font-size: 18px; font-weight: 900; }
+        .hud-val.gold { color: #ffd700; }
+        .hud-val.red { color: #dc143c; }
+        
+        .btn { background: linear-gradient(135deg, #b8860b, #daa520); color: #111; border: 2px solid #ffd700; padding: 12px 28px; border-radius: 8px; font-size: 15px; font-weight: 900; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; margin-top: 16px; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4); text-transform: uppercase;}
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(218, 165, 32, 0.6); }
+        .btn:active { transform: scale(0.96); }
+        
+        .card { background: #222; border: 2px solid #444; border-radius: 12px; padding: 24px; text-align: center; max-width: 420px; width: 100%; position: relative; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .title { font-size: 28px; font-weight: 900; margin-bottom: 6px; color: #daa520; }
+        .desc { font-size: 14px; color: #ccc; margin-bottom: 12px; line-height: 1.5; }
+        
+        .edu-box { background: rgba(218, 165, 32, 0.1); border: 1px solid rgba(218, 165, 32, 0.3); border-radius: 8px; padding: 12px; font-size: 13px; color: #eee; margin: 12px 0; text-align: left; line-height: 1.4; border-left: 4px solid #daa520;}
+        .edu-box strong { color: #daa520; display: block; margin-bottom: 4px; font-size: 13px;}
+        
+        .timeline-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; height: 12px; background: #111; border-radius: 2px; overflow: hidden; border: 1px solid #444; z-index: 10; pointer-events: none;}
+        .timeline-fill { width: 100%; height: 100%; background: #daa520; transition: width 0.2s linear, background 0.3s; }
+        .timeline-text { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: #aaa; pointer-events: none; z-index: 10;}
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+        .stat-box { background: #111; padding: 10px; border-radius: 4px; border: 1px solid #333;}
+        .stat-box .lbl { font-size: 10px; color: #888; text-transform: uppercase;}
+        .stat-box .val { font-size: 20px; font-weight: 900; margin-top: 2px; }
+        
+        #toast { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: #dc143c; color: #fff; padding: 8px 16px; border-radius: 6px; font-weight: 800; font-size: 14px; opacity: 0; transition: opacity 0.3s; z-index: 60; pointer-events: none; box-shadow: 0 4px 15px rgba(220,20,60,0.4); text-transform: uppercase;}
+        
+        .char-anim { font-size: 44px; display: inline-block; animation: judgeBob 3s infinite ease-in-out; }
+        @keyframes judgeBob { 0%, 100% { transform: rotate(-5deg) translateY(0); } 50% { transform: rotate(5deg) translateY(-5px); } }
+        
+        /* Game Specific Area */
+        .game-area { flex: 1; display: flex; flex-direction: column; padding: 70px 20px 40px; gap: 16px; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+        .game-area::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        
+        .case-file { background: #f4ecd8; color: #333; border-radius: 4px; padding: 16px; box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 0 5px 15px rgba(0,0,0,0.5); position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        .case-file::before { content: 'CONFIDENTIAL'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 40px; color: rgba(200,0,0,0.05); font-weight: 900; pointer-events: none; white-space: nowrap;}
+        
+        .statement-box { background: #fff; border: 1px solid #ddd; padding: 16px; border-left: 4px solid #444; margin-bottom: 12px; font-family: 'Georgia', serif; font-size: 16px; line-height: 1.4; position: relative; }
+        .statement-box:last-child { margin-bottom: 0; }
+        .statement-label { position: absolute; top: -8px; left: 10px; background: #444; color: #fff; font-size: 9px; padding: 2px 6px; font-family: sans-serif; text-transform: uppercase; font-weight: 800; border-radius: 2px;}
+        
+        .character-portrait { float: left; width: 40px; height: 40px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 12px; margin-bottom: 4px; border: 1px solid #ccc;}
+        
+        .action-row { display: flex; gap: 12px; margin-top: auto; padding-top: 16px;}
+        .action-btn { flex: 1; padding: 16px; font-size: 16px; font-weight: 900; text-transform: uppercase; border: none; border-radius: 6px; cursor: pointer; color: white; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform 0.1s;}
+        .action-btn:active { transform: scale(0.96); }
+        .action-btn i { font-size: 24px; font-style: normal;}
+        
+        .btn-corroborate { background: linear-gradient(135deg, #2e8b57, #3cb371); box-shadow: 0 4px 0 #1f5f3b;}
+        .btn-contradict { background: linear-gradient(135deg, #b22222, #cd5c5c); box-shadow: 0 4px 0 #801818;}
+        
+        .case-stamp { position: absolute; right: 20px; top: 20px; border: 3px solid #dc143c; color: #dc143c; font-size: 20px; font-weight: 900; font-family: 'Courier New', monospace; padding: 4px 10px; transform: rotate(15deg); opacity: 0; pointer-events: none;}
+        @keyframes stampAnim { 0% { opacity: 0; transform: scale(2) rotate(15deg); } 20% { opacity: 1; transform: scale(1) rotate(15deg); } 80% { opacity: 1; transform: scale(1) rotate(15deg); } 100% { opacity: 0; transform: scale(1) rotate(15deg); } }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- HUD -->
+        <div class="hud" id="hud" style="display:none;">
+            <div class="hud-item"><span class="hud-label">Case File</span><span class="hud-val gold" id="h-lvl">1</span></div>
+            <div class="hud-item"><span class="hud-label">Score</span><span class="hud-val gold" id="h-score">0</span></div>
+            <div class="hud-item"><span class="hud-label">Solved</span><span class="hud-val" id="h-target">0/5</span></div>
+            <div class="hud-item"><span class="hud-label">Objections Left</span><span class="hud-val red" id="h-lives">🏛️🏛️🏛️</span></div>
+        </div>
+        
+        <div class="timeline-text" id="t-text" style="display:none;">Time remaining</div>
+        <div class="timeline-container" id="t-bar" style="display:none;"><div class="timeline-fill" id="t-fill"></div></div>
+        <div id="toast">Message</div>
+        
+        <!-- Game Area -->
+        <div class="game-area" id="gameArea" style="display:none;">
+            <div class="case-file">
+                <div class="case-stamp" id="stamp">CONTRADICTION!</div>
+                
+                <div class="statement-box">
+                    <span class="statement-label">Statement A</span>
+                    <div class="character-portrait" id="charA">👨</div>
+                    <div id="textA" style="min-height: 40px;">...</div>
+                    <div style="clear:both;"></div>
+                </div>
+                
+                <div style="text-align:center; font-size:24px; color:#aaa; margin-bottom: 2px;">⚡</div>
+                
+                <div class="statement-box">
+                    <span class="statement-label">Statement B</span>
+                    <div class="character-portrait" id="charB">🕵️</div>
+                    <div id="textB" style="min-height: 40px;">...</div>
+                    <div style="clear:both;"></div>
+                </div>
+            </div>
+            
+            <div class="action-row">
+                <button class="action-btn btn-corroborate" onclick="makeChoice(true)">
+                    <i>⚖️</i>
+                    CORROBORATES
+                </button>
+                <button class="action-btn btn-contradict" onclick="makeChoice(false)">
+                    <i>🚨</i>
+                    CONTRADICTS
+                </button>
+            </div>
+        </div>
+
+        <!-- Screens -->
+        <div class="screen on" id="s-title">
+            <div class="card">
+                <div class="char-anim" style="margin-bottom:8px">⚖️</div>
+                <h1 class="title">Evidence Analyzer</h1>
+                <p class="desc">Review witness testimonies and evidence logs. Do they corroborate (match) or contradict?</p>
+                <div class="edu-box">
+                    <strong>Lawyer 101: Cross-Examination</strong>
+                    Lawyers look for inconsistencies in testimonies. If a witness says it was raining, but the weather report says sunny, that is a <strong>contradiction</strong>!
+                </div>
+                <button class="btn" onclick="startGame()">OPEN CASE FILE</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-level">
+            <div class="card">
+                <div class="char-anim" id="lvl-icon" style="margin-bottom:8px">📂</div>
+                <h1 class="title" id="lvl-title">Case 1</h1>
+                <div class="edu-box" id="lvl-edu"></div>
+                <div style="font-size: 16px; font-weight: 800; color: #ffd700; margin: 12px 0;" id="lvl-target">Evidences needed: 5</div>
+                <button class="btn" id="lvl-btn" onclick="startLevel()">REVIEW EVIDENCE</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-end">
+            <div class="card">
+                <div class="char-anim" id="end-icon" style="margin-bottom:8px">🏛️</div>
+                <h1 class="title" id="end-title" style="color: #fff">CASE CLOSED</h1>
+                <p class="desc" id="end-desc">The truth has been revealed.</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-box"><div class="lbl">Total Score</div><div class="val gold" id="end-score">0</div></div>
+                    <div class="stat-box"><div class="lbl">Cases Solved</div><div class="val" style="color:#eee" id="end-lvl">1</div></div>
+                    <div class="stat-box"><div class="lbl">Reputation (XP)</div><div class="val" style="color:#b8860b;" id="end-xp">0</div></div>
+                    <div class="stat-box"><div class="lbl">Retainer (Coins)</div><div class="val gold" id="end-coins">0</div></div>
+                </div>
+                
+                <button class="btn" onclick="finishGameExternal()">Return to Fortress</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAX_LEVELS = 5;
+        
+        const EDU_FACTS = [
+            "Witnesses can be unreliable! Comparing their stories to hard evidence is a key part of the justice system.",
+            "Circumstantial evidence implies a fact but doesn't prove it directly. Direct evidence supports the truth of an assertion directly.",
+            "Perjury is the offense of willfully telling an untruth in a court after having taken an oath or affirmation.",
+            "Corroborating evidence is evidence that strengthens or confirms already existing evidence.",
+            "A 'smoking gun' is a reference to an object or fact that serves as conclusive evidence of a crime or similar act."
+        ];
+        
+        // Scenario pool
+        const SCENARIOS = [
+            { aCar: '👨', a: 'I saw the suspect running away at exactly 8:00 PM.', bCar: '⌚', b: 'The store receipt shows a purchase by the suspect at 8:02 PM, 5 miles away.', corr: false },
+            { aCar: '👩', a: 'The car that sped away was definitely a bright red sedan.', bCar: '📸', b: 'The traffic camera footage at the intersection captured a red sedan speeding.', corr: true },
+            { aCar: '🧔', a: 'I was home all night watching television. I didn\'t go out.', bCar: '📱', b: 'Cell tower records show the suspect\'s phone pinging a tower near the crime scene at 10 PM.', corr: false },
+            { aCar: '👮', a: 'The window was broken from the inside outward. Glass was on the street.', bCar: '👨', b: 'The homeowner claims someone threw a rock from the street into the living room.', corr: false },
+            { aCar: '🕵️', a: 'The lock was picked. There are scratch marks on the cylinder.', bCar: '🔬', b: 'Forensic analysis confirms tool marks consistent with a lockpick.', corr: true },
+            { aCar: '👩', a: 'I lent him $500 last Tuesday. He promised to pay me back.', bCar: '🧾', b: 'Bank records show a $500 transfer from her account to his on Tuesday.', corr: true },
+            { aCar: '🚙', a: 'The suspect\'s car has severe denting on the front bumper.', bCar: '🚗', b: 'The victim\'s car was hit from behind by a large, heavy vehicle.', corr: false },
+            { aCar: '👨', a: 'It was pitch black outside. No streetlights were working.', bCar: '📝', b: 'City maintenance records confirm a power outage on that block during that time.', corr: true },
+            { aCar: '🧑', a: 'I have never met that person in my life.', bCar: '📩', b: 'Email logs show over 50 emails exchanged between the two over the last year.', corr: false },
+            { aCar: '💼', a: 'The briefcase contained highly sensitive documents.', bCar: '🗑️', b: 'Shredding company logs show the briefcase contents were safely destroyed yesterday.', corr: false }
+        ];
+        
+        let state = { playing: false, level: 1, score: 0, lives: 3, timeLimit: 45, timeLeft: 45, targetCount: 5, currentCount: 0, currentScenario: null, timerInt: null };
+        
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+            if(id) document.getElementById(id).classList.add('on');
+        }
+
+        function showToast(msg, isErr=true) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; 
+            t.style.background = isErr ? '#dc143c' : '#2e8b57';
+            t.style.opacity = 1;
+            clearTimeout(t._t);
+            t._t = setTimeout(() => t.style.opacity = 0, 1500);
+        }
+
+        function getLevelConfig(lvl) {
+            return {
+                time: Math.max(20, 50 - (lvl-1)*6), // Gets faster
+                target: 3 + Math.floor(lvl/2)       // 3, 4, 4, 5, 5
+            };
+        }
+
+        function startGame() { state.level = 1; state.score = 0; state.lives = 3; prepareLevel(); }
+
+        function prepareLevel() {
+            const cfg = getLevelConfig(state.level);
+            state.targetCount = cfg.target; state.timeLimit = cfg.time; state.timeLeft = cfg.time; state.currentCount = 0;
+            
+            document.getElementById('lvl-title').textContent = `Case File ${state.level}`;
+            document.getElementById('lvl-target').textContent = `Evidences needed: ${cfg.target}`;
+            document.getElementById('lvl-icon').textContent = state.level === MAX_LEVELS ? '⚖️' : '📂';
+            
+            document.getElementById('lvl-edu').innerHTML = `<strong>Legal Briefing:</strong> ${EDU_FACTS[state.level-1]}`;
+            
+            showScreen('s-level');
+            toggleGameUI(false);
+        }
+
+        function startLevel() {
+            showScreen(''); toggleGameUI(true);
+            state.playing = true; updateHUD(); nextScenario();
+            
+            clearInterval(state.timerInt);
+            state.timerInt = setInterval(tickHelper, 100);
+        }
+        
+        function toggleGameUI(show) {
+            const d = show ? 'flex' : 'none';
+            document.getElementById('hud').style.display = d;
+            document.getElementById('t-bar').style.display = show ? 'block' : 'none';
+            document.getElementById('t-text').style.display = show ? 'block' : 'none';
+            document.getElementById('gameArea').style.display = d;
+        }
+
+        function updateHUD() {
+            document.getElementById('h-lvl').textContent = state.level;
+            document.getElementById('h-score').textContent = state.score;
+            document.getElementById('h-target').textContent = `${state.currentCount}/${state.targetCount}`;
+            document.getElementById('h-lives').textContent = '🏛️'.repeat(Math.max(0, state.lives));
+        }
+        
+        function nextScenario() {
+            // Pick a random scenario
+            state.currentScenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+            
+            document.getElementById('charA').textContent = state.currentScenario.aCar;
+            document.getElementById('textA').textContent = state.currentScenario.a;
+            document.getElementById('charB').textContent = state.currentScenario.bCar;
+            document.getElementById('textB').textContent = state.currentScenario.b;
+        }
+        
+        function playStamp(text, color) {
+            const stamp = document.getElementById('stamp');
+            stamp.textContent = text;
+            stamp.style.color = color;
+            stamp.style.borderColor = color;
+            stamp.style.animation = 'none';
+            void stamp.offsetWidth;
+            stamp.style.animation = 'stampAnim 0.8s ease forwards';
+        }
+
+        function makeChoice(playerChoseCorroborate) {
+            if(!state.playing) return;
+            
+            const correctChoice = state.currentScenario.corr;
+            
+            if (playerChoseCorroborate === correctChoice) {
+                // Correct!
+                state.score += 50;
+                state.currentCount++;
+                
+                playStamp(correctChoice ? 'CORROBORATED' : 'OBJECTION!', '#2e8b57');
+                
+                if (state.currentCount >= state.targetCount) {
+                    setTimeout(() => endLevel(true), 800);
+                    state.playing = false; // pause input
+                    return;
+                }
+                updateHUD();
+                setTimeout(() => { if(state.playing) nextScenario(); }, 800);
+                
+            } else {
+                // Wrong!
+                state.lives--;
+                state.score = Math.max(0, state.score - 20);
+                
+                playStamp('OVERRULED!', '#dc143c');
+                showToast(`Incorrect! The statements actually ${correctChoice ? 'Corroborate' : 'Contradict'}.`, true);
+                
+                updateHUD();
+                
+                if (state.lives <= 0) {
+                    setTimeout(() => endLevel(false), 800);
+                    state.playing = false;
+                } else {
+                    setTimeout(() => { if(state.playing) nextScenario(); }, 800);
+                }
+            }
+        }
+
+        function tickHelper() {
+            if(!state.playing) return;
+            state.timeLeft -= 0.1;
+            
+            const pct = Math.max(0, state.timeLeft / state.timeLimit);
+            document.getElementById('t-fill').style.width = `${pct * 100}%`;
+            document.getElementById('t-text').textContent = `${Math.ceil(state.timeLeft)}s remaining`;
+            
+            if (pct < 0.2) document.getElementById('t-fill').style.background = '#dc143c';
+            else document.getElementById('t-fill').style.background = '#daa520';
+
+            if (state.timeLeft <= 0) {
+                endLevel(false); // ran out of time
+            }
+        }
+
+        function endLevel(won) {
+            state.playing = false;
+            clearInterval(state.timerInt);
+            
+            if (won) {
+                state.level++;
+                if (state.level > MAX_LEVELS) gameOver(true); else prepareLevel();
+            } else {
+                if (state.timeLeft <= 0) { state.lives--; updateHUD(); }
+                
+                if (state.lives <= 0) {
+                    gameOver(false);
+                } else {
+                    document.getElementById('lvl-title').textContent = `Time's Up!`;
+                    document.getElementById('lvl-edu').innerHTML = `You ran out of time to present evidence. Lost 1 🏛️`;
+                    document.getElementById('lvl-btn').textContent = `RETRY CASE ${state.level}`;
+                    showScreen('s-level');
+                    toggleGameUI(false);
+                }
+            }
+        }
+
+        function gameOver(win = false) {
+            state.playing = false;
+            clearInterval(state.timerInt);
+            toggleGameUI(false);
+            
+            const xp = state.lives > 0 ? 500 + state.score : Math.floor(state.score * 0.5);
+            const coins = state.lives > 0 ? 300 + Math.floor(state.score / 10) : Math.floor(state.score / 20);
+            
+            document.getElementById('end-icon').textContent = win ? '⚖️' : '🔒';
+            document.getElementById('end-title').textContent = win ? 'JUSTICE SERVED!' : 'CASE DISMISSED';
+            document.getElementById('end-desc').textContent = win ? 'You proved the truth.' : 'You lost your credibility in court.';
+            document.getElementById('end-score').textContent = state.score;
+            document.getElementById('end-lvl').textContent = Math.min(state.level, MAX_LEVELS);
+            document.getElementById('end-xp').textContent = `+${xp}`;
+            document.getElementById('end-coins').textContent = `+${coins}`;
+            
+            showScreen('s-end');
+            
+            if(window.parent && window.parent.currentUser) {
+                fetch('/api/save-gamestate', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ xp: xp, coins: coins })
+                }).catch(e=>console.log(e));
+            }
+        }
+        
+        function finishGameExternal() {
+             if(window.parent && window.parent.expFinishGame) window.parent.expFinishGame();
+             else showToast("Stats saved. Close game manually.", false);
+        }
+    </script>
+</body>
+</html>

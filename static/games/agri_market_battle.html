@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agri Market Battle</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d2b0d;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh;}
+#g{background:#0d2b0d;min-height:100vh;overflow:hidden;color:#fff;position:relative;}
+.scr{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:18px;text-align:center;}
+.scr.on{display:flex;}
+.btn{border:none;color:#fff;font-size:.9rem;font-weight:700;padding:11px 26px;border-radius:8px;cursor:pointer;margin:5px;transition:transform .15s,filter .15s;}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.15);}
+.btn.green{background:#15803d;}
+.btn.amber{background:#b45309;}
+.btn.gray{background:#1e3a1e;border:1px solid #2d5a2d;}
+.btn.red{background:#991b1b;}
+.lcard{background:#1a3d1a;border:1.5px solid #2d6a2d55;border-radius:12px;padding:13px 18px;margin:5px;min-width:155px;cursor:pointer;transition:transform .15s,border-color .15s;}
+.lcard:hover{transform:scale(1.04);border-color:#4ade80;}
+.lcard h3{color:#86efac;font-size:.9rem;}
+.lcard p{color:#4b7a4b;font-size:.72rem;margin-top:3px;}
+#bs{flex-direction:column;justify-content:flex-start;padding:12px;}
+#hud{display:flex;justify-content:space-between;align-items:center;width:100%;background:#1a3d1a88;padding:7px 13px;border-radius:8px;margin-bottom:7px;}
+.hstat{font-size:.78rem;display:flex;align-items:center;gap:4px;}
+.hstat b{color:#4ade80;}
+#tbar{width:100%;height:7px;background:#1a3d1a;border-radius:4px;margin-bottom:8px;overflow:hidden;}
+#tfill{height:100%;background:#4ade80;border-radius:4px;transition:width .35s linear;}
+#pdots{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;}
+.dot{width:12px;height:12px;border-radius:50%;background:#1a3d1a;border:1.5px solid #2d5a2d;}
+.dot.done{background:#15803d;}.dot.cur{background:#4ade80;animation:dpulse 1s infinite alternate;}
+#arena{display:flex;gap:10px;width:100%;align-items:flex-start;justify-content:center;}
+.side{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:88px;}
+.cname{font-size:.65rem;color:#86efac;font-weight:700;letter-spacing:1px;}
+.sprite{font-size:3rem;line-height:1;transition:transform .3s;}
+.sprite.atk{animation:atk .4s ease;}
+.sprite.hurt{animation:hurt .4s ease;}
+.hpbar{width:82px;height:8px;background:#0d2b0d;border-radius:5px;overflow:hidden;}
+.hpfill{height:100%;border-radius:5px;transition:width .4s;}
+.hptxt{font-size:.63rem;color:#4b7a4b;margin-top:2px;}
+#qzone{flex:1;background:#1a3d1a88;border-radius:12px;padding:13px;display:flex;flex-direction:column;align-items:center;max-width:360px;}
+#crop-display{width:110px;height:90px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;border:2px solid #2d5a2d;font-size:3.5rem;background:#0d2b0d;flex-shrink:0;position:relative;}
+#crop-label{position:absolute;bottom:4px;left:0;right:0;font-size:.6rem;color:#86efac;font-weight:700;letter-spacing:1px;text-align:center;}
+#scenario-tag{font-size:.62rem;color:#4ade80;font-weight:700;letter-spacing:2px;margin-bottom:4px;}
+#q-text{font-size:.84rem;color:#e2e8f0;margin-bottom:10px;text-align:center;min-height:42px;line-height:1.5;}
+#choices{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;}
+.choice{background:#0d2b0d;border:1px solid #2d5a2d60;border-radius:8px;color:#e2e8f0;font-size:.77rem;padding:9px 8px;cursor:pointer;transition:background .18s,border-color .18s;text-align:center;line-height:1.3;}
+.choice:hover{background:#15803d;border-color:#4ade80;}
+.choice.ok{background:#166534;border-color:#4ade80;}
+.choice.bad{background:#991b1b;border-color:#f87171;}
+#fb{font-size:.8rem;min-height:20px;margin-top:5px;font-weight:700;}
+#tip{font-size:.69rem;color:#4b7a4b;margin-top:4px;text-align:center;min-height:28px;font-style:italic;line-height:1.4;}
+#combo-txt{font-size:.82rem;color:#fbbf24;font-weight:700;min-height:18px;}
+#vs{font-size:1.2rem;font-weight:700;color:#4ade80;align-self:center;padding-top:34px;}
+#dmg{position:absolute;pointer-events:none;font-size:1.3rem;font-weight:700;opacity:0;top:46%;left:50%;}
+#streak{position:absolute;top:26%;left:50%;transform:translate(-50%,-50%);font-size:1.5rem;font-weight:700;color:#fbbf24;pointer-events:none;opacity:0;}
+.rc{background:#1a3d1a;border-radius:16px;padding:22px 26px;max-width:320px;text-align:center;}
+.rc h2{color:#86efac;margin-bottom:6px;}
+.rc .big{font-size:2.3rem;font-weight:700;color:#fbbf24;}
+.rc p{color:#4b7a4b;font-size:.82rem;margin:5px 0;}
+.badge{display:inline-block;background:#14532d;color:#86efac;font-size:.66rem;padding:3px 9px;border-radius:20px;margin:2px;}
+.topic-card{background:#1a3d1a;border:1px solid #2d5a2d;border-radius:10px;padding:10px 13px;margin:4px 0;display:flex;align-items:center;gap:11px;max-width:380px;width:100%;cursor:pointer;transition:border-color .15s;}
+.topic-card:hover{border-color:#4ade80;}
+.topic-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.6rem;background:#0d2b0d;}
+.tinfo{text-align:left;}
+.tname{font-size:.84rem;font-weight:700;color:#e2e8f0;}
+.tfact{font-size:.69rem;color:#4b7a4b;margin-top:2px;line-height:1.4;}
+#hs-list .hrow{display:flex;justify-content:space-between;padding:7px 12px;background:#1a3d1a;border-radius:8px;margin:4px 0;font-size:.82rem;}
+.tip-pill{display:inline-block;background:#14532d44;border:1px solid #15803d44;border-radius:20px;padding:3px 9px;font-size:.67rem;color:#86efac;margin:2px;}
+#market-ticker{width:100%;background:#0d2b0d;padding:6px 12px;border-radius:8px;margin-bottom:8px;font-size:.72rem;color:#fbbf24;overflow:hidden;white-space:nowrap;}
+@keyframes atk{0%{transform:scale(1)}40%{transform:scale(1.25)rotate(-8deg)}100%{transform:scale(1)}}
+@keyframes hurt{0%{transform:translateX(0)}20%{transform:translateX(-10px)}55%{transform:translateX(8px)}100%{transform:translateX(0)}}
+@keyframes popUp{0%{opacity:1;transform:translate(-50%,-50%)scale(1)}100%{opacity:0;transform:translate(-50%,-130%)scale(1.3)}}
+@keyframes ticker{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+@keyframes dpulse{from{box-shadow:0 0 0 0 #4ade8088}to{box-shadow:0 0 0 5px #4ade8000}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+</style>
+</head>
+<body>
+<div id="g">
+
+<!-- TITLE -->
+<div class="scr on" id="title-screen">
+  <div style="font-size:3rem;animation:bounce 2s infinite;">🌾</div>
+  <div style="font-size:1.9rem;font-weight:700;color:#4ade80;letter-spacing:1px;margin-top:4px;">AGRI MARKET BATTLE</div>
+  <div style="font-size:.88rem;color:#86efac;margin-top:5px;">Master farming, trading & market economics!</div>
+  <div style="margin:14px 0;display:flex;flex-wrap:wrap;justify-content:center;gap:5px;max-width:320px;">
+    <span class="tip-pill">🌱 Crop seasons</span>
+    <span class="tip-pill">📈 Market prices</span>
+    <span class="tip-pill">🚜 Farm equipment</span>
+    <span class="tip-pill">💰 Supply & demand</span>
+    <span class="tip-pill">🌍 Export & trade</span>
+    <span class="tip-pill">🌦️ Weather impact</span>
+    <span class="tip-pill">🧪 Soil & nutrients</span>
+    <span class="tip-pill">🐄 Livestock</span>
+  </div>
+  <p style="color:#4b7a4b;font-size:.77rem;max-width:290px;margin-bottom:14px;">Answer questions about agriculture and market economics to defeat rivals! Chain correct answers for COMBO damage.</p>
+  <button class="btn green" onclick="showLS()">▶ START FARMING</button>
+  <button class="btn amber" onclick="showLearn()">📚 Farm Academy</button>
+  <button class="btn gray" onclick="showHS()">🏆 Harvest Scores</button>
+</div>
+
+<!-- LEVEL SELECT -->
+<div class="scr" id="level-screen">
+  <div style="font-size:1.8rem;margin-bottom:4px;">🚜</div>
+  <h2 style="color:#4ade80;margin-bottom:4px;">Choose Your Season</h2>
+  <p style="font-size:.85rem;color:#86efac;margin-bottom:14px;">Each season brings harder market challenges!</p>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:7px;">
+    <div class="lcard" onclick="startL(1)"><h3>🌱 Season 1</h3><p>Young Farmer</p><p style="color:#4ade80;font-size:.69rem;margin-top:3px;">18s · 8 rounds · Basic crops</p></div>
+    <div class="lcard" onclick="startL(2)"><h3>🌿 Season 2</h3><p>Market Trader</p><p style="color:#fbbf24;font-size:.69rem;margin-top:3px;">13s · 10 rounds · Prices & trade</p></div>
+    <div class="lcard" onclick="startL(3)"><h3>🌾 Season 3</h3><p>Agri Expert</p><p style="color:#f87171;font-size:.69rem;margin-top:3px;">9s · 12 rounds · Economics</p></div>
+    <div class="lcard" onclick="startL(4)"><h3>🏆 Harvest Boss</h3><p>Market Mogul</p><p style="color:#4ade80;font-size:.69rem;margin-top:3px;">6s · 14 rounds · Expert level</p></div>
+  </div>
+  <button class="btn gray" style="margin-top:14px;" onclick="show('title-screen')">← Back</button>
+</div>
+
+<!-- BATTLE -->
+<div class="scr" id="bs">
+  <div id="market-ticker">
+    <span id="ticker-inner" style="display:inline-block;animation:ticker 18s linear infinite;">📈 Wheat ₹2,150/quintal &nbsp;|&nbsp; 🌽 Corn ₹1,340/quintal &nbsp;|&nbsp; 🍚 Rice ₹1,960/quintal &nbsp;|&nbsp; 🧅 Onion ₹890/quintal &nbsp;|&nbsp; 🍅 Tomato ₹1,100/quintal &nbsp;|&nbsp; 🥦 Soybean ₹3,800/quintal &nbsp;|&nbsp; 🌻 Sunflower ₹5,200/quintal &nbsp;|&nbsp; 🧄 Garlic ₹4,500/quintal</span>
+  </div>
+  <div id="hud">
+    <div class="hstat">❤️ <div id="lives"></div></div>
+    <div class="hstat" id="llabel">Season 1</div>
+    <div class="hstat">⚡ <b id="cval">x1</b></div>
+    <div class="hstat">🌾 <b id="sc">0</b></div>
+  </div>
+  <div id="tbar"><div id="tfill" style="width:100%"></div></div>
+  <div id="pdots"></div>
+  <div id="arena">
+    <div class="side">
+      <div class="cname">FARMER YOU</div>
+      <div class="sprite" id="psprite">👨‍🌾</div>
+      <div class="hpbar"><div class="hpfill" id="php" style="width:100%;background:#4ade80;"></div></div>
+      <div class="hptxt" id="phtxt">3/3</div>
+    </div>
+    <div id="qzone">
+      <div id="crop-display">
+        <span id="crop-emoji">🌾</span>
+        <div id="crop-label">LOADING</div>
+      </div>
+      <div id="scenario-tag">CROP KNOWLEDGE</div>
+      <div id="q-text">Loading question...</div>
+      <div id="choices"></div>
+      <div id="fb"></div>
+      <div id="tip"></div>
+      <div id="combo-txt"></div>
+    </div>
+    <div id="vs">VS</div>
+    <div class="side">
+      <div class="cname" id="ename">RIVAL</div>
+      <div class="sprite" id="esprite">🧑‍💼</div>
+      <div class="hpbar"><div class="hpfill" id="ehp" style="width:100%;background:#f87171;"></div></div>
+      <div class="hptxt" id="ehtxt">8/8</div>
+    </div>
+  </div>
+  <div id="dmg"></div>
+  <div id="streak"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="scr" id="results-screen">
+  <div class="rc">
+    <div style="font-size:2rem;" id="rico">🎉</div>
+    <h2 id="rtitle">Harvest Won!</h2>
+    <div class="big" id="rscore">0</div>
+    <p id="rmsg"></p>
+    <div id="racc" style="color:#86efac;font-size:.77rem;margin:6px 0;"></div>
+    <div id="rcats" style="margin:8px 0;"></div>
+    <button class="btn green" onclick="showLS()" style="margin-top:10px;">▶ Play Again</button>
+    <button class="btn amber" onclick="claimRewards()" style="margin-top:4px;">🏆 Claim Rewards & Exit</button>
+    <button class="btn gray" onclick="show('title-screen')" style="margin-top:4px;">🏠 Home</button>
+  </div>
+</div>
+
+<!-- HIGH SCORES -->
+<div class="scr" id="hs-screen">
+  <h2 style="color:#fbbf24;margin-bottom:4px;">🏆 Harvest Leaderboard</h2>
+  <div id="hs-list" style="width:100%;max-width:290px;margin:14px 0;"></div>
+  <button class="btn gray" onclick="show('title-screen')">← Back</button>
+</div>
+
+<!-- FARM ACADEMY -->
+<div class="scr" id="learn-screen">
+  <h2 style="color:#4ade80;margin-bottom:2px;">📚 Farm Academy</h2>
+  <p style="font-size:.84rem;color:#86efac;margin-bottom:10px;">Tap a topic to explore farming & market knowledge</p>
+  <div id="learn-list" style="width:100%;max-width:400px;overflow-y:auto;max-height:460px;"></div>
+  <button class="btn gray" style="margin-top:10px;flex-shrink:0;" onclick="show('title-screen')">← Back</button>
+</div>
+
+<!-- TOPIC DETAIL -->
+<div id="topic-detail" style="display:none;position:absolute;top:0;left:0;width:100%;min-height:100%;background:#0d2b0dee;z-index:10;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#1a3d1a;border-radius:14px;padding:20px;max-width:330px;width:100%;text-align:center;">
+    <div id="detail-icon" style="font-size:2.5rem;margin-bottom:8px;"></div>
+    <div id="detail-name" style="font-size:1.1rem;font-weight:700;color:#e2e8f0;margin-bottom:3px;"></div>
+    <div id="detail-sub" style="font-size:.74rem;color:#4ade80;margin-bottom:10px;"></div>
+    <div id="detail-facts" style="font-size:.8rem;color:#94a3b8;text-align:left;line-height:1.7;"></div>
+    <button class="btn gray" style="margin-top:14px;width:100%;" onclick="closeDetail()">← Back to Academy</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const TOPICS=[
+  {icon:'🌾',name:'Wheat & Grain',sub:'Staple crop economics',facts:'<b style="color:#4ade80">What it is:</b> Wheat is India\'s second most important cereal crop after rice.<br><br><b style="color:#fbbf24">Market:</b> Wheat MSP for 2024 was ₹2,275/quintal.<br><br><b style="color:#86efac">Key fact:</b> India is the 2nd largest wheat producer.'},
+  {icon:'🍚',name:'Rice & Paddy',sub:'Kharif season staple',facts:'<b style="color:#4ade80">What it is:</b> Rice is a Kharif crop grown during monsoon season.<br><br><b style="color:#fbbf24">Market:</b> India is the world\'s largest rice exporter.<br><br><b style="color:#86efac">Key fact:</b> West Bengal, UP, and Punjab are top producers.'},
+  {icon:'🌽',name:'Corn & Maize',sub:'Versatile cash crop',facts:'<b style="color:#4ade80">What it is:</b> Maize is used for food, animal feed, and ethanol.<br><br><b style="color:#fbbf24">Market:</b> Prices are influenced by poultry and ethanol industries.<br><br><b style="color:#86efac">Key fact:</b> Karnataka, AP, and Maharashtra are top producers.'},
+  {icon:'📈',name:'Supply & Demand',sub:'Core market economics',facts:'<b style="color:#4ade80">The law:</b> More supply = lower prices. Less supply = higher prices.<br><br><b style="color:#fbbf24">Example:</b> Excess wheat drops mandi prices. Drought spikes onion prices.<br><br><b style="color:#86efac">Key fact:</b> Market timing is key for farmer profits.'},
+  {icon:'🌦️',name:'Weather & Farming',sub:'Climate impact on crops',facts:'<b style="color:#4ade80">Monsoon:</b> 70% of Indian agriculture depends on the monsoon.<br><br><b style="color:#fbbf24">El Niño:</b> Weakens India\'s monsoon, affecting crop yields.<br><br><b style="color:#86efac">Key fact:</b> 10% monsoon deficit = 2-3% lower farm output.'},
+  {icon:'🧪',name:'Soil & Nutrients',sub:'Science of growing',facts:'<b style="color:#4ade80">NPK:</b> Nitrogen, Phosphorus, Potassium are essential nutrients.<br><br><b style="color:#fbbf24">pH matters:</b> Most crops grow best in pH 6-7.<br><br><b style="color:#86efac">Key fact:</b> Organic farming restores soil health naturally.'},
+  {icon:'🚜',name:'Farm Equipment',sub:'Technology in agriculture',facts:'<b style="color:#4ade80">Revolution:</b> One combine harvester = 200 manual harvesters.<br><br><b style="color:#fbbf24">Cost:</b> Basic tractor costs ₹5-10 lakh.<br><br><b style="color:#86efac">Key fact:</b> Precision farming uses GPS and sensors.'},
+  {icon:'🌍',name:'Export & Trade',sub:'Global agricultural markets',facts:'<b style="color:#4ade80">India exports:</b> Rice, wheat, spices, cotton, sugar, and fruits.<br><br><b style="color:#fbbf24">MSP system:</b> Guarantees farmers a floor price for crops.<br><br><b style="color:#86efac">Key fact:</b> Russia-Ukraine war boosted Indian wheat export prices.'},
+  {icon:'🐄',name:'Livestock & Dairy',sub:'Animal husbandry economics',facts:'<b style="color:#4ade80">India leads:</b> World\'s largest livestock and milk producer.<br><br><b style="color:#fbbf24">Market:</b> Amul collects milk from millions of small farmers.<br><br><b style="color:#86efac">Key fact:</b> Operation Flood = the White Revolution.'},
+  {icon:'🧅',name:'Horticulture',sub:'Fruits, vegetables & spices',facts:'<b style="color:#4ade80">What it is:</b> India is 2nd largest producer of fruits and vegetables.<br><br><b style="color:#fbbf24">Price volatility:</b> Perishable crops have extreme price swings.<br><br><b style="color:#86efac">Key fact:</b> India is called the "Spice Bowl of the World".'},
+];
+
+const QS=[
+  {cat:'Crop Seasons',emoji:'🌾',crop:'Wheat',q:'Which season is wheat primarily grown in India?',a:'Rabi (winter) season',w:['Kharif (monsoon) season','Zaid (summer) season','All year round'],tip:'Rabi crops are sown in October-November and harvested in March-April.'},
+  {cat:'Crop Seasons',emoji:'🍚',crop:'Rice',q:'Rice (paddy) is a Kharif crop. When is it sown?',a:'June-July during monsoon',w:['December-January','March-April','September-October'],tip:'Kharif crops are sown when the monsoon arrives (June-July).'},
+  {cat:'Market Price',emoji:'📈',crop:'Market',q:'If wheat production increases due to a great harvest, what happens to wheat prices?',a:'Prices fall (more supply, same demand)',w:['Prices rise','Prices stay the same','Government sets prices higher'],tip:'Supply & Demand: When supply goes UP, prices come DOWN.'},
+  {cat:'Market Price',emoji:'💰',crop:'Onion',q:'Onion prices spiked to ₹100/kg in winter. What likely caused this?',a:'Crop failure due to heavy rains',w:['Everyone stopped eating onions','Government raised the price','Farmers planted more onions'],tip:'Onions are perishable and highly sensitive to weather.'},
+  {cat:'MSP & Policy',emoji:'🏛️',crop:'Policy',q:'What does MSP (Minimum Support Price) protect farmers from?',a:'Prices falling too low below production cost',w:['Prices rising too high','Too much rainfall','Pest attacks on crops'],tip:'MSP is a price floor set by the government.'},
+  {cat:'MSP & Policy',emoji:'🏦',crop:'FCI',q:'Which government agency buys food grains at MSP?',a:'Food Corporation of India (FCI)',w:['Reserve Bank of India','SEBI','NITI Aayog'],tip:'FCI procures wheat and rice at MSP and maintains buffer stocks.'},
+  {cat:'Weather Impact',emoji:'🌦️',crop:'Monsoon',q:'India gets what % of annual rainfall during the monsoon?',a:'About 70-80%',w:['About 20-30%','About 40-50%','About 90-95%'],tip:'The southwest monsoon provides 70-80% of annual rainfall.'},
+  {cat:'Weather Impact',emoji:'🌵',crop:'Drought',q:'During a drought year, what happens to food prices?',a:'Food prices rise due to less supply',w:['Food prices fall','Food prices are unaffected','Prices are controlled by farmers'],tip:'Drought reduces crop production, causing food inflation.'},
+  {cat:'Soil Science',emoji:'🧪',crop:'Soil',q:'Which three nutrients (NPK) does a plant primarily need?',a:'Nitrogen, Phosphorus, Potassium',w:['Carbon, Oxygen, Hydrogen','Iron, Zinc, Calcium','Sodium, Chlorine, Magnesium'],tip:'NPK = the three macronutrients in fertilizers.'},
+  {cat:'Soil Science',emoji:'🌱',crop:'pH',q:'What soil pH range do most food crops grow best in?',a:'Slightly acidic: pH 6 to 7',w:['Strongly acidic: pH 2 to 4','Strongly alkaline: pH 9 to 11','Neutral only: exactly pH 7'],tip:'Most crops prefer slightly acidic to neutral soil (pH 6-7).'},
+  {cat:'Farm Equipment',emoji:'🚜',crop:'Tractor',q:'What major advantage do combine harvesters give farmers?',a:'They harvest, thresh and clean grain in one pass',w:['They plant seeds automatically','They irrigate large fields','They test soil nutrients'],tip:'A combine harvester cuts, separates grain, and cleans in one pass.'},
+  {cat:'Farm Equipment',emoji:'💧',crop:'Drip',q:'Drip irrigation is preferred over flood irrigation because it...',a:'Uses 40-60% less water and reduces waste',w:['Is cheaper to install','Grows crops faster','Works only for rice'],tip:'Drip irrigation delivers water directly to plant roots.'},
+  {cat:'Export & Trade',emoji:'🌍',crop:'Export',q:'India is the world\'s LARGEST exporter of which crop?',a:'Rice (especially Basmati)',w:['Wheat','Cotton','Soybeans'],tip:'India exports over 20 million tonnes of rice annually.'},
+  {cat:'Export & Trade',emoji:'🌶️',crop:'Spices',q:'Why is India called the "Spice Bowl of the World"?',a:'It produces and exports the most spices globally',w:['Indians eat the spiciest food','Spices grow only in India','Indian spices are the cheapest'],tip:'India produces about 75 of the 109 spices listed by ISO.'},
+  {cat:'Livestock',emoji:'🐄',crop:'Dairy',q:'Which revolution transformed India into the world\'s top milk producer?',a:'Operation Flood (White Revolution)',w:['Green Revolution','Blue Revolution','Golden Revolution'],tip:'Operation Flood (1970-1996) created the cooperative dairy model.'},
+  {cat:'Livestock',emoji:'🥛',crop:'Amul',q:'How does the Amul cooperative model help small dairy farmers?',a:'Collects their milk, processes it, and gives them fair prices',w:['Gives them free cows','Pays them government salary','Lets them sell directly in cities'],tip:'Amul connects millions of small farmers to a national market.'},
+  {cat:'Horticulture',emoji:'🧅',crop:'Onion',q:'Why do onion and tomato prices fluctuate so wildly compared to wheat?',a:'They are perishable and cannot be stored long',w:['They are luxury vegetables','Government does not control them','Farmers prefer not selling them'],tip:'Perishable crops have no buffer stock — prices swing wildly.'},
+  {cat:'Horticulture',emoji:'🍅',crop:'Tomato',q:'Tomato prices went from ₹20/kg to ₹200/kg in one month. This is called...',a:'Price volatility of perishable crops',w:['Normal market behavior','Government price fixing','Farmer monopoly'],tip:'Price volatility is severe for perishables. Cold storage helps.'},
+  {cat:'Supply & Demand',emoji:'📊',crop:'Market',q:'Direct selling to private buyers usually...',a:'Gets farmers higher prices by cutting middlemen',w:['Always gives lower prices','Is illegal in India','Reduces crop quality'],tip:'Direct sale gives farmers a bigger share of the final price.'},
+  {cat:'Supply & Demand',emoji:'🌻',crop:'Sunflower',q:'When global sunflower oil supply drops, what happens to Indian mustard oil prices?',a:'Mustard oil prices rise (substitute demand increases)',w:['Mustard prices fall','No effect on Indian markets','Farmers grow less mustard'],tip:'This is cross-price elasticity in action!'},
+  {cat:'Crop Seasons',emoji:'🌽',crop:'Maize',q:'Maize (corn) is used for which industrial purpose besides food?',a:'Making ethanol (biofuel)',w:['Building material','Textile fiber','Medicine production'],tip:'Corn-based ethanol is added to petrol to reduce fuel imports.'},
+  {cat:'MSP & Policy',emoji:'🌾',crop:'Procurement',q:'The Green Revolution of the 1960s made India self-sufficient in...',a:'Wheat and rice',w:['Cotton and jute','Sugarcane and tea','Pulses and oilseeds'],tip:'The Green Revolution introduced HYV seeds and chemical fertilizers.'},
+  {cat:'Farm Economics',emoji:'💸',crop:'Credit',q:'Why do many farmers take loans before the sowing season?',a:'To buy seeds, fertilizers, and pay for labor upfront',w:['To save money in banks','To buy land from neighbors','Government requires it'],tip:'Farming requires large upfront investment before any harvest income.'},
+  {cat:'Farm Economics',emoji:'🏪',crop:'Mandi',q:'What is a "mandi" in the agricultural marketing system?',a:'A regulated wholesale market where farmers sell crops',w:['A retail shop for farmers','A government bank for agriculture','A pesticide distribution center'],tip:'APMC mandis are state-regulated wholesale markets for farmers.'},
+  {cat:'Weather Impact',emoji:'❄️',crop:'Cold Storage',q:'Cold storage infrastructure helps farmers most by...',a:'Allowing them to sell when prices are higher instead of at harvest',w:['Making crops grow faster','Reducing fertilizer use','Attracting more buyers to farms'],tip:'Cold storage lets farmers hold stock and sell when prices recover.'},
+  {cat:'Export & Trade',emoji:'🌱',crop:'Organic',q:'Organic produce sells at a premium price because...',a:'It is grown without chemicals, meeting high-value market demand',w:['It tastes sweeter always','It grows faster than regular crops','Government subsidizes organic farmers'],tip:'Organic certification means no synthetic pesticides or fertilizers.'},
+  {cat:'Soil Science',emoji:'🌿',crop:'Organic',q:'What is the main benefit of crop rotation for farmers?',a:'It restores soil nutrients and breaks pest cycles naturally',w:['It doubles crop yield immediately','It reduces need for irrigation','It protects crops from rain'],tip:'Growing different crops in sequence replenishes soil naturally.'},
+  {cat:'Livestock',emoji:'🐓',crop:'Poultry',q:'When maize (corn) prices rise, what happens to chicken/egg prices?',a:'They rise too, because maize is poultry feed',w:['They fall','They are unaffected','Poultry farmers grow their own maize'],tip:'60% of poultry cost is feed (mainly maize). Chain reaction!'},
+];
+
+const RIVALS=[{n:'Village Trader',s:'🧑‍💼',hp:8},{n:'Mandi Broker',s:'💼',hp:10},{n:'Agri Corp CEO',s:'🏢',hp:12},{n:'Market Mogul',s:'🤑',hp:14}];
+const LVLS=[{n:1,label:'Season 1',qs:8,tmax:18},{n:2,label:'Season 2',qs:10,tmax:13},{n:3,label:'Season 3',qs:12,tmax:9},{n:4,label:'Harvest Boss',qs:14,tmax:6}];
+
+let G={};
+let finalScore=0, gameWon=false;
+
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function showLS(){show('level-screen');}
+function showHS(){
+  show('hs-screen');
+  let hs=[];try{hs=JSON.parse(localStorage.getItem('agriHS')||'[]');}catch(e){}
+  let el=document.getElementById('hs-list');
+  if(!hs.length){el.innerHTML='<p style="color:#4b7a4b;text-align:center;">No harvests recorded yet!</p>';return;}
+  el.innerHTML=hs.map((h,i)=>`<div class="hrow"><span>${['🥇','🥈','🥉'][i]||'🌱'} ${h.label}</span><span style="color:#fbbf24;font-weight:700;">🌾 ${h.sc}</span></div>`).join('');
+}
+function showLearn(){
+  show('learn-screen');
+  document.getElementById('learn-list').innerHTML=TOPICS.map((t,i)=>`
+    <div class="topic-card" onclick="showDetail(${i})">
+      <div class="topic-icon">${t.icon}</div>
+      <div class="tinfo"><div class="tname">${t.name}</div><div class="tfact">${t.sub} · Tap to learn</div></div>
+    </div>`).join('');
+}
+function showDetail(i){let t=TOPICS[i];document.getElementById('detail-icon').textContent=t.icon;document.getElementById('detail-name').textContent=t.name;document.getElementById('detail-sub').textContent=t.sub;document.getElementById('detail-facts').innerHTML=t.facts;document.getElementById('topic-detail').style.display='flex';}
+function closeDetail(){document.getElementById('topic-detail').style.display='none';}
+function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
+
+function startL(lv){
+  let cfg=LVLS[lv-1];let rv=RIVALS[lv-1];
+  let pool=shuffle([...QS]).slice(0,cfg.qs);
+  G={lv,label:cfg.label,lives:3,score:0,combo:1,qi:0,qs:pool,eHp:rv.hp,eMx:rv.hp,tmax:cfg.tmax,tv:cfg.tmax,ti:null,answered:false,cor:0,wrg:0,cats:{}};
+  document.getElementById('esprite').textContent=rv.s;
+  document.getElementById('ename').textContent=rv.n;
+  document.getElementById('llabel').textContent=cfg.label;
+  updateHUD();buildDots();show('bs');nextQ();
+}
+function buildDots(){document.getElementById('pdots').innerHTML=G.qs.map((_,i)=>`<div class="dot${i===0?' cur':''}" id="d${i}"></div>`).join('');}
+function updDots(){G.qs.forEach((_,i)=>{let d=document.getElementById('d'+i);if(d)d.className='dot'+(i<G.qi?' done':i===G.qi?' cur':'');});}
+function updateHUD(){
+  let lv=document.getElementById('lives');lv.innerHTML='';
+  for(let i=0;i<3;i++){let h=document.createElement('span');h.style.fontSize='.9rem';h.textContent=i<G.lives?'❤️':'🖤';lv.appendChild(h);}
+  document.getElementById('cval').textContent='x'+G.combo;
+  document.getElementById('sc').textContent=G.score;
+  document.getElementById('php').style.width=((G.lives/3)*100)+'%';
+  document.getElementById('phtxt').textContent=G.lives+'/3';
+  document.getElementById('ehp').style.width=((G.eHp/G.eMx)*100)+'%';
+  document.getElementById('ehtxt').textContent=G.eHp+'/'+G.eMx;
+}
+function nextQ(){
+  if(G.qi>=G.qs.length){endGame(true);return;}
+  G.answered=false;let q=G.qs[G.qi];
+  document.getElementById('crop-emoji').textContent=q.emoji;
+  document.getElementById('crop-label').textContent=q.crop;
+  document.getElementById('scenario-tag').textContent=q.cat.toUpperCase();
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('fb').textContent='';
+  document.getElementById('tip').textContent='';
+  document.getElementById('combo-txt').textContent='';
+  let opts=shuffle([q.a,...q.w.slice(0,3)]);
+  let ch=document.getElementById('choices');ch.innerHTML='';
+  opts.forEach(o=>{let b=document.createElement('button');b.className='choice';b.textContent=o;b.onclick=()=>ans(b,o,q);ch.appendChild(b);});
+  updDots();startTimer();
+}
+function startTimer(){clearInterval(G.ti);G.tv=G.tmax;updTimer();G.ti=setInterval(()=>{G.tv--;updTimer();if(G.tv<=0){clearInterval(G.ti);timeUp();}},1000);}
+function updTimer(){let p=(G.tv/G.tmax)*100;let f=document.getElementById('tfill');f.style.width=p+'%';f.style.background=p>55?'#4ade80':p>28?'#fbbf24':'#f87171';}
+function timeUp(){
+  if(G.answered)return;G.answered=true;let q=G.qs[G.qi];
+  document.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.a)b.classList.add('ok');});
+  document.getElementById('fb').textContent='⏰ Harvest missed!';document.getElementById('fb').style.color='#f87171';
+  document.getElementById('tip').textContent='💡 '+q.tip;
+  G.combo=1;G.wrg++;
+  if(!G.cats[q.cat])G.cats[q.cat]={c:0,w:0};G.cats[q.cat].w++;
+  loseL();
+  if(G.lives<=0){setTimeout(()=>endGame(false),1600);return;}
+  setTimeout(()=>{G.qi++;nextQ();},2700);
+}
+function ans(btn,opt,q){
+  if(G.answered)return;G.answered=true;clearInterval(G.ti);
+  if(!G.cats[q.cat])G.cats[q.cat]={c:0,w:0};
+  let ok=opt===q.a;
+  if(ok){
+    G.cats[q.cat].c++;btn.classList.add('ok');
+    let dmg=Math.ceil(G.combo*1.5);G.eHp=Math.max(0,G.eHp-dmg);
+    let pts=100*G.combo+(G.tv*6);G.score+=pts;
+    G.combo=Math.min(G.combo+1,5);G.cor++;
+    document.getElementById('fb').textContent='✅ Correct! +'+pts+' pts';document.getElementById('fb').style.color='#4ade80';
+    document.getElementById('tip').textContent='💡 '+q.tip;
+    if(G.combo>1)document.getElementById('combo-txt').textContent='🔥 COMBO x'+G.combo+'!';
+    if(G.combo>=3)flashStreak('🔥 x'+G.combo+' COMBO!');
+    showDmg('-'+dmg+'🌾','#fbbf24',false);
+    anim('psprite','atk');anim('esprite','hurt');updateHUD();
+    if(G.eHp<=0){setTimeout(()=>endGame(true),1400);return;}
+  }else{
+    G.cats[q.cat].w++;btn.classList.add('bad');
+    document.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.a)b.classList.add('ok');});
+    G.combo=1;G.wrg++;
+    document.getElementById('fb').textContent='❌ Market loss!';document.getElementById('fb').style.color='#f87171';
+    document.getElementById('tip').textContent='💡 '+q.tip;
+    showDmg('-❤️','#f87171',true);anim('esprite','atk');anim('psprite','hurt');
+    loseL();updateHUD();
+    if(G.lives<=0){setTimeout(()=>endGame(false),1600);return;}
+  }
+  setTimeout(()=>{G.qi++;nextQ();},2800);
+}
+function loseL(){G.lives=Math.max(0,G.lives-1);updateHUD();}
+function anim(id,cls){let e=document.getElementById(id);e.classList.remove('atk','hurt');void e.offsetWidth;e.classList.add(cls);setTimeout(()=>e.classList.remove(cls),400);}
+function showDmg(txt,col,isP){let p=document.getElementById('dmg');p.style.animation='none';p.textContent=txt;p.style.color=col;p.style.left=isP?'13%':'67%';p.style.top='40%';void p.offsetWidth;p.style.animation='popUp 0.8s ease forwards';}
+function flashStreak(msg){let e=document.getElementById('streak');e.textContent=msg;e.style.animation='none';void e.offsetWidth;e.style.animation='popUp 1s ease forwards';}
+
+function endGame(won){
+  clearInterval(G.ti);
+  gameWon=won;finalScore=G.score;
+  let tot=G.cor+G.wrg;let acc=tot>0?Math.round(G.cor/tot*100):0;
+  document.getElementById('rico').textContent=won?'🏆':'🌧️';
+  document.getElementById('rtitle').textContent=won?'Harvest Complete!':'Bad Season — Try Again!';
+  document.getElementById('rscore').textContent=G.score;
+  document.getElementById('rmsg').textContent=won?'You outtraded the market rival!':'Study the Farm Academy and come back stronger!';
+  document.getElementById('racc').textContent='Accuracy: '+acc+'% · '+G.cor+' correct · '+G.wrg+' wrong';
+  let catBadges=Object.entries(G.cats).map(([cat,v])=>{let pct=v.c+v.w>0?Math.round(v.c/(v.c+v.w)*100):0;return `<span class="badge">${cat}: ${pct}%</span>`;}).join('');
+  document.getElementById('rcats').innerHTML='<div style="font-size:.7rem;color:#4b7a4b;margin-bottom:4px;">Topic scores:</div>'+catBadges;
+  if(won){
+    let hs=[];try{hs=JSON.parse(localStorage.getItem('agriHS')||'[]');}catch(e){}
+    hs.push({label:G.label,sc:G.score});hs.sort((a,b)=>b.sc-a.sc);hs=hs.slice(0,5);
+    try{localStorage.setItem('agriHS',JSON.stringify(hs));}catch(e){}
+  }
+  show('results-screen');
+}
+
+function claimRewards(){
+  let xp = gameWon ? 400 + finalScore : Math.floor(finalScore * 0.3);
+  let coins = gameWon ? 250 + Math.floor(finalScore / 5) : Math.floor(finalScore / 10);
+  if(window.parent && window.parent.currentUser) {
+    fetch('/api/save-gamestate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ xp: xp, coins: coins })
+    }).then(() => {
+      if(window.parent.closeGame) window.parent.closeGame(gameWon);
+    }).catch(e => console.log(e));
+  } else if (window.parent && window.parent.closeGame) {
+    window.parent.closeGame(gameWon);
+  }
+}
+</script>
+</body>
+</html>
