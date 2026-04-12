@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algorithm Puzzle</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#G{background:#07071a;height:100vh;position:relative;overflow:hidden;border-radius:14px;color:#fff;user-select:none;font-family:'Segoe UI',system-ui,sans-serif}
+canvas#bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;padding:16px}
+.gone{display:none!important}
+#hud{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:30;background:rgba(0,0,10,0.7);border-bottom:1px solid rgba(80,160,255,0.2)}
+.hb{display:flex;flex-direction:column;align-items:center;gap:1px}
+.hl{font-size:8px;color:#5af;letter-spacing:2px;opacity:.7;font-weight:600}
+.hv{font-size:17px;font-weight:700;color:#5af;letter-spacing:1px}
+#arena{position:absolute;top:56px;left:0;right:0;bottom:0;z-index:5}
+.en{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .15s}
+.en:hover .eb{transform:scale(1.12)}
+.eb{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;border:2px solid rgba(255,255,255,0.25);position:relative;transition:transform .15s}
+.en.boss .eb{width:96px;height:96px;font-size:40px}
+.en-nm{font-size:9px;color:#cce;margin-top:5px;text-align:center;background:rgba(0,0,20,.75);padding:2px 7px;border-radius:10px;letter-spacing:.5px;max-width:90px;line-height:1.3}
+.hpw{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:52px;height:4px;background:#1a1a3a;border-radius:2px;overflow:hidden}
+.hpf{height:100%;background:#3f3;border-radius:2px;transition:width .25s}
+@keyframes ef{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes bf{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-14px) rotate(4deg)}}
+@keyframes spawn{from{opacity:0;transform:scale(0) rotate(-180deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes pop{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-70px) scale(.7)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes waveIn{0%{opacity:0;letter-spacing:20px}60%{opacity:1;letter-spacing:6px}100%{opacity:0;letter-spacing:2px}}
+.en-anim{animation:ef 2.2s ease-in-out infinite}
+.boss-anim{animation:bf 1.6s ease-in-out infinite}
+.spawn-anim{animation:spawn .45s cubic-bezier(.175,.885,.32,1.275)}
+.ft{position:absolute;pointer-events:none;font-size:15px;font-weight:700;z-index:60;animation:floatUp .9s ease-out forwards}
+#pp{position:absolute;bottom:0;left:0;right:0;z-index:40;background:rgba(3,6,28,.97);border-top:2px solid rgba(80,160,255,.35);padding:14px 16px 18px;animation:pop .2s ease-out}
+.pn{font-size:9px;color:#6af;letter-spacing:2px;margin-bottom:5px;font-weight:600}
+.pq{font-size:14px;color:#e8f0ff;margin-bottom:13px;line-height:1.55;font-family:'Courier New',monospace;background:rgba(80,140,255,.07);padding:10px 12px;border-radius:8px;border-left:3px solid #3af;white-space:pre-wrap}
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cb{background:rgba(80,140,255,.07);border:1px solid rgba(80,140,255,.25);color:#c8deff;padding:10px 10px;border-radius:8px;font-family:'Courier New',monospace;font-size:12px;cursor:pointer;transition:all .15s;text-align:left;line-height:1.4}
+.cb:hover{background:rgba(80,140,255,.22);border-color:#4af;color:#fff;transform:translateY(-1px)}
+.cb.ok{background:rgba(0,200,80,.2);border-color:#0f8;color:#0f8;pointer-events:none}
+.cb.no{background:rgba(255,50,50,.18);border-color:#f44;color:#f44;pointer-events:none}
+#tbar{height:5px;background:#0a0a20;border-radius:3px;margin-top:10px;overflow:hidden}
+#tf{height:100%;border-radius:3px;transition:width .08s linear,background .3s}
+.box{background:rgba(10,20,60,.95);border:1px solid rgba(80,140,255,.35);border-radius:16px;padding:26px 28px;max-width:460px;width:100%;text-align:center}
+.box h1{font-size:26px;font-weight:800;color:#4af;margin-bottom:6px;letter-spacing:2px}
+.box p{font-size:12px;color:#89b;margin-bottom:16px;line-height:1.7}
+.btn{background:rgba(20,60,140,.8);border:1px solid #4af;color:#4af;padding:11px 28px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1.5px;transition:all .18s;margin:5px;font-family:inherit}
+.btn:hover{background:#4af;color:#000}
+.btn.red{border-color:#f55;color:#f55}
+.btn.red:hover{background:#f55;color:#fff}
+.btn.gold{border-color:#fa0;color:#fa0}
+.btn.gold:hover{background:#fa0;color:#000}
+.sbig{font-size:48px;font-weight:800;color:#4af;margin:14px 0}
+.sr{display:flex;justify-content:space-between;font-size:12px;color:#79a;padding:3px 0;border-bottom:1px solid rgba(80,140,255,.1)}
+.xpw{height:5px;background:#0a0a20;border-radius:3px;overflow:hidden;margin:2px 0}
+.xpf{height:100%;background:#5af;border-radius:3px;transition:width .5s}
+.xpl{font-size:8px;color:#5af;letter-spacing:1px}
+#combo{position:absolute;top:62px;right:14px;z-index:25;text-align:right;font-size:12px;letter-spacing:1px;transition:all .3s;pointer-events:none}
+#wann{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:50;font-size:32px;font-weight:800;color:#4af;letter-spacing:4px;opacity:0;pointer-events:none;text-align:center;text-shadow:0 0 20px rgba(80,160,255,.6)}
+#skill-notice{position:absolute;top:62px;left:14px;z-index:25;font-size:10px;color:#fa0;background:rgba(0,0,20,.8);padding:4px 10px;border-radius:8px;border:1px solid rgba(255,170,0,.3);opacity:0;transition:opacity .4s;pointer-events:none}
+.diff-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:9px;letter-spacing:2px;font-weight:700;margin-bottom:14px}
+.lives-row{display:flex;gap:6px;align-items:center;justify-content:center}
+.heart{font-size:20px;transition:all .3s}
+.heart.dead{opacity:.15;filter:grayscale(1) brightness(.4)}
+#levelup{position:absolute;inset:0;z-index:45;background:rgba(0,0,30,.8);display:flex;align-items:center;justify-content:center;animation:pop .3s ease-out}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only" style="position:absolute;left:-9999px">Algo Wars — algorithm puzzle battle game</h2>
+
+<div id="G">
+<canvas id="bg"></canvas>
+
+<div id="hud" class="gone">
+  <div class="hb"><span class="hl">WAVE</span><span class="hv" id="hw">1</span></div>
+  <div class="hb"><span class="hl">SCORE</span><span class="hv" id="hs">0</span></div>
+  <div class="hb" id="hlives"></div>
+  <div class="hb">
+    <span class="hl">XP <span id="hlvl" style="color:#fa0">LV1</span></span>
+    <div class="xpw" style="width:90px"><div class="xpf" id="hxp" style="width:0%"></div></div>
+  </div>
+  <div class="hb"><span class="hl">KILLS</span><span class="hv" id="hk">0</span></div>
+</div>
+
+<div id="arena"></div>
+<div id="combo"></div>
+<div id="wann"></div>
+<div id="skill-notice"></div>
+
+<div class="scr" id="s-start">
+  <div class="box">
+    <div style="font-size:52px;margin-bottom:8px">🧩</div>
+    <h1>ALGO WARS</h1>
+    <p>Defeat algorithm monsters by solving coding puzzles.<br>10 waves. Increasing difficulty. Limited lives.<br>Combos unlock power moves. Can you reach wave 10?</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 16px;text-align:left">
+      <div style="background:rgba(80,140,255,.07);border:1px solid rgba(80,140,255,.2);border-radius:8px;padding:8px 10px;font-size:10px;color:#89b;line-height:1.6">
+        <div style="color:#4af;font-weight:700;margin-bottom:4px">HOW TO PLAY</div>
+        Tap an enemy to battle it. Solve the puzzle before the timer runs out. Each correct answer damages the enemy.
+      </div>
+      <div style="background:rgba(80,140,255,.07);border:1px solid rgba(80,140,255,.2);border-radius:8px;padding:8px 10px;font-size:10px;color:#89b;line-height:1.6">
+        <div style="color:#fa0;font-weight:700;margin-bottom:4px">POWER UPS</div>
+        Combo x3 = Time Freeze<br>Combo x5 = Double Damage<br>Combo x7 = Full HP restore<br>Wrong = lose 1 life
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;color:#89b;margin-bottom:8px;letter-spacing:1px">SELECT DIFFICULTY</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn" onclick="setDiff('easy')" id="db-easy">EASY</button>
+        <button class="btn gold" onclick="setDiff('normal')" id="db-normal">NORMAL</button>
+        <button class="btn red" onclick="setDiff('hard')" id="db-hard">HARD</button>
+      </div>
+    </div>
+    <button class="btn" style="font-size:14px;padding:13px 36px" onclick="startGame()">FIGHT ⚔️</button>
+  </div>
+</div>
+
+<div class="scr gone" id="s-over">
+  <div class="box">
+    <div style="font-size:52px;margin-bottom:8px">💀</div>
+    <h1>DEFEATED</h1>
+    <div class="sbig" id="os"></div>
+    <div class="sr"><span>Wave reached</span><span id="ow" style="color:#4af"></span></div>
+    <div class="sr"><span>Enemies slain</span><span id="ok" style="color:#0f8"></span></div>
+    <div class="sr"><span>Best combo</span><span id="oc" style="color:#fa0"></span></div>
+    <div class="sr"><span>Accuracy</span><span id="oa" style="color:#af8"></span></div>
+    <div class="sr"><span>Difficulty</span><span id="od" style="color:#f88"></span></div>
+    <br>
+    <button class="btn" onclick="startGame()">RETRY ↺</button>
+    <button class="btn" onclick="goMenu()">MENU</button>
+  </div>
+</div>
+
+<div class="scr gone" id="s-win">
+  <div class="box">
+    <div style="font-size:52px;margin-bottom:8px">🏆</div>
+    <h1>VICTORY!</h1>
+    <p>All 10 waves conquered! You are the Algorithm Master!</p>
+    <div class="sbig" id="ws"></div>
+    <div class="sr"><span>Enemies slain</span><span id="wk" style="color:#0f8"></span></div>
+    <div class="sr"><span>Best combo</span><span id="wc" style="color:#fa0"></span></div>
+    <div class="sr"><span>Accuracy</span><span id="wa" style="color:#af8"></span></div>
+    <br>
+    <button class="btn gold" style="font-size:14px;padding:13px 36px" onclick="startGame()">PLAY AGAIN ↺</button>
+    <button class="btn" onclick="goMenu()">MENU</button>
+  </div>
+</div>
+
+<div id="pp" class="gone">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <div class="pn" id="pen">ENEMY</div>
+    <div style="font-size:9px;color:#79a" id="p-diff-label"></div>
+  </div>
+  <div class="pq" id="pq"></div>
+  <div class="ch" id="pch"></div>
+  <div id="tbar"><div id="tf" style="width:100%;background:#4af"></div></div>
+</div>
+
+</div>
+
+<script>
+const AR=document.getElementById('arena');
+const PP=document.getElementById('pp');
+const WANN=document.getElementById('wann');
+const SNOTICE=document.getElementById('skill-notice');
+const G=document.getElementById('G');
+
+const DIFF={
+  easy:{timeBase:22,timeDec:.8,lives:5,scoreM:0.7,label:'EASY',color:'#4f4'},
+  normal:{timeBase:18,timeDec:1.2,lives:3,scoreM:1,label:'NORMAL',color:'#fa0'},
+  hard:{timeBase:13,timeDec:1.6,lives:2,scoreM:1.5,label:'HARD',color:'#f44'}
+};
+
+const PUZZLES=[
+  {q:"What is time complexity of binary search?",a:"O(log n)",w:["O(n)","O(n²)","O(1)"],tier:1},
+  {q:"Which data structure uses LIFO?",a:"Stack",w:["Queue","Heap","Array"],tier:1},
+  {q:"Which traversal visits root FIRST?",a:"Preorder",w:["Inorder","Postorder","Levelorder"],tier:1},
+  {q:"Array access by index is:",a:"O(1)",w:["O(n)","O(log n)","O(n log n)"],tier:1},
+  {q:"Linked list search is:",a:"O(n)",w:["O(1)","O(log n)","O(n²)"],tier:1},
+  {q:"Which sort is O(n log n) always?",a:"Merge sort",w:["Quick sort","Bubble sort","Insertion sort"],tier:1},
+  {q:"Queue uses which principle?",a:"FIFO",w:["LIFO","LILO","FOLS"],tier:1},
+  {q:"Hash table average lookup:",a:"O(1)",w:["O(n)","O(log n)","O(n²)"],tier:1},
+  {q:"DFS uses which structure?",a:"Stack",w:["Queue","Heap","Array"],tier:2},
+  {q:"BFS uses which structure?",a:"Queue",w:["Stack","Heap","Tree"],tier:2},
+  {q:"Insertion in sorted linked list:",a:"O(n)",w:["O(1)","O(log n)","O(n log n)"],tier:2},
+  {q:"Which is NOT stable sort?",a:"Quick sort",w:["Merge sort","Insertion sort","Bubble sort"],tier:2},
+  {q:"Heap's root always holds:",a:"Min or max element",w:["Median","First inserted","Random"],tier:2},
+  {q:"Dynamic programming solves:",a:"Overlapping subproblems",w:["Graph cycles","Memory leaks","Stack overflows"],tier:2},
+  {q:"Quicksort worst case is:",a:"O(n²)",w:["O(n log n)","O(n)","O(log n)"],tier:2},
+  {q:"Inorder traversal of BST gives:",a:"Sorted sequence",w:["Random order","Reverse order","Level order"],tier:2},
+  {q:"Dijkstra fails with:",a:"Negative edge weights",w:["Undirected graphs","Dense graphs","Large inputs"],tier:3},
+  {q:"Two Sum fastest solution uses:",a:"Hash map",w:["Sorting","Binary search","Brute force"],tier:3},
+  {q:"Floyd-Warshall solves:",a:"All-pairs shortest path",w:["MST","Single source","Topological sort"],tier:3},
+  {q:"A trie is optimized for:",a:"Prefix/string search",w:["Sorting numbers","Graph paths","Matrix ops"],tier:3},
+  {q:"Memoization stores:",a:"Computed subproblem results",w:["Sorted inputs","Graph edges","Random values"],tier:3},
+  {q:"Union-Find detects:",a:"Graph cycles",w:["Shortest paths","Duplicate keys","Tree height"],tier:3},
+  {q:"Topological sort works on:",a:"Directed acyclic graphs",w:["Undirected graphs","Cyclic graphs","Trees only"],tier:3},
+  {q:"Amortized O(1) means:",a:"Average cost per op is O(1)",w:["Always O(1)","Sometimes O(1)","Best case O(1)"],tier:3},
+  {q:"Segment tree answers:",a:"Range queries in O(log n)",w:["Point queries","Graph queries","Hash queries"],tier:4},
+  {q:"KMP improves:",a:"String pattern matching",w:["Sorting","Graph BFS","Hash collisions"],tier:4},
+  {q:"A Red-Black tree guarantees:",a:"O(log n) height",w:["O(1) height","O(n) height","O(n²) insert"],tier:4},
+  {q:"Bellman-Ford handles:",a:"Negative edge weights",w:["Only positive weights","Undirected only","No cycles"],tier:4},
+  {q:"Prim's algorithm builds:",a:"Minimum spanning tree",w:["Shortest path","Max flow","Topological order"],tier:4},
+  {q:"Space complexity of BFS on a graph with V vertices:",a:"O(V)",w:["O(1)","O(V²)","O(log V)"],tier:4},
+  {q:"AVL tree vs BST: AVL guarantees:",a:"Balanced height O(log n)",w:["Faster inserts","Less memory","Simpler code"],tier:4},
+  {q:"Knapsack 0/1 time complexity:",a:"O(n × W)",w:["O(n log n)","O(n²)","O(2ⁿ) always"],tier:4},
+];
+
+const ENEMIES=[
+  {n:"Bug Bot",e:"🤖",bg:"#0e2252",hp:1,xp:10,boss:false},
+  {n:"Stack Wraith",e:"👻",bg:"#2a0a4a",hp:1,xp:12,boss:false},
+  {n:"Loop Goblin",e:"👺",bg:"#0a3a1a",hp:1,xp:14,boss:false},
+  {n:"Null Shade",e:"🦇",bg:"#3a1a08",hp:1,xp:16,boss:false},
+  {n:"Byte Spider",e:"🕷️",bg:"#1a0a3a",hp:2,xp:22,boss:false},
+  {n:"Glitch Imp",e:"😈",bg:"#3a0a2a",hp:2,xp:26,boss:false},
+  {n:"Recursion Demon",e:"🐉",bg:"#1a1a3a",hp:3,xp:45,boss:true},
+  {n:"Complexity Titan",e:"💀",bg:"#3a1a00",hp:3,xp:50,boss:true},
+  {n:"∞ Loop Beast",e:"🌀",bg:"#003a3a",hp:4,xp:60,boss:true},
+];
+
+const SKILLS=[
+  {combo:3,name:"TIME FREEZE",desc:"Timer paused!",color:"#4af"},
+  {combo:5,name:"DOUBLE DAMAGE",desc:"Next hit = 2x",color:"#0f8"},
+  {combo:7,name:"RESTORED",desc:"+1 Life!",color:"#fa0"},
+];
+
+let gs={};
+let active=null;
+let tim=null;
+let usedQ=new Set();
+let waveEn=[];
+let diffKey='normal';
+let doubleDmg=false;
+let frozen=false;
+let frozenTimeout=null;
+let totalQ=0;
+let correctQ=0;
+
+function setDiff(d){
+  diffKey=d;
+  ['easy','normal','hard'].forEach(k=>{
+    const b=document.getElementById('db-'+k);
+    b.style.borderColor=k===d?DIFF[k].color:'rgba(80,140,255,.5)';
+    b.style.color=k===d?DIFF[k].color:'#4af';
+    b.style.background=k===d?'rgba(80,140,255,.15)':'rgba(20,60,140,.8)';
+  });
+}
+setDiff('normal');
+
+function goMenu(){
+  ['s-over','s-win','hud','s-start'].forEach(id=>document.getElementById(id).classList.add('gone'));
+  PP.classList.add('gone');
+  AR.innerHTML='';
+  clearInterval(tim);
+  document.getElementById('s-start').classList.remove('gone');
+  document.getElementById('hud').classList.add('gone');
+}
+
+function startGame(){
+  ['s-start','s-over','s-win'].forEach(id=>document.getElementById(id).classList.add('gone'));
+  document.getElementById('hud').classList.remove('gone');
+  PP.classList.add('gone');
+  AR.innerHTML='';
+  clearInterval(tim);
+  usedQ.clear();
+  active=null;
+  doubleDmg=false;
+  frozen=false;
+  totalQ=0;
+  correctQ=0;
+  const D=DIFF[diffKey];
+  gs={wave:1,score:0,lives:D.lives,maxLives:D.lives,xp:0,xpNext:120,lvl:1,combo:0,bestCombo:0,kills:0};
+  updateHUD();
+  beginWave();
+}
+
+function updateHUD(){
+  document.getElementById('hw').textContent=gs.wave;
+  document.getElementById('hs').textContent=gs.score;
+  document.getElementById('hk').textContent=gs.kills;
+  document.getElementById('hlvl').textContent='LV'+gs.lvl;
+  document.getElementById('hxp').style.width=Math.round(gs.xp/gs.xpNext*100)+'%';
+  let lh='';
+  for(let i=0;i<gs.maxLives;i++) lh+=`<span class="heart${i>=gs.lives?' dead':''}">❤️</span>`;
+  document.getElementById('hlives').innerHTML=`<span class="hl">LIVES</span><div class="lives-row">${lh}</div>`;
+  updateComboUI();
+}
+
+function updateComboUI(){
+  const c=gs.combo;
+  const el=document.getElementById('combo');
+  if(c>=3){
+    const col=c>=7?'#fa0':c>=5?'#0f8':'#4af';
+    el.innerHTML=`<div style="font-size:18px;font-weight:800;color:${col}">🔥 COMBO ×${c}</div><div style="font-size:9px;color:${col};letter-spacing:1px">${c>=7?'RESTORE READY':c>=5?'DOUBLE DMG':c>=3?'FREEZE READY':''}</div>`;
+  } else {
+    el.innerHTML='';
+  }
+}
+
+function beginWave(){
+  AR.innerHTML='';
+  waveEn=[];
+  active=null;
+  PP.classList.add('gone');
+  clearInterval(tim);
+  doubleDmg=false;
+  frozen=false;
+  announceWave(gs.wave);
+  setTimeout(()=>spawnEnemies(gs.wave), 1300);
+}
+
+function announceWave(w){
+  const el=WANN;
+  const isLast=w===10;
+  el.innerHTML=isLast?'⚠️ FINAL WAVE ⚠️':`WAVE ${w}`;
+  el.style.animation='none';
+  el.offsetHeight;
+  el.style.animation='waveIn 1.2s ease-out forwards';
+}
+
+function spawnEnemies(wave){
+  const gw=G.offsetWidth||600;
+  const gh=(G.offsetHeight||700)-56;
+  const isBossWave=wave%3===0;
+  const count=Math.min(2+Math.ceil(wave*1.1),9);
+
+  for(let i=0;i<count;i++){
+    const isBoss=isBossWave&&i===0;
+    const pool=isBoss?ENEMIES.filter(e=>e.boss):ENEMIES.filter(e=>!e.boss);
+    const type=pool[Math.floor(Math.random()*pool.length)];
+    const sz=isBoss?96:64;
+    const margin=isBoss?70:50;
+    const x=margin+Math.random()*Math.max(10,gw-sz-margin*2);
+    const y=margin+Math.random()*Math.max(10,gh-sz-margin*2);
+    const extraHp=Math.floor((wave-1)*0.6)+(isBoss?2:0);
+    const hp=type.hp+extraHp;
+    const id='e'+i+Date.now();
+    const en={id,type,hp,maxHp:hp,x,y,isBoss,dead:false,el:null};
+    waveEn.push(en);
+    buildEnemy(en, i*180);
+  }
+}
+
+function buildEnemy(e,delay){
+  const d=document.createElement('div');
+  d.className='en'+(e.isBoss?' boss':'')+' spawn-anim';
+  d.id=e.id;
+  d.style.left=e.x+'px';
+  d.style.top=e.y+'px';
+  d.style.animationDelay=(delay/1000)+'s';
+  d.innerHTML=`<div class="eb ${e.isBoss?'boss-anim':'en-anim'}" style="background:${e.type.bg}">${e.type.e}<div class="hpw"><div class="hpf" id="hf-${e.id}"></div></div></div><div class="en-nm">${e.type.n}</div>`;
+  d.onclick=()=>engage(e.id);
+  AR.appendChild(d);
+  e.el=d;
+}
+
+function engage(id){
+  if(active) return;
+  const e=waveEn.find(x=>x.id===id);
+  if(!e||e.dead) return;
+  active=e;
+  showPuzzle(e);
+}
+
+function getPuzzle(wave){
+  const maxTier=Math.min(4,1+Math.floor((wave-1)/2.5));
+  const pool=PUZZLES.filter(p=>p.tier<=maxTier&&!usedQ.has(p.q));
+  if(!pool.length){usedQ.clear();return getPuzzle(wave);}
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function showPuzzle(e){
+  const p=getPuzzle(gs.wave);
+  usedQ.add(p.q);
+  totalQ++;
+  const D=DIFF[diffKey];
+  const secs=Math.max(5,D.timeBase-gs.wave*D.timeDec);
+
+  document.getElementById('pen').textContent=`⚔️ ${e.type.e} ${e.type.n.toUpperCase()}  HP: ${e.hp}/${e.maxHp}`;
+  document.getElementById('p-diff-label').textContent=`T${p.tier} · ${Math.round(secs)}s`;
+  document.getElementById('pq').textContent=p.q;
+
+  const opts=[p.a,...p.w].sort(()=>Math.random()-.5);
+  const ch=document.getElementById('pch');
+  ch.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='cb';
+    b.textContent=o;
+    b.onclick=()=>answer(o,p.a,e);
+    ch.appendChild(b);
+  });
+
+  PP.classList.remove('gone');
+  if(!frozen) startTimer(secs,()=>answer(null,p.a,e));
+  else{
+    document.getElementById('tf').style.width='100%';
+    document.getElementById('tf').style.background='#4af';
+  }
+}
+
+function startTimer(secs,cb){
+  const tf=document.getElementById('tf');
+  tf.style.width='100%';
+  tf.style.background='#4af';
+  clearInterval(tim);
+  const t0=Date.now();
+  tim=setInterval(()=>{
+    if(frozen) return;
+    const pct=Math.max(0,1-(Date.now()-t0)/(secs*1000));
+    tf.style.width=(pct*100)+'%';
+    tf.style.background=pct<.3?'#f44':pct<.6?'#fa0':'#4af';
+    if(pct<=0){clearInterval(tim);cb();}
+  },60);
+}
+
+function answer(chosen,correct,enemy){
+  clearInterval(tim);
+  document.querySelectorAll('.cb').forEach(b=>{
+    if(b.textContent===correct) b.classList.add('ok');
+    else if(b.textContent===chosen) b.classList.add('no');
+    b.onclick=null;
+  });
+
+  const wasCorrect=chosen===correct;
+  if(wasCorrect){
+    correctQ++;
+    gs.combo++;
+    gs.bestCombo=Math.max(gs.bestCombo,gs.combo);
+    const dmg=doubleDmg?2:1;
+    doubleDmg=false;
+    const pts=(15+gs.wave*6+Math.floor(gs.combo/2)*4)*DIFF[diffKey].scoreM;
+    gs.score+=Math.round(pts);
+    gs.xp+=enemy.type.xp*(gs.combo>3?1.5:1);
+    checkLevelUp();
+    checkSkill(gs.combo);
+    floatMsg(enemy.el,'+'+Math.round(pts),gs.combo>=3?'#fa0':'#4f4');
+    damageEnemy(enemy,dmg);
+  } else {
+    gs.combo=0;
+    doubleDmg=false;
+    gs.lives--;
+    floatMsg(enemy.el,chosen?'WRONG!':'TIME!','#f55');
+    if(enemy.el) enemy.el.style.animation='shake .4s ease-out';
+    setTimeout(()=>{if(enemy.el) enemy.el.style.animation='';},500);
+    if(gs.lives<=0){
+      updateHUD();
+      setTimeout(showGameOver,700);
+      return;
+    }
+  }
+  updateHUD();
+  setTimeout(()=>{
+    PP.classList.add('gone');
+    active=null;
+    checkWaveCleared();
+  },650);
+}
+
+function damageEnemy(e,dmg){
+  e.hp=Math.max(0,e.hp-dmg);
+  const f=document.getElementById('hf-'+e.id);
+  if(f) f.style.width=(e.hp/e.maxHp*100)+'%';
+  if(e.hp<=0){
+    e.dead=true;
+    gs.kills++;
+    burst(e);
+    if(e.el){
+      e.el.style.transition='all .4s';
+      e.el.style.transform='scale(0) rotate(360deg)';
+      e.el.style.opacity='0';
+      setTimeout(()=>{if(e.el&&e.el.parentNode) e.el.remove();},420);
+    }
+  }
+}
+
+function checkSkill(combo){
+  SKILLS.forEach(sk=>{
+    if(combo===sk.combo){
+      if(sk.combo===3){frozen=true;clearTimeout(frozenTimeout);frozenTimeout=setTimeout(()=>frozen=false,5000);}
+      if(sk.combo===5) doubleDmg=true;
+      if(sk.combo===7) gs.lives=Math.min(gs.maxLives,gs.lives+1);
+      showSkillNotice(`${sk.name}: ${sk.desc}`,sk.color);
+    }
+  });
+}
+
+function showSkillNotice(msg,color){
+  const el=SNOTICE;
+  el.textContent=msg;
+  el.style.color=color;
+  el.style.borderColor=color+'55';
+  el.style.opacity='1';
+  setTimeout(()=>el.style.opacity='0',2500);
+}
+
+function checkLevelUp(){
+  while(gs.xp>=gs.xpNext){
+    gs.xp-=gs.xpNext;
+    gs.lvl++;
+    gs.xpNext=Math.round(gs.xpNext*1.4);
+    gs.lives=Math.min(gs.maxLives,gs.lives+1);
+    showSkillNotice('LEVEL UP! +1 Life','#fa0');
+  }
+}
+
+function checkWaveCleared(){
+  const alive=waveEn.filter(e=>!e.dead);
+  if(!alive.length){
+    if(gs.wave>=10){setTimeout(showWin,800);}
+    else{
+      gs.wave++;
+      if(gs.wave%5===0) gs.lives=Math.min(gs.maxLives,gs.lives+1);
+      updateHUD();
+      setTimeout(beginWave,900);
+    }
+  }
+}
+
+function floatMsg(ref,txt,col){
+  const el=document.createElement('div');
+  el.className='ft';
+  el.textContent=txt;
+  el.style.color=col;
+  if(ref){
+    const r=ref.getBoundingClientRect();
+    const gr=G.getBoundingClientRect();
+    el.style.left=(r.left-gr.left+r.width/2-20)+'px';
+    el.style.top=(r.top-gr.top+10)+'px';
+  } else {
+    el.style.left='50%';
+    el.style.top='40%';
+    el.style.transform='translateX(-50%)';
+  }
+  G.appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
+
+function burst(e){
+  if(!e.el) return;
+  const r=e.el.getBoundingClientRect();
+  const gr=G.getBoundingClientRect();
+  const cx=r.left-gr.left+r.width/2;
+  const cy=r.top-gr.top+r.height/2;
+  const emojis=['✨','💥','⚡','🔮','💫','🌟'];
+  for(let i=0;i<8;i++){
+    const p=document.createElement('div');
+    p.className='ft';
+    p.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    p.style.fontSize='16px';
+    const angle=Math.random()*Math.PI*2;
+    const dist=30+Math.random()*50;
+    const tx=Math.cos(angle)*dist;
+    p.style.left=(cx+tx-8)+'px';
+    p.style.top=(cy-10)+'px';
+    G.appendChild(p);
+    setTimeout(()=>p.remove(),950);
+  }
+}
+
+function accuracy(){
+  return totalQ?Math.round(correctQ/totalQ*100)+'%':'N/A';
+}
+
+function showGameOver(){
+  PP.classList.add('gone');
+  AR.innerHTML='';
+  document.getElementById('hud').classList.add('gone');
+  document.getElementById('os').textContent=gs.score;
+  document.getElementById('ow').textContent=gs.wave;
+  document.getElementById('ok').textContent=gs.kills;
+  document.getElementById('oc').textContent='×'+gs.bestCombo;
+  document.getElementById('oa').textContent=accuracy();
+  document.getElementById('od').textContent=DIFF[diffKey].label;
+  document.getElementById('s-over').classList.remove('gone');
+}
+
+function showWin(){
+  PP.classList.add('gone');
+  AR.innerHTML='';
+  document.getElementById('hud').classList.add('gone');
+  document.getElementById('ws').textContent=gs.score;
+  document.getElementById('wk').textContent=gs.kills;
+  document.getElementById('wc').textContent='×'+gs.bestCombo;
+  document.getElementById('wa').textContent=accuracy();
+  document.getElementById('s-win').classList.remove('gone');
+}
+
+(function starfield(){
+  const c=document.getElementById('bg');
+  const ctx=c.getContext('2d');
+  const resize=()=>{c.width=G.offsetWidth||600;c.height=G.offsetHeight||700;};
+  resize();
+  const stars=Array.from({length:150},()=>({
+    x:Math.random()*c.width,y:Math.random()*c.height,
+    r:Math.random()*1.4+.2,
+    sp:Math.random()*.5+.05,
+    ph:Math.random()*Math.PI*2
+  }));
+  const shooters=[];
+  function addShooter(){
+    if(shooters.length<3) shooters.push({x:Math.random()*c.width,y:Math.random()*40,len:60+Math.random()*80,sp:3+Math.random()*4,ang:.3+Math.random()*.5,life:1});
+  }
+  setInterval(addShooter,3000);
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    const t=Date.now()/1000;
+    stars.forEach(s=>{
+      const a=.15+.65*(Math.sin(t*s.sp*4+s.ph)*.5+.5);
+      ctx.fillStyle=`rgba(160,200,255,${a})`;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+    });
+    for(let i=shooters.length-1;i>=0;i--){
+      const s=shooters[i];
+      ctx.strokeStyle=`rgba(200,230,255,${s.life*.6})`;
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(s.x,s.y);
+      ctx.lineTo(s.x-Math.cos(s.ang)*s.len,s.y-Math.sin(s.ang)*s.len);
+      ctx.stroke();
+      s.x+=Math.cos(s.ang)*s.sp;s.y+=Math.sin(s.ang)*s.sp;
+      s.life-=.015;
+      if(s.life<=0) shooters.splice(i,1);
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',resize);
+})();
+</script>
+</body>
+</html>

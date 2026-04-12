@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+    <title>DNA Sequencer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+        body { background: #061118; color: #fff; overflow: hidden; touch-action: none; }
+        #app { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        .screen { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: rgba(6, 17, 24, 0.95); z-index: 50; }
+        .screen.on { display: flex; }
+        
+        .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: linear-gradient(180deg, rgba(0,0,0,0.9), transparent); z-index: 10; pointer-events: none; }
+        .hud-item { display: flex; flex-direction: column; align-items: center; }
+        .hud-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .hud-val { font-size: 18px; font-weight: 900; }
+        .hud-val.gold { color: #fbbf24; }
+        .hud-val.red { color: #ef4444; }
+        .hud-val.green { color: #10b981; }
+        
+        .btn { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: 2px solid #34d399; padding: 12px 28px; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; margin-top: 16px; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); }
+        .btn:active { transform: scale(0.96); }
+        
+        .card { background: #0f172a; border: 2px solid #1e293b; border-radius: 16px; padding: 24px; text-align: center; max-width: 420px; width: 100%; position: relative; overflow: hidden; }
+        .title { font-size: 28px; font-weight: 900; margin-bottom: 6px; background: linear-gradient(90deg, #34d399, #6ee7b7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .desc { font-size: 13px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.5; }
+        
+        .edu-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px; font-size: 12px; color: #a7f3d0; margin: 12px 0; text-align: left; line-height: 1.4; }
+        .edu-box strong { color: #34d399; display: block; margin-bottom: 4px; font-size: 13px;}
+        
+        .timeline-container { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; border: 1px solid #334155; z-index: 10; pointer-events: none;}
+        .timeline-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.2s linear, background 0.3s; }
+        .timeline-text { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: #cbd5e1; pointer-events: none; z-index: 10;}
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+        .stat-box { background: #020617; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;}
+        .stat-box .lbl { font-size: 10px; color: #64748b; text-transform: uppercase;}
+        .stat-box .val { font-size: 20px; font-weight: 900; margin-top: 2px; }
+        
+        #toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: #fbbf24; color: #1c1917; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 12px; opacity: 0; transition: opacity 0.3s; z-index: 60; pointer-events: none; }
+        
+        .char-anim { font-size: 44px; display: inline-block; animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        
+        /* Game specific */
+        .dna-vial { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; z-index: 1; }
+        .dna-target { font-size: 48px; font-weight: 900; background: #0f172a; border: 4px solid #1e293b; width: 100px; height: 100px; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; transition: all 0.2s; }
+        .dna-target.pulse { animation: matchPulse 0.4s ease; border-color: #10b981; }
+        .dna-target.shake { animation: errShake 0.4s ease; border-color: #ef4444; }
+        @keyframes matchPulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); } 100% { transform: scale(1); } }
+        @keyframes errShake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+        
+        .controls-area { position: absolute; bottom: 0; left: 0; right: 0; height: 100px; display: flex; justify-content: stretch; align-items: stretch; background: #0f172a; border-top: 2px solid #1e293b; z-index: 20;}
+        .gene-btn { flex: 1; background: transparent; border: none; border-right: 1px solid #1e293b; border-top: 4px solid transparent; font-size: 32px; font-weight: 900; color: #fff; cursor: pointer; transition: all 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .gene-btn:last-child { border-right: none; }
+        .gene-btn:active { background: rgba(255,255,255,0.05); }
+        .gene-btn.A { border-top-color: #3b82f6; text-shadow: 0 0 10px #3b82f6; }
+        .gene-btn.T { border-top-color: #f59e0b; text-shadow: 0 0 10px #f59e0b; }
+        .gene-btn.C { border-top-color: #10b981; text-shadow: 0 0 10px #10b981; }
+        .gene-btn.G { border-top-color: #ef4444; text-shadow: 0 0 10px #ef4444; }
+        .gene-sub { font-size: 10px; color: #64748b; font-weight: 600; text-shadow: none; margin-top: 4px; }
+        
+        .helper-char { position: absolute; top: 120px; right: 20px; display: flex; align-items: center; background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 20px; padding: 4px 12px; animation: float 3s infinite ease-in-out; }
+        .helper-char .emoji { font-size: 24px; margin-right: 8px; }
+        .helper-char .msg { font-size: 11px; color: #cbd5e1; font-weight: 700; }
+        
+        .dna-strand-bg { position: absolute; inset: 0; opacity: 0.1; background-image: radial-gradient(#10b981 1px, transparent 1px), radial-gradient(#3b82f6 1px, transparent 1px); background-position: 0 0, 20px 20px; background-size: 40px 40px; pointer-events: none; z-index: 0; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- HUD -->
+        <div class="hud" id="hud" style="display:none;">
+            <div class="hud-item"><span class="hud-label">Level</span><span class="hud-val green" id="h-lvl">1</span></div>
+            <div class="hud-item"><span class="hud-label">Score</span><span class="hud-val gold" id="h-score">0</span></div>
+            <div class="hud-item"><span class="hud-label">Matched</span><span class="hud-val" id="h-target">0/10</span></div>
+            <div class="hud-item"><span class="hud-label">Patient Health</span><span class="hud-val red" id="h-lives">❤️❤️❤️</span></div>
+        </div>
+        
+        <div class="timeline-text" id="t-text" style="display:none;">30s remaining</div>
+        <div class="timeline-container" id="t-bar" style="display:none;"><div class="timeline-fill" id="t-fill"></div></div>
+        
+        <div id="toast">Message</div>
+        
+        <!-- Game Area -->
+        <div class="dna-strand-bg" id="dnaBg" style="display:none;"></div>
+        
+        <div class="dna-vial" id="gameArea" style="display:none;">
+            <div class="helper-char">
+                <span class="emoji">👩🔬</span>
+                <span class="msg" id="helper-msg">A pairs with T!</span>
+            </div>
+            
+            <div style="font-size: 12px; font-weight: 800; color: #a7f3d0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: -10px;">Target Sequence</div>
+            <div class="dna-target" id="dnaTarget">A</div>
+        </div>
+        
+        <div class="controls-area" id="controlsArea" style="display:none;">
+            <button class="gene-btn A" onclick="matchGene('A')">A<span class="gene-sub">Adenine</span></button>
+            <button class="gene-btn T" onclick="matchGene('T')">T<span class="gene-sub">Thymine</span></button>
+            <button class="gene-btn C" onclick="matchGene('C')">C<span class="gene-sub">Cytosine</span></button>
+            <button class="gene-btn G" onclick="matchGene('G')">G<span class="gene-sub">Guanine</span></button>
+        </div>
+
+        <!-- Screens -->
+        <div class="screen on" id="s-title">
+            <div class="card">
+                <div class="char-anim" style="margin-bottom:8px">🧬</div>
+                <h1 class="title">DNA Sequencer</h1>
+                <p class="desc">A genetic mutation is spreading! Step into the lab and sequence the DNA fast enough to synthesize a cure.</p>
+                <div class="edu-box">
+                    <strong>Genetics 101: Base Pairs</strong>
+                    DNA is made of 4 bases.<br>
+                    • <strong>A</strong> (Adenine) ALWAYS pairs with <strong>T</strong> (Thymine).<br>
+                    • <strong>C</strong> (Cytosine) ALWAYS pairs with <strong>G</strong> (Guanine).
+                </div>
+                <button class="btn" onclick="startGame()">ENTER LAB</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-level">
+            <div class="card">
+                <div class="char-anim" id="lvl-icon" style="margin-bottom:8px">🔬</div>
+                <h1 class="title" id="lvl-title">Level 1</h1>
+                <div class="edu-box" id="lvl-edu"></div>
+                <div style="font-size: 16px; font-weight: 800; color: #fbbf24; margin: 12px 0;" id="lvl-target">Sequences needed: 10</div>
+                <button class="btn green" id="lvl-btn" onclick="startLevel()">BEGIN SYNTHESIS</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-end">
+            <div class="card">
+                <div class="char-anim" id="end-icon" style="margin-bottom:8px">🏆</div>
+                <h1 class="title" id="end-title">CURE DEVELOPED!</h1>
+                <p class="desc" id="end-desc">Patient stabilized.</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-box"><div class="lbl">Final Score</div><div class="val gold" id="end-score">0</div></div>
+                    <div class="stat-box"><div class="lbl">Level Reached</div><div class="val green" id="end-lvl">1</div></div>
+                    <div class="stat-box"><div class="lbl">XP Earned</div><div class="val" style="color:#a78bfa;" id="end-xp">0</div></div>
+                    <div class="stat-box"><div class="lbl">Coins</div><div class="val gold" id="end-coins">0</div></div>
+                </div>
+                
+                <button class="btn" onclick="finishGameExternal()">Complete Mission</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAX_LEVELS = 5;
+        const BASES = ['A', 'T', 'C', 'G'];
+        const PAIRS = { 'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C' };
+        
+        const EDU_FACTS = [
+            "The A-T and C-G rule is known as Chargaff's rules. They form the rungs of the DNA double helix ladder!",
+            "DNA contains the biological instructions that make each species unique.",
+            "A single genetic mutation (like pairing A with C by mistake) can lead to diseases like sickle cell anemia.",
+            "Human DNA is about 99.9% identical from person to person! The 0.1% makes us all different.",
+            "If you unrolled all the DNA in your body, it would stretch to the sun and back about 600 times!"
+        ];
+        
+        let state = {
+            playing: false, level: 1, score: 0, lives: 3, timeLimit: 30, timeLeft: 30, targetCount: 10, currentCount: 0,
+            currentTarget: 'A', timerInt: null
+        };
+        
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+            if(id) document.getElementById(id).classList.add('on');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.style.opacity = 1;
+            clearTimeout(t._t);
+            t._t = setTimeout(() => t.style.opacity = 0, 1500);
+        }
+
+        function getLevelConfig(lvl) {
+            return {
+                time: Math.max(15, 30 - (lvl-1)*2), // Gets slightly faster
+                target: 10 + (lvl-1)*5 // Require more matches
+            };
+        }
+
+        function startGame() { state.level = 1; state.score = 0; state.lives = 3; prepareLevel(); }
+
+        function prepareLevel() {
+            const cfg = getLevelConfig(state.level);
+            state.targetCount = cfg.target; state.timeLimit = cfg.time; state.timeLeft = cfg.time; state.currentCount = 0;
+            
+            document.getElementById('lvl-title').textContent = `Sequence Level ${state.level}`;
+            document.getElementById('lvl-target').textContent = `Sequences needed: ${cfg.target}`;
+            document.getElementById('lvl-icon').textContent = state.level === MAX_LEVELS ? '🧬' : '🔬';
+            
+            document.getElementById('lvl-edu').innerHTML = `<strong>Lab Notes:</strong> ${EDU_FACTS[state.level-1]}`;
+            
+            showScreen('s-level');
+            toggleGameUI(false);
+        }
+
+        function startLevel() {
+            showScreen('');
+            toggleGameUI(true);
+            
+            state.playing = true;
+            updateHUD();
+            nextTarget();
+            
+            clearInterval(state.timerInt);
+            state.timerInt = setInterval(tickHelper, 100);
+        }
+        
+        function toggleGameUI(show) {
+            const d = show ? 'flex' : 'none';
+            document.getElementById('hud').style.display = d;
+            document.getElementById('t-bar').style.display = show ? 'block' : 'none';
+            document.getElementById('t-text').style.display = show ? 'block' : 'none';
+            document.getElementById('gameArea').style.display = d;
+            document.getElementById('controlsArea').style.display = d;
+            document.getElementById('dnaBg').style.display = show ? 'block' : 'none';
+        }
+
+        function updateHUD() {
+            document.getElementById('h-lvl').textContent = state.level;
+            document.getElementById('h-score').textContent = state.score;
+            document.getElementById('h-target').textContent = `${state.currentCount}/${state.targetCount}`;
+            document.getElementById('h-lives').textContent = '❤️'.repeat(Math.max(0, state.lives));
+        }
+        
+        function nextTarget() {
+            state.currentTarget = BASES[Math.floor(Math.random() * BASES.length)];
+            const tEl = document.getElementById('dnaTarget');
+            tEl.textContent = state.currentTarget;
+            tEl.style.color = state.currentTarget === 'A' ? '#3b82f6' : state.currentTarget === 'T' ? '#f59e0b' : state.currentTarget === 'C' ? '#10b981' : '#ef4444';
+            
+            // Randomize helper message
+            const msgs = ["Keep focusing!", "Watch the pairs!", "Quickly!", "A-T, C-G!"];
+            document.getElementById('helper-msg').innerHTML = state.currentTarget === 'A' ? "Needs T!" : state.currentTarget === 'T' ? "Needs A!" : state.currentTarget === 'C' ? "Needs G!" : "Needs C!";
+        }
+
+        function matchGene(pickedBase) {
+            if(!state.playing) return;
+            
+            const correctBase = PAIRS[state.currentTarget];
+            const tEl = document.getElementById('dnaTarget');
+            
+            // Reset animation
+            tEl.classList.remove('pulse', 'shake');
+            void tEl.offsetWidth; // trigger reflow
+            
+            if (pickedBase === correctBase) {
+                // Correct!
+                state.score += 20;
+                state.currentCount++;
+                tEl.classList.add('pulse');
+                
+                let bBg = document.getElementById('dnaBg');
+                bBg.style.backgroundPositionY = (parseInt(bBg.style.backgroundPositionY||0) + 40) + 'px';
+                
+                if (state.currentCount >= state.targetCount) {
+                    endLevel(true);
+                    return;
+                }
+                updateHUD();
+                nextTarget();
+            } else {
+                // Wrong!
+                state.lives--;
+                state.score = Math.max(0, state.score - 10);
+                tEl.classList.add('shake');
+                showToast(`Mutation! ${state.currentTarget} pairs with ${correctBase}! -1 ❤️`);
+                updateHUD();
+                
+                if (state.lives <= 0) {
+                    endLevel(false);
+                } else {
+                    nextTarget(); // give a new one so they don't get stuck
+                }
+            }
+        }
+
+        function tickHelper() {
+            if(!state.playing) return;
+            state.timeLeft -= 0.1;
+            
+            const pct = Math.max(0, state.timeLeft / state.timeLimit);
+            document.getElementById('t-fill').style.width = `${pct * 100}%`;
+            document.getElementById('t-text').textContent = `${Math.ceil(state.timeLeft)}s remaining`;
+            
+            if (pct < 0.2) document.getElementById('t-fill').style.background = '#ef4444';
+            else document.getElementById('t-fill').style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+
+            if (state.timeLeft <= 0) {
+                endLevel(false); // ran out of time
+            }
+        }
+
+        function endLevel(won) {
+            state.playing = false;
+            clearInterval(state.timerInt);
+            
+            if (won) {
+                state.level++;
+                if (state.level > MAX_LEVELS) gameOver(true); else prepareLevel();
+            } else {
+                if (state.timeLeft <= 0) {
+                    state.lives--;
+                    updateHUD();
+                }
+                
+                if (state.lives <= 0) {
+                    gameOver(false);
+                } else {
+                    document.getElementById('lvl-title').textContent = `Time's Up!`;
+                    document.getElementById('lvl-edu').innerHTML = `Failed to process DNA in time. Lost 1 ❤️`;
+                    document.getElementById('lvl-btn').textContent = `RETRY LEVEL ${state.level}`;
+                    showScreen('s-level');
+                    toggleGameUI(false);
+                }
+            }
+        }
+
+        function gameOver(win = false) {
+            state.playing = false;
+            clearInterval(state.timerInt);
+            toggleGameUI(false);
+            
+            const xp = state.lives > 0 ? 500 + state.score : Math.floor(state.score * 0.5);
+            const coins = state.lives > 0 ? 300 + Math.floor(state.score / 10) : Math.floor(state.score / 20);
+            
+            document.getElementById('end-icon').textContent = win ? '🧬' : '🦠';
+            document.getElementById('end-title').textContent = win ? 'CURE DEVELOPED!' : 'MUTATION SPREAD';
+            document.getElementById('end-desc').textContent = win ? 'You saved the patient!' : 'The sequence became too unstable.';
+            document.getElementById('end-score').textContent = state.score;
+            document.getElementById('end-lvl').textContent = Math.min(state.level, MAX_LEVELS);
+            document.getElementById('end-xp').textContent = `+${xp}`;
+            document.getElementById('end-coins').textContent = `+${coins}`;
+            
+            showScreen('s-end');
+            
+            if(window.parent && window.parent.currentUser) {
+                fetch('/api/save-gamestate', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ xp: xp, coins: coins })
+                }).catch(e=>console.log(e));
+            }
+        }
+        
+        function finishGameExternal() {
+            if(window.parent && window.parent.expFinishGame) window.parent.expFinishGame();
+            else showToast("Stats saved. Close game manually.");
+        }
+    </script>
+</body>
+</html>

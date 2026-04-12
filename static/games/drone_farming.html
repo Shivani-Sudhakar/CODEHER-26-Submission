@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drone Farming RPG</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap');
+
+:root {
+  --cyan:#00f5ff;--purple:#7b2fff;--green:#39ff14;--orange:#ff6b00;
+  --red:#ff2244;--gold:#ffd700;--dark:#050a0f;--panel:#0a1520;
+  --panel2:#0d1e2e;--border:#1a3a5c;--text:#c8e8ff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--dark);color:var(--text);font-family:'Exo 2',sans-serif;overflow:hidden;height:100vh;width:100vw}
+
+#loading{position:fixed;inset:0;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .6s}
+#loading h1{font-family:'Orbitron',monospace;font-size:clamp(24px,4vw,42px);color:var(--cyan);letter-spacing:4px;margin-bottom:8px}
+#loading p{color:var(--purple);font-size:14px;letter-spacing:2px;margin-bottom:32px}
+.load-bar-wrap{width:280px;height:4px;background:#111;border:1px solid var(--border);border-radius:2px}
+.load-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:2px;transition:width .1s}
+.load-txt{font-size:11px;color:#4a7a9b;margin-top:8px;letter-spacing:1px}
+
+/* ── TITLE SCREEN ── */
+#title-screen{position:fixed;inset:0;background:var(--dark);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+.title-bg{position:absolute;inset:0;overflow:hidden}
+.star{position:absolute;border-radius:50%;animation:twinkle 3s infinite}
+@keyframes twinkle{0%,100%{opacity:.3}50%{opacity:1}}
+.title-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,245,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,.04) 1px,transparent 1px);background-size:40px 40px;animation:gridMove 8s linear infinite}
+@keyframes gridMove{0%{transform:translateY(0)}100%{transform:translateY(40px)}}
+.drone-silhouette{font-size:64px;animation:hover-drone 3s ease-in-out infinite;position:relative;z-index:2;filter:drop-shadow(0 0 20px var(--cyan))}
+@keyframes hover-drone{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+#title-screen h1{font-family:'Orbitron',monospace;font-size:clamp(28px,5vw,56px);color:var(--cyan);letter-spacing:6px;text-shadow:0 0 30px var(--cyan);position:relative;z-index:2;margin:12px 0 4px}
+#title-screen .sub{font-size:clamp(12px,2vw,16px);color:var(--purple);letter-spacing:4px;position:relative;z-index:2;margin-bottom:40px}
+.menu-btn{display:block;width:220px;padding:12px 24px;margin:8px;background:transparent;border:1px solid var(--cyan);border-radius:4px;color:var(--cyan);font-family:'Orbitron',monospace;font-size:13px;letter-spacing:2px;cursor:pointer;transition:all .2s;position:relative;z-index:2;text-align:center}
+.menu-btn:hover{background:rgba(0,245,255,.12);box-shadow:0 0 20px rgba(0,245,255,.4);transform:scale(1.04)}
+.menu-btn.secondary{border-color:var(--purple);color:var(--purple)}
+.menu-btn.secondary:hover{background:rgba(123,47,255,.12);box-shadow:0 0 20px rgba(123,47,255,.4)}
+.version{position:absolute;bottom:16px;right:20px;font-size:11px;color:#2a4a6a;z-index:2}
+
+/* ── GAME LAYOUT ── */
+#game-screen{position:fixed;inset:0;display:none;flex-direction:column}
+
+/* TOP HUD */
+#top-hud{background:var(--panel);border-bottom:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;gap:12px;flex-shrink:0;min-height:52px}
+.hud-block{display:flex;flex-direction:column;gap:2px;min-width:80px}
+.hud-label{font-size:9px;letter-spacing:2px;color:#4a7a9b;text-transform:uppercase}
+.hud-val{font-family:'Orbitron',monospace;font-size:13px;color:var(--cyan)}
+.bar-wrap{width:100px;height:6px;background:#0a1520;border:1px solid var(--border);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.hp-fill{background:linear-gradient(90deg,#e02020,#ff6644)}
+.en-fill{background:linear-gradient(90deg,#1a88ff,#00f5ff)}
+.xp-fill{background:linear-gradient(90deg,var(--purple),#c44dff)}
+#zone-name{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-left:auto}
+#wave-info{font-family:'Orbitron',monospace;font-size:11px;color:var(--orange);text-align:right}
+
+/* MAIN AREA */
+#main-area{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* LEFT PANEL */
+#left-panel{width:180px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+#map-panel{flex:1;padding:8px;overflow:hidden}
+#map-panel h3{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#4a7a9b;margin-bottom:6px}
+#mini-map{width:100%;aspect-ratio:1;background:#020810;border:1px solid var(--border);border-radius:4px;position:relative;overflow:hidden}
+.drone-info{padding:8px;border-top:1px solid var(--border)}
+.drone-info h3{font-family:'Orbitron',monospace;font-size:9px;color:#4a7a9b;letter-spacing:2px;margin-bottom:6px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.stat-name{font-size:10px;color:#6a9abf}
+.stat-val{font-family:'Orbitron',monospace;font-size:11px;color:var(--green)}
+#skill-cooldowns{padding:8px;border-top:1px solid var(--border)}
+#skill-cooldowns h3{font-family:'Orbitron',monospace;font-size:9px;color:#4a7a9b;letter-spacing:2px;margin-bottom:6px}
+.skill-slot{display:flex;align-items:center;gap:6px;margin-bottom:5px;cursor:pointer}
+.skill-icon{width:28px;height:28px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;position:relative;transition:all .2s;flex-shrink:0}
+.skill-icon:hover{border-color:var(--cyan);box-shadow:0 0 8px rgba(0,245,255,.3)}
+.skill-icon .cd-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:'Orbitron',monospace;color:var(--cyan);border-radius:3px}
+.skill-info{flex:1;min-width:0}
+.skill-name{font-size:9px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skill-key{font-size:9px;color:#4a7a9b}
+
+/* CANVAS */
+#canvas-wrap{flex:1;position:relative;overflow:hidden;background:#020810}
+#game-canvas{display:block;width:100%;height:100%}
+#canvas-overlay{position:absolute;inset:0;pointer-events:none}
+
+/* RIGHT PANEL */
+#right-panel{width:200px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+#quest-panel{padding:8px;border-bottom:1px solid var(--border)}
+#quest-panel h3{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#4a7a9b;margin-bottom:6px}
+.quest-item{background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:6px;margin-bottom:4px}
+.quest-title{font-size:10px;color:var(--gold);margin-bottom:2px}
+.quest-desc{font-size:9px;color:#6a9abf;line-height:1.4}
+.quest-prog{font-size:9px;color:var(--green);margin-top:3px}
+#inventory-panel{padding:8px;border-bottom:1px solid var(--border);flex:1;overflow:hidden}
+#inventory-panel h3{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#4a7a9b;margin-bottom:6px}
+.inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.inv-slot{aspect-ratio:1;background:var(--panel2);border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;position:relative;transition:all .2s}
+.inv-slot:hover{border-color:var(--cyan);transform:scale(1.05)}
+.inv-slot .qty{position:absolute;bottom:1px;right:2px;font-size:8px;color:var(--gold);font-family:'Orbitron',monospace}
+#log-panel{padding:8px;flex:1;overflow:hidden;display:flex;flex-direction:column}
+#log-panel h3{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:#4a7a9b;margin-bottom:6px;flex-shrink:0}
+#battle-log{flex:1;overflow-y:auto;font-size:9px;line-height:1.5;scrollbar-width:none;-ms-overflow-style:none}
+#battle-log::-webkit-scrollbar{display:none;width:0;height:0}
+.log-line{margin-bottom:2px;padding:2px 4px;border-radius:2px}
+.log-info{color:#6a9abf}
+.log-dmg{color:#ff6644}
+.log-heal{color:var(--green)}
+.log-xp{color:var(--purple)}
+.log-warn{color:var(--orange)}
+.log-good{color:var(--cyan)}
+
+/* BOTTOM HUD */
+#bottom-hud{background:var(--panel);border-top:1px solid var(--border);padding:6px 12px;display:flex;align-items:center;gap:16px;flex-shrink:0;min-height:56px}
+.hotbar{display:flex;gap:4px}
+.hotkey{display:flex;flex-direction:column;align-items:center;gap:2px}
+.hotkey-icon{width:40px;height:40px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;transition:border-color .2s}
+.hotkey-icon.active{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,245,255,.4)}
+.hotkey-label{font-size:8px;color:#4a7a9b;font-family:'Orbitron',monospace}
+#action-info{flex:1;font-size:11px;color:#4a7a9b;line-height:1.4}
+#boss-bar{flex:1;display:none;flex-direction:column;gap:4px}
+#boss-bar .boss-name{font-family:'Orbitron',monospace;font-size:11px;color:var(--red)}
+#boss-bar .boss-bar-wrap{height:10px;background:#0a1520;border:1px solid var(--red);border-radius:3px;overflow:hidden}
+#boss-bar .boss-fill{height:100%;background:linear-gradient(90deg,#800000,var(--red));transition:width .4s}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:500;display:none}
+.modal.open{display:flex}
+.modal-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;position:relative;scrollbar-width:none;-ms-overflow-style:none}
+.modal-box::-webkit-scrollbar{display:none;width:0;height:0}
+.modal-box h2{font-family:'Orbitron',monospace;font-size:18px;color:var(--cyan);margin-bottom:16px;letter-spacing:2px}
+.modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:#4a7a9b;font-size:20px;cursor:pointer}
+.modal-close:hover{color:var(--red)}
+
+/* FACT QUIZ */
+#quiz-modal .question{font-size:14px;color:var(--text);margin-bottom:16px;line-height:1.6}
+.quiz-opt{display:block;width:100%;padding:10px 14px;margin-bottom:8px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:13px;cursor:pointer;text-align:left;transition:all .2s}
+.quiz-opt:hover{border-color:var(--cyan);color:var(--cyan)}
+.quiz-opt.correct{border-color:var(--green);color:var(--green);background:rgba(57,255,20,.08)}
+.quiz-opt.wrong{border-color:var(--red);color:var(--red);background:rgba(255,34,68,.08)}
+.quiz-fact{margin-top:12px;padding:10px;background:rgba(0,245,255,.06);border-left:3px solid var(--cyan);border-radius:2px;font-size:12px;color:var(--text);line-height:1.5}
+.quiz-reward{margin-top:10px;font-family:'Orbitron',monospace;font-size:12px;color:var(--gold)}
+#quiz-next{margin-top:12px;padding:10px 24px;background:var(--purple);border:none;border-radius:4px;color:#fff;font-family:'Orbitron',monospace;font-size:12px;cursor:pointer;display:none}
+#quiz-next:hover{background:#9b4fff}
+
+/* GAME OVER / LEVEL UP */
+#gameover-modal .result-icon{font-size:56px;margin-bottom:12px;text-align:center}
+#gameover-modal .result-title{font-family:'Orbitron',monospace;font-size:22px;text-align:center;margin-bottom:8px}
+#gameover-modal .result-stats{background:var(--panel2);border-radius:4px;padding:12px;margin-bottom:16px}
+#gameover-modal .result-stats div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px}
+#gameover-modal .result-stats div:last-child{border:none}
+.result-stat-val{font-family:'Orbitron',monospace;color:var(--cyan)}
+
+/* LEVEL UP */
+#levelup-modal .lu-icon{font-size:48px;text-align:center;margin-bottom:8px;animation:pulse-glow 1s ease-in-out infinite}
+@keyframes pulse-glow{0%,100%{filter:drop-shadow(0 0 8px var(--gold))}50%{filter:drop-shadow(0 0 20px var(--gold))}}
+#levelup-modal h2{text-align:center;color:var(--gold)!important}
+.upgrade-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.upgrade-card{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:12px;cursor:pointer;transition:all .2s;text-align:center}
+.upgrade-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 4px 16px rgba(255,215,0,.2)}
+.upgrade-card .uc-icon{font-size:28px;margin-bottom:6px}
+.upgrade-card .uc-name{font-size:11px;color:var(--gold);font-family:'Orbitron',monospace;margin-bottom:4px}
+.upgrade-card .uc-desc{font-size:10px;color:#6a9abf;line-height:1.4}
+
+/* COMBAT EFFECTS */
+.dmg-float{position:absolute;pointer-events:none;font-family:'Orbitron',monospace;font-weight:700;animation:float-up 1s ease-out forwards}
+@keyframes float-up{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-50px) scale(.6)}}
+.screen-flash{position:absolute;inset:0;pointer-events:none;animation:flash .2s ease-out forwards}
+@keyframes flash{0%{opacity:.5}100%{opacity:0}}
+
+/* TOAST */
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--cyan);border-radius:6px;padding:8px 20px;font-size:12px;color:var(--cyan);font-family:'Orbitron',monospace;letter-spacing:1px;z-index:800;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1}
+
+/* RESPONSIVE */
+@media(max-width:900px){#left-panel,#right-panel{width:150px}}
+@media(max-width:700px){#left-panel{display:none}#right-panel{width:130px}}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="drone-silhouette" style="font-size:48px;margin-bottom:16px">🤖</div>
+  <h1>DRONE FARMING</h1>
+  <p>TECH MEETS AGRICULTURE</p>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+  <div class="load-txt" id="load-txt">Initializing farm systems...</div>
+</div>
+
+<!-- TITLE SCREEN -->
+<div id="title-screen">
+  <div class="title-bg">
+    <div class="title-grid"></div>
+  </div>
+  <div class="drone-silhouette">🤖</div>
+  <h1>DRONE FARMING</h1>
+  <div class="sub">TECH MEETS AGRICULTURE — RPG EDITION</div>
+  <button class="menu-btn" onclick="startGame()">▶ NEW MISSION</button>
+  <button class="menu-btn secondary" onclick="showHow()">? HOW TO PLAY</button>
+  <div class="version">v1.0 | Grade 6-8 STEM</div>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <!-- TOP HUD -->
+  <div id="top-hud">
+    <div class="hud-block">
+      <span class="hud-label">HP</span>
+      <div class="bar-wrap"><div class="bar-fill hp-fill" id="hp-bar" style="width:100%"></div></div>
+      <span class="hud-val" id="hp-val">100/100</span>
+    </div>
+    <div class="hud-block">
+      <span class="hud-label">Energy</span>
+      <div class="bar-wrap"><div class="bar-fill en-fill" id="en-bar" style="width:100%"></div></div>
+      <span class="hud-val" id="en-val">80/80</span>
+    </div>
+    <div class="hud-block">
+      <span class="hud-label">XP</span>
+      <div class="bar-wrap"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
+      <span class="hud-val" id="lvl-val">Lv.1</span>
+    </div>
+    <div class="hud-block" style="min-width:60px">
+      <span class="hud-label">Credits</span>
+      <span class="hud-val" id="credits-val">0₡</span>
+    </div>
+    <div class="hud-block" style="min-width:60px">
+      <span class="hud-label">Yield</span>
+      <span class="hud-val" id="yield-val">0kg</span>
+    </div>
+    <span id="zone-name">ZONE: SECTOR-1</span>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+      <span id="wave-info">WAVE 1/5</span>
+      <span style="font-size:9px;color:#4a7a9b" id="enemies-left">Enemies: 0</span>
+    </div>
+  </div>
+
+  <div id="main-area">
+    <!-- LEFT PANEL -->
+    <div id="left-panel">
+      <div id="map-panel">
+        <h3>SECTOR MAP</h3>
+        <div id="mini-map">
+          <canvas id="map-canvas" style="width:100%;height:100%"></canvas>
+        </div>
+      </div>
+      <div class="drone-info">
+        <h3>DRONE STATS</h3>
+        <div class="stat-row"><span class="stat-name">Attack</span><span class="stat-val" id="s-atk">15</span></div>
+        <div class="stat-row"><span class="stat-name">Defense</span><span class="stat-val" id="s-def">5</span></div>
+        <div class="stat-row"><span class="stat-name">Speed</span><span class="stat-val" id="s-spd">3</span></div>
+        <div class="stat-row"><span class="stat-name">Sensor</span><span class="stat-val" id="s-sen">10m</span></div>
+      </div>
+      <div id="skill-cooldowns">
+        <h3>SKILLS [1-4]</h3>
+        <div class="skill-slot" onclick="useSkill(0)">
+          <div class="skill-icon" id="sk0-icon">💊<div class="cd-overlay" id="sk0-cd" style="display:none">0</div></div>
+          <div class="skill-info"><div class="skill-name">Nano Repair</div><div class="skill-key">[1] Heal +30 HP</div></div>
+        </div>
+        <div class="skill-slot" onclick="useSkill(1)">
+          <div class="skill-icon" id="sk1-icon">⚡<div class="cd-overlay" id="sk1-cd" style="display:none">0</div></div>
+          <div class="skill-info"><div class="skill-name">EMP Blast</div><div class="skill-key">[2] Stun all</div></div>
+        </div>
+        <div class="skill-slot" onclick="useSkill(2)">
+          <div class="skill-icon" id="sk2-icon">🌱<div class="cd-overlay" id="sk2-cd" style="display:none">0</div></div>
+          <div class="skill-info"><div class="skill-name">FertiDrop</div><div class="skill-key">[3] Boost yield</div></div>
+        </div>
+        <div class="skill-slot" onclick="useSkill(3)">
+          <div class="skill-icon" id="sk3-icon">🛡️<div class="cd-overlay" id="sk3-cd" style="display:none">0</div></div>
+          <div class="skill-info"><div class="skill-name">Force Shield</div><div class="skill-key">[4] Absorb dmg</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CANVAS -->
+    <div id="canvas-wrap">
+      <canvas id="game-canvas"></canvas>
+      <div id="canvas-overlay"></div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="right-panel">
+      <div id="quest-panel">
+        <h3>ACTIVE MISSIONS</h3>
+        <div class="quest-item">
+          <div class="quest-title">🌾 Harvest Quota</div>
+          <div class="quest-desc">Collect crop data from all fields</div>
+          <div class="quest-prog" id="q1-prog">0 / 10 sectors</div>
+        </div>
+        <div class="quest-item">
+          <div class="quest-title">🐛 Pest Control</div>
+          <div class="quest-desc">Eliminate crop threats</div>
+          <div class="quest-prog" id="q2-prog">0 / 20 pests</div>
+        </div>
+      </div>
+      <div id="inventory-panel">
+        <h3>INVENTORY</h3>
+        <div class="inv-grid" id="inv-grid"></div>
+      </div>
+      <div id="log-panel">
+        <h3>BATTLE LOG</h3>
+        <div id="battle-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM HUD -->
+  <div id="bottom-hud">
+    <div class="hotbar">
+      <div class="hotkey">
+        <div class="hotkey-icon active" id="hk-laser">🔫</div>
+        <div class="hotkey-label">Q-Laser</div>
+      </div>
+      <div class="hotkey">
+        <div class="hotkey-icon" id="hk-seed">🌱</div>
+        <div class="hotkey-label">E-Seed</div>
+      </div>
+      <div class="hotkey">
+        <div class="hotkey-icon" id="hk-scan">📡</div>
+        <div class="hotkey-label">R-Scan</div>
+      </div>
+    </div>
+    <div id="action-info">
+      <div>WASD/Arrows — Move &nbsp;|&nbsp; Q — Attack &nbsp;|&nbsp; E — Plant Seed &nbsp;|&nbsp; R — Scan Area</div>
+      <div style="margin-top:2px">1-4 — Skills &nbsp;|&nbsp; Space — Dodge Roll &nbsp;|&nbsp; F — Interact</div>
+    </div>
+    <div id="boss-bar">
+      <div class="boss-name" id="boss-name">BOSS: BLIGHT TITAN</div>
+      <div class="boss-bar-wrap"><div class="boss-fill" id="boss-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ MODAL -->
+<div class="modal" id="quiz-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeQuiz()">✕</button>
+    <h2>🧠 AGRI-TECH CHALLENGE</h2>
+    <div class="question" id="quiz-q"></div>
+    <div id="quiz-opts"></div>
+    <div class="quiz-fact" id="quiz-fact" style="display:none"></div>
+    <div class="quiz-reward" id="quiz-reward" style="display:none"></div>
+    <button id="quiz-next" onclick="closeQuiz()">CONTINUE MISSION →</button>
+  </div>
+</div>
+
+<!-- LEVEL UP MODAL -->
+<div class="modal" id="levelup-modal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="lu-icon">🤖</div>
+    <h2>DRONE UPGRADED!</h2>
+    <p style="text-align:center;color:#6a9abf;font-size:12px;margin-top:4px" id="lu-subtitle">Choose an upgrade module:</p>
+    <div class="upgrade-grid" id="upgrade-grid"></div>
+  </div>
+</div>
+
+<!-- GAME OVER MODAL -->
+<div class="modal" id="gameover-modal">
+  <div class="modal-box" style="max-width:380px">
+    <div class="result-icon" id="result-icon">💥</div>
+    <div class="result-title" id="result-title" style="color:var(--red)">MISSION FAILED</div>
+    <p style="text-align:center;font-size:12px;color:#6a9abf;margin:8px 0 16px" id="result-sub">Your drone has been disabled. The crops need you!</p>
+    <div class="result-stats" id="result-stats"></div>
+    <button class="menu-btn" style="margin:8px auto 0;display:block" id="result-btn" onclick="restartGame()">RETRY MISSION</button>
+    <button class="menu-btn secondary" style="margin:4px auto 0;display:block" onclick="endGame()">CLAIM & EXIT</button>
+  </div>
+</div>
+
+<!-- HOW TO PLAY -->
+<div class="modal" id="how-modal">
+  <div class="modal-box" style="max-width:440px">
+    <button class="modal-close" onclick="document.getElementById('how-modal').classList.remove('open')">✕</button>
+    <h2>HOW TO PLAY</h2>
+    <div style="font-size:12px;color:var(--text);line-height:1.8">
+      <p style="color:var(--cyan);margin-bottom:8px">You are an AI-powered farming drone. Your mission: protect crops, eliminate pests, and learn agri-tech!</p>
+      <p><strong style="color:var(--gold)">MOVE</strong> with WASD or Arrow Keys</p>
+      <p><strong style="color:var(--gold)">ATTACK</strong> press Q to fire laser at nearest enemy</p>
+      <p><strong style="color:var(--gold)">PLANT</strong> press E over green plots to plant seeds</p>
+      <p><strong style="color:var(--gold)">SCAN</strong> press R to scan area for data (+XP)</p>
+      <p><strong style="color:var(--gold)">DODGE</strong> Space to roll and avoid damage</p>
+      <p><strong style="color:var(--gold)">SKILLS</strong> keys 1-4 for special abilities</p>
+      <p style="margin-top:8px;color:var(--green)">Defeat waves of pests and diseases. After each wave you get an Agri-Tech quiz — correct answers give BONUS rewards! Answer to learn about precision farming, sensors, GPS, water management and more.</p>
+      <p style="margin-top:8px;color:var(--orange)">Every 5 waves — fight a BOSS! Watch out for the Blight Titan and Swarm Queen!</p>
+    </div>
+    <button class="menu-btn" style="margin-top:16px" onclick="document.getElementById('how-modal').classList.remove('open')">GOT IT!</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+//  GAME DATA
+// ════════════════════════════════════════════
+const QUESTIONS = [
+  {q:"What is precision farming?",opts:["Using GPS and sensors to optimize crop growth","Farming without any machines","Growing only one type of crop","Farming on small land"],ans:0,fact:"Precision farming uses GPS, sensors, and data analytics to monitor soil, water, and crops — maximizing yield while minimizing waste. Drones are a key tool!",reward:{xp:60,credits:30}},
+  {q:"How do agricultural drones help detect crop disease?",opts:["They taste the crops","They use thermal and multispectral cameras to spot unhealthy plants","They fly away from sick crops","They spray random chemicals"],ans:1,fact:"Drones carry special cameras that detect plant stress invisible to the human eye — diseased plants reflect infrared light differently. Farmers get disease maps within hours!",reward:{xp:60,credits:30}},
+  {q:"What is a 'drone swarm' in agriculture?",opts:["A swarm of bees helping drones","Multiple drones working together autonomously over a large field","A single drone flying fast","Drones that only operate at night"],ans:1,fact:"Drone swarms use AI to coordinate dozens of drones simultaneously — they can pollinate, spray, and survey thousands of acres in a single day!",reward:{xp:70,credits:40}},
+  {q:"What sensor do drones use to measure soil moisture?",opts:["Barometer","NDVI multispectral sensor","Sonar","Thermometer only"],ans:1,fact:"NDVI (Normalized Difference Vegetation Index) sensors measure how plants reflect near-infrared light to assess health. Soil moisture sensors also use dielectric measurement.",reward:{xp:65,credits:35}},
+  {q:"Why is GPS important in drone farming?",opts:["To play games on the drone","To enable precise navigation, mapping and auto-return home","To communicate with animals","GPS is not used in farming"],ans:1,fact:"RTK-GPS (Real-Time Kinematic) gives drones centimeter-level accuracy — so they can spray exactly the right spot, reducing chemical waste by up to 40%!",reward:{xp:60,credits:25}},
+  {q:"What is 'variable rate technology' in precision agriculture?",opts:["Drones flying at different speeds","Applying different amounts of water/fertilizer to different zones based on data","A farming social media app","Mixing random chemicals"],ans:1,fact:"Variable Rate Technology lets drones spray MORE fertilizer on weak zones and LESS on healthy zones — saving resources and boosting yield. It's like a smart recipe for your field!",reward:{xp:75,credits:45}},
+  {q:"How much can drone spraying reduce pesticide use compared to traditional methods?",opts:["None at all","5–10%","30–50%","100% — drones never use pesticides"],ans:2,fact:"Drone spraying can reduce pesticide use by 30–50%! Drones apply chemicals exactly where needed using sensors, vs traditional tractors that spray entire fields uniformly.",reward:{xp:80,credits:50}},
+  {q:"What does 'LIDAR' do on a farming drone?",opts:["Lights up the farm at night","Creates detailed 3D terrain maps for drainage and soil analysis","Translates animal sounds","Plays music to help crops grow"],ans:1,fact:"LIDAR (Light Detection And Ranging) bounces laser pulses off the ground to build precise 3D maps. Farmers use these to design perfect drainage, catch erosion, and plan planting rows!",reward:{xp:70,credits:40}},
+  {q:"What is a 'digital twin' in smart farming?",opts:["A second farm exactly like the first","A virtual model of your real farm updated with live drone data","A robot that looks like a farmer","Two drones flying together"],ans:1,fact:"A Digital Twin is a real-time virtual copy of your farm. As drones collect data, the twin updates — farmers can simulate weather, test decisions, and predict harvest without risk!",reward:{xp:85,credits:55}},
+  {q:"Which crop benefit most immediately from drone monitoring?",opts:["Only cactus","Large-scale crops like wheat, rice, corn — especially in remote or hilly areas","Crops in your backyard","Only underwater crops"],ans:1,fact:"Drones shine on large-scale staple crops — a single drone can scan 200 acres in one flight! Hilly and remote areas once impossible to monitor are now fully mapped from the air.",reward:{xp:65,credits:35}},
+  {q:"What is 'AI crop counting' by drones?",opts:["Drones counting money from crop sales","AI analyzing drone images to count individual plants and predict yield","Manually counting seeds","Guessing how many crops exist"],ans:1,fact:"AI models trained on millions of crop images can count individual plants, measure canopy cover, and predict total yield weeks before harvest — giving farmers priceless advance data!",reward:{xp:75,credits:45}},
+  {q:"How do drones help with pollination?",opts:["They plant flowers everywhere","They carry and release pollen or host bee colonies to boost crop pollination","They scare insects away","Drones cannot help with pollination"],ans:1,fact:"In areas with declining bee populations, drones equipped with pollen dispensers can pollinate crops like apples and almonds. Some drones even guide and protect bee swarms!",reward:{xp:80,credits:50}},
+];
+
+const ENEMY_TYPES = [
+  {name:"Aphid Cluster",emoji:"🐛",hp:30,atk:5,spd:1.2,xp:15,credits:8,color:"#7acc44"},
+  {name:"Fungal Spore",emoji:"🍄",hp:50,atk:8,spd:0.8,xp:25,credits:12,color:"#cc44aa"},
+  {name:"Locust",emoji:"🦗",hp:40,atk:10,spd:1.8,xp:30,credits:15,color:"#ccaa44"},
+  {name:"Root Rot",emoji:"🦠",hp:70,atk:6,spd:0.6,xp:35,credits:18,color:"#44aacc"},
+  {name:"Blight Cloud",emoji:"☁️",hp:90,atk:12,spd:0.9,xp:45,credits:22,color:"#8844cc"},
+  {name:"Mole Bot",emoji:"🐾",hp:60,atk:14,spd:1.1,xp:40,credits:20,color:"#cc6644"},
+];
+
+const BOSS_TYPES = [
+  {name:"BLIGHT TITAN",emoji:"👾",hp:400,atk:22,spd:0.6,xp:200,credits:120,color:"#cc0044",size:32},
+  {name:"SWARM QUEEN",emoji:"🐝",hp:600,atk:18,spd:1.1,xp:300,credits:180,color:"#ffaa00",size:28},
+  {name:"DROUGHT GOLEM",emoji:"🏔️",hp:800,atk:28,spd:0.4,xp:400,credits:250,color:"#886644",size:36},
+];
+
+const UPGRADES = [
+  [{icon:"⚔️",name:"Laser Boost",desc:"Attack +8, laser range +20%",effect:()=>{G.atk+=8;G.laserRange*=1.2}},
+   {icon:"🛡️",name:"Alloy Armor",desc:"Max HP +30, defense +4",effect:()=>{G.maxHp+=30;G.hp=Math.min(G.hp+30,G.maxHp);G.def+=4}},
+   {icon:"⚡",name:"Turbo Charge",desc:"Speed +1.5, energy regen +20%",effect:()=>{G.spd+=1.5;G.enRegen*=1.2}},
+   {icon:"🔋",name:"Solar Cell",desc:"Max Energy +40, skills cost 15% less",effect:()=>{G.maxEn+=40;G.en=Math.min(G.en+40,G.maxEn);G.skillCostMult*=0.85}}],
+  [{icon:"🌡️",name:"Thermal Cam",desc:"Reveal all enemies, +15% XP",effect:()=>{G.xpMult+=0.15;G.thermal=true}},
+   {icon:"💉",name:"BioNano Heal",desc:"Passive +3 HP/sec regen",effect:()=>{G.hpRegen+=3}},
+   {icon:"💥",name:"Explosive Tips",desc:"Laser pierces enemies, +splash dmg",effect:()=>{G.pierce=true;G.splash=true}},
+   {icon:"📡",name:"Long Range Radar",desc:"Minimap shows all enemies",effect:()=>{G.radar=true;G.senRange+=15}}],
+];
+
+const ITEMS = [
+  {emoji:"🩹",name:"Nano Patch",qty:3,desc:"Heal 40 HP",use:()=>{heal(40);"Nano Patch used! +40 HP"}},
+  {emoji:"⚡",name:"Power Cell",qty:2,desc:"Restore 50 Energy",use:()=>{G.en=Math.min(G.en+50,G.maxEn);updateHUD()}},
+  {emoji:"💊",name:"Shield Pill",qty:2,desc:"Shield 30 dmg",use:()=>{G.shield+=30;toast("Shield active! +30 absorption")}},
+  {emoji:"🌿",name:"Crop Sample",qty:0,desc:"Trade for credits"},
+  {emoji:"🔩",name:"Scrap Part",qty:5,desc:"Craft upgrade material"},
+  {emoji:"💎",name:"Data Crystal",qty:0,desc:"Rare: instant quiz skip"},
+  {emoji:"🧪",name:"Fertilizer",qty:3,desc:"Boost yield data"},
+  {emoji:"🔦",name:"Flare",qty:2,desc:"Blind all enemies 3s"},
+];
+
+// ════════════════════════════════════════════
+//  GAME STATE
+// ════════════════════════════════════════════
+let G={
+  hp:100,maxHp:100,en:80,maxEn:80,
+  xp:0,xpNext:100,level:1,
+  credits:0,yield:0,
+  atk:15,def:5,spd:3,laserRange:120,
+  hpRegen:0,enRegen:1,xpMult:1,skillCostMult:1,
+  thermal:false,radar:false,pierce:false,splash:false,shield:0,
+  senRange:10,
+  // world
+  wave:1,maxWave:15,zone:1,
+  enemies:[],bullets:[],crops:[],particles:[],
+  player:{x:400,y:300,facing:0,roll:0,rollCD:0},
+  // input
+  keys:{},
+  // timing
+  lastTick:0,dt:0,
+  // counters
+  pestsKilled:0,sectorsScanned:0,questYield:10,questPest:20,
+  // skills
+  skillCD:[0,0,0,0],skillMax:[8,15,12,20],
+  dodgeCD:0,
+  // misc
+  gameOver:false,won:false,bossActive:false,
+  score:0,startTime:Date.now(),
+  // canvas
+  cw:700,ch:460,
+  camX:0,camY:0,
+  worldW:1400,worldH:900,
+  invItems:[...ITEMS],
+  waveEnemies:0,
+  quizOpen:false,
+  shieldTimer:0,
+  stunTimers:[],
+  totalDmgTaken:0,
+  seedsPlanted:0,
+};
+
+let canvas,ctx,mapCanvas,mapCtx;
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+function init(){
+  canvas=document.getElementById('game-canvas');
+  ctx=canvas.getContext('2d');
+  mapCanvas=document.getElementById('map-canvas');
+  mapCtx=mapCanvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize',resizeCanvas);
+  window.addEventListener('keydown',e=>{
+    G.keys[e.code]=true;
+    handleKey(e);
+    if(e.code==="Space") e.preventDefault();
+  },{passive:false});
+  window.addEventListener('keyup',e=>{G.keys[e.code]=false});
+  buildInventory();
+}
+
+function resizeCanvas(){
+  const wrap=document.getElementById('canvas-wrap');
+  canvas.width=wrap.clientWidth;
+  canvas.height=wrap.clientHeight;
+  G.cw=canvas.width;G.ch=canvas.height;
+  mapCanvas.width=mapCanvas.parentElement.clientWidth-16;
+  mapCanvas.height=mapCanvas.parentElement.clientWidth-16;
+}
+
+// ════════════════════════════════════════════
+//  FLOW
+// ════════════════════════════════════════════
+function loadingScreen(){
+  const msgs=["Initializing farm systems...","Loading terrain data...","Calibrating drone sensors...","Syncing GPS coordinates...","Ready for deployment!"];
+  let i=0,bar=document.getElementById('load-bar'),txt=document.getElementById('load-txt');
+  let iv=setInterval(()=>{
+    i++;bar.style.width=(i*20)+'%';txt.textContent=msgs[Math.min(i,msgs.length-1)];
+    if(i>=5){clearInterval(iv);setTimeout(showTitle,400)}
+  },320);
+}
+
+function showTitle(){
+  document.getElementById('loading').style.opacity='0';
+  setTimeout(()=>{document.getElementById('loading').style.display='none';
+    document.getElementById('title-screen').style.display='flex';
+    buildStars();},600);
+}
+
+function buildStars(){
+  const bg=document.querySelector('.title-bg');
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    const sz=Math.random()*3+1;
+    Object.assign(s.style,{width:sz+'px',height:sz+'px',background:'#fff',
+      left:Math.random()*100+'%',top:Math.random()*100+'%',
+      animationDelay:Math.random()*3+'s',animationDuration:(Math.random()*2+2)+'s'});
+    bg.appendChild(s);
+  }
+}
+
+function showHow(){document.getElementById('how-modal').classList.add('open')}
+
+function startGame(){
+  document.getElementById('title-screen').style.display='none';
+  document.getElementById('game-screen').style.display='flex';
+  resetGame();
+  spawnWave();
+  requestAnimationFrame(gameLoop);
+}
+
+function restartGame(){
+  document.getElementById('gameover-modal').classList.remove('open');
+  resetGame();
+  spawnWave();
+  requestAnimationFrame(gameLoop);
+}
+
+function goTitle(){
+  document.getElementById('gameover-modal').classList.remove('open');
+  document.getElementById('game-screen').style.display='none';
+  document.getElementById('title-screen').style.display='flex';
+}
+
+function endGame() {
+    let xp = G.won ? 500 + G.score : Math.floor(G.score * 0.5);
+    let coins = G.won ? 300 + Math.floor(G.score / 10) : Math.floor(G.score / 20);
+    
+    if(window.parent && window.parent.currentUser) {
+        fetch('/api/save-gamestate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ xp: xp, coins: coins })
+        }).then(() => {
+            if(window.parent.closeGame) window.parent.closeGame(G.won);
+        }).catch(e => console.log(e));
+    } else if (window.parent && window.parent.closeGame) {
+        window.parent.closeGame(G.won);
+    }
+}
+
+function resetGame(){
+  G.hp=G.maxHp=100;G.en=G.maxEn=80;G.xp=0;G.xpNext=100;G.level=1;
+  G.credits=0;G.yield=0;G.atk=15;G.def=5;G.spd=3;G.laserRange=120;
+  G.hpRegen=0;G.enRegen=1;G.xpMult=1;G.skillCostMult=1;
+  G.shield=0;G.pierce=false;G.splash=false;G.thermal=false;G.radar=false;
+  G.wave=1;G.zone=1;G.enemies=[];G.bullets=[];G.particles=[];
+  G.player={x:700,y:450,facing:0,roll:0,rollCD:0};
+  G.skillCD=[0,0,0,0];G.dodgeCD=0;G.gameOver=false;G.won=false;
+  G.bossActive=false;G.score=0;G.startTime=Date.now();
+  G.pestsKilled=0;G.sectorsScanned=0;G.totalDmgTaken=0;G.seedsPlanted=0;
+  G.invItems=[...ITEMS.map(i=>({...i}))];
+  G.stunTimers=[];G.quizOpen=false;
+  buildCrops();buildInventory();updateHUD();
+  document.getElementById('boss-bar').style.display='none';
+  addLog("Mission start! Protect the crops!","log-good");
+}
+
+// ════════════════════════════════════════════
+//  WORLD GENERATION
+// ════════════════════════════════════════════
+function buildCrops(){
+  G.crops=[];
+  for(let i=0;i<20;i++){
+    G.crops.push({
+      x:Math.random()*(G.worldW-60)+30,
+      y:Math.random()*(G.worldH-60)+30,
+      stage:0,maxStage:3,
+      timer:0,growTime:8000,
+      planted:false,infected:false,
+      w:24,h:24,
+    });
+  }
+}
+
+// ════════════════════════════════════════════
+//  ENEMY SPAWNING
+// ════════════════════════════════════════════
+function spawnWave(){
+  G.enemies=[];G.bullets=[];
+  const isBoss=G.wave%5===0;
+  document.getElementById('wave-info').textContent=`WAVE ${G.wave}/${G.maxWave}`;
+  document.getElementById('zone-name').textContent=`ZONE: SECTOR-${G.zone}`;
+  if(isBoss){
+    const bt=BOSS_TYPES[Math.floor(G.wave/5)-1]||BOSS_TYPES[BOSS_TYPES.length-1];
+    const b=spawnEnemy(bt,true);
+    G.bossActive=true;
+    document.getElementById('boss-bar').style.display='flex';
+    document.getElementById('boss-name').textContent=`BOSS: ${bt.name}`;
+    addLog(`BOSS APPEARED: ${bt.name}!`,"log-warn");
+    toast("⚠ BOSS BATTLE! "+bt.name);
+  } else {
+    const count=4+G.wave*2;
+    G.waveEnemies=count;
+    for(let i=0;i<count;i++){
+      const diff=Math.min(Math.floor(G.wave/2),ENEMY_TYPES.length-1);
+      const pool=ENEMY_TYPES.slice(0,diff+1);
+      const type=pool[Math.floor(Math.random()*pool.length)];
+      setTimeout(()=>spawnEnemy(type,false),i*400);
+    }
+  }
+  addLog(`Wave ${G.wave} incoming!`,"log-warn");
+}
+
+function spawnEnemy(type,isBoss){
+  const side=Math.floor(Math.random()*4);
+  let x,y;
+  if(side===0){x=Math.random()*G.worldW;y=-40}
+  else if(side===1){x=G.worldW+40;y=Math.random()*G.worldH}
+  else if(side===2){x=Math.random()*G.worldW;y=G.worldH+40}
+  else{x=-40;y=Math.random()*G.worldH}
+  const mult=1+G.wave*0.1;
+  const e={...type,x,y,maxHp:type.hp*mult,hp:type.hp*mult,isBoss,
+    size:isBoss?(type.size||30):16,vx:0,vy:0,angle:0,stunned:0,
+    lastAtk:0,atkRange:isBoss?50:30,atkRate:isBoss?1200:1800,
+    id:Math.random()};
+  G.enemies.push(e);
+  document.getElementById('enemies-left').textContent=`Enemies: ${G.enemies.length}`;
+  return e;
+}
+
+// ════════════════════════════════════════════
+//  GAME LOOP
+// ════════════════════════════════════════════
+function gameLoop(ts){
+  if(G.gameOver)return;
+  if(G.quizOpen){requestAnimationFrame(gameLoop);return}
+  G.dt=Math.min((ts-G.lastTick)/1000,0.1);G.lastTick=ts;
+  update();draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function update(){
+  const dt=G.dt,now=performance.now();
+  // player movement
+  const p=G.player;
+  let mvx=0,mvy=0;
+  if(G.keys['KeyW']||G.keys['ArrowUp'])mvy=-1;
+  if(G.keys['KeyS']||G.keys['ArrowDown'])mvy=1;
+  if(G.keys['KeyA']||G.keys['ArrowLeft'])mvx=-1;
+  if(G.keys['KeyD']||G.keys['ArrowRight'])mvx=1;
+  const spd=G.spd*(p.roll>0?2.2:1)*60;
+  p.x=Math.max(10,Math.min(G.worldW-10,p.x+mvx*spd*dt));
+  p.y=Math.max(10,Math.min(G.worldH-10,p.y+mvy*spd*dt));
+  if(mvx||mvy)p.facing=Math.atan2(mvy,mvx);
+
+  if(p.roll>0)p.roll-=dt;
+  if(p.rollCD>0)p.rollCD-=dt;
+  if(G.dodgeCD>0)G.dodgeCD-=dt;
+
+  // regen
+  G.hpRegen&&(G.hp=Math.min(G.maxHp,G.hp+G.hpRegen*dt));
+  G.en=Math.min(G.maxEn,G.en+G.enRegen*dt);
+
+  // skill cooldowns
+  G.skillCD=G.skillCD.map((v,i)=>Math.max(0,v-dt));
+  updateSkillUI();
+
+  // auto-attack Q
+  if(G.keys['KeyQ']&&G.enemies.length>0){
+    G.keys['KeyQ']=false;
+    fireAtNearest();
+  }
+
+  // bullets
+  G.bullets=G.bullets.filter(b=>{
+    b.x+=b.vx*300*dt;b.y+=b.vy*300*dt;b.life-=dt;
+    if(b.life<=0)return false;
+    // hit enemies
+    let hit=false;
+    G.enemies.forEach(e=>{
+      if(hit&&!G.pierce)return;
+      const dx=e.x-b.x,dy=e.y-b.y;
+      if(Math.sqrt(dx*dx+dy*dy)<e.size+6){
+        damageEnemy(e,b.dmg);
+        if(G.splash)spawnParticles(b.x,b.y,'#ff6644',6);
+        if(!G.pierce)hit=true;
+      }
+    });
+    return !hit;
+  });
+
+  // enemies
+  G.enemies.forEach(e=>{
+    if(e.stunned>0){e.stunned-=dt;return}
+    const dx=p.x-e.x,dy=p.y-e.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const spd=e.spd*(1 + G.wave*0.05)*60;
+    
+    // Check if the enemy reached player
+    if(dist>e.atkRange) {
+        e.x+=dx/dist*spd*dt;
+        e.y+=dy/dist*spd*dt;
+    }
+    e.angle+=dt*(e.isBoss?1:2);
+    // attack player
+    if(dist<e.atkRange+20&&now-e.lastAtk>e.atkRate){
+      e.lastAtk=now;
+      if(p.roll<=0){
+        const actualDmg=Math.max(1,e.atk - G.def*0.5);
+        let shieldAbsorb=Math.min(G.shield,actualDmg);
+        G.shield-=shieldAbsorb;
+        const finalDmg=actualDmg-shieldAbsorb;
+        G.hp-=finalDmg;G.totalDmgTaken+=finalDmg;
+        flashScreen('rgba(255,0,0,0.25)');
+        addLog(`${e.name} dealt ${Math.round(finalDmg)} dmg`,"log-dmg");
+        if(G.hp<=0){G.hp=0;triggerGameOver(false);return}
+        updateHUD();
+      }
+    }
+  });
+
+  // crops
+  G.crops.forEach(c=>{
+    if(c.planted&&c.stage<c.maxStage){
+      c.timer+=dt*1000;
+      if(c.timer>c.growTime){c.timer=0;c.stage++;G.yield++;G.score+=5;updateHUD()}
+    }
+  });
+
+  // particles
+  G.particles=G.particles.filter(p=>{
+    p.x+=p.vx*60*dt;p.y+=p.vy*60*dt;p.vy+=0.05;
+    p.life-=dt;p.vx*=0.95;return p.life>0;
+  });
+
+  // camera
+  G.camX=Math.max(0,Math.min(G.worldW-G.cw,p.x-G.cw/2));
+  G.camY=Math.max(0,Math.min(G.worldH-G.ch,p.y-G.ch/2));
+
+  // check wave complete
+  if(G.enemies.length===0&&!G.quizOpen){
+    if(G.wave>=G.maxWave){triggerGameOver(true);return}
+    G.wave++;
+    if(G.wave%5===1)G.zone++;
+    G.bossActive=false;
+    document.getElementById('boss-bar').style.display='none';
+    G.quizOpen=true;
+    setTimeout(()=>showQuiz(),600);
+  }
+
+  updateMinimap();
+  document.getElementById('enemies-left').textContent=`Enemies: ${G.enemies.length}`;
+}
+
+// ════════════════════════════════════════════
+//  COMBAT
+// ════════════════════════════════════════════
+function fireAtNearest(){
+  if(G.en<8)return;
+  G.en-=8;updateHUD();
+  // find nearest
+  let nearest=null,bestDist=G.laserRange;
+  G.enemies.forEach(e=>{
+    const dx=e.x-G.player.x,dy=e.y-G.player.y;
+    const d=Math.sqrt(dx*dx+dy*dy);
+    if(d<bestDist){bestDist=d;nearest=e}
+  });
+  if(!nearest)return;
+  const dx=nearest.x-G.player.x,dy=nearest.y-G.player.y;
+  const dist=Math.sqrt(dx*dx+dy*dy)||1;
+  G.bullets.push({x:G.player.x,y:G.player.y,vx:dx/dist,vy:dy/dist,dmg:G.atk,life:1.5,color:var_cyan});
+  spawnParticles(G.player.x,G.player.y,'#00f5ff',4);
+}
+
+function damageEnemy(e,dmg){
+  const actual=Math.round(dmg*(0.85+Math.random()*.3));
+  e.hp-=actual;
+  spawnDmgFloat(e.x-G.camX,e.y-G.camY,actual,'#ff6644');
+  G.score+=actual;
+  if(e.hp<=0){
+    G.xp+=Math.round(e.xp*G.xpMult);
+    G.credits+=e.credits;
+    G.pestsKilled++;
+    spawnParticles(e.x,e.y,e.color||'#ff6644',12);
+    addLog(`${e.name} eliminated! +${e.xp}XP +${e.credits}₡`,"log-xp");
+    G.enemies=G.enemies.filter(x=>x!==e);
+    if(e.isBoss){
+      G.score+=500;addLog("BOSS DEFEATED! +500 score","log-good");
+      toast("BOSS DEFEATED! Outstanding!");
+      // drop items
+      G.invItems[3].qty+=3;G.invItems[2].qty+=1;
+    }
+    checkXP();updateHUD();
+    // drop items randomly
+    if(Math.random()<0.3){G.invItems[4].qty++;buildInventory()}
+    if(Math.random()<0.15){G.invItems[6].qty++;buildInventory()}
+  }
+  updateHUD();
+}
+
+function heal(amount){
+  G.hp=Math.min(G.maxHp,G.hp+amount);
+  spawnParticles(G.player.x,G.player.y,'#39ff14',8);
+  addLog(`Healed +${amount} HP`,"log-heal");
+  updateHUD();
+}
+
+// ════════════════════════════════════════════
+//  SKILLS
+// ════════════════════════════════════════════
+function useSkill(i){
+  if(G.skillCD[i]>0){toast(`Skill on cooldown! ${Math.ceil(G.skillCD[i])}s`);return}
+  const costs=[15,25,20,30];
+  const c=Math.round(costs[i]*G.skillCostMult);
+  if(G.en<c){toast("Not enough energy!");return}
+  G.en-=c;G.skillCD[i]=G.skillMax[i];updateHUD();
+  if(i===0){heal(30);toast("Nano Repair activated! +30 HP")}
+  else if(i===1){G.enemies.forEach(e=>e.stunned=3);toast("EMP Blast! All enemies stunned 3s!");addLog("EMP Blast fired!","log-good")}
+  else if(i===2){G.yield+=10;G.score+=50;toast("FertiDrop! Yield +10kg!");addLog("FertiDrop: yield boosted","log-good")}
+  else if(i===3){G.shield+=60;G.shieldTimer=8;toast("Force Shield! +60 absorption!");addLog("Force Shield active!","log-good")}
+}
+
+function handleKey(e){
+  if(e.code==='Digit1')useSkill(0);
+  if(e.code==='Digit2')useSkill(1);
+  if(e.code==='Digit3')useSkill(2);
+  if(e.code==='Digit4')useSkill(3);
+  if(e.code==='Space'&&G.dodgeCD<=0){G.player.roll=0.4;G.dodgeCD=3;addLog("Dodge roll!","log-info")}
+  if(e.code==='KeyE'){plantSeed()}
+  if(e.code==='KeyR'){scanArea()}
+}
+
+function plantSeed(){
+  const p=G.player;
+  const nearby=G.crops.find(c=>{
+    const dx=c.x-p.x,dy=c.y-p.y;
+    return Math.sqrt(dx*dx+dy*dy)<50&&!c.planted;
+  });
+  if(nearby){
+    nearby.planted=true;G.seedsPlanted++;
+    spawnParticles(nearby.x,nearby.y,'#39ff14',8);
+    addLog("Seed planted! Monitoring growth...","log-heal");
+    toast("Seed planted!");
+  } else {
+    toast("No empty plots nearby!");
+  }
+}
+
+function scanArea(){
+  if(G.en<12){toast("Not enough energy!");return}
+  G.en-=12;G.xp+=20;G.sectorsScanned++;
+  spawnParticles(G.player.x,G.player.y,'#00f5ff',16);
+  addLog("Area scanned! +20 XP","log-xp");
+  toast("Scan complete! Data uploaded.");
+  checkXP();updateHUD();
+}
+
+// ════════════════════════════════════════════
+//  QUIZ
+// ════════════════════════════════════════════
+let usedQs=[];
+function showQuiz(){
+  document.getElementById('quiz-modal').classList.add('open');
+  // pick unused question
+  if(usedQs.length===QUESTIONS.length)usedQs=[];
+  let idx;
+  do{idx=Math.floor(Math.random()*QUESTIONS.length)}while(usedQs.includes(idx));
+  usedQs.push(idx);
+  const q=QUESTIONS[idx];
+  document.getElementById('quiz-q').textContent=q.q;
+  document.getElementById('quiz-fact').style.display='none';
+  document.getElementById('quiz-reward').style.display='none';
+  document.getElementById('quiz-next').style.display='none';
+  const opDiv=document.getElementById('quiz-opts');
+  opDiv.innerHTML='';
+  const letters=['A','B','C','D'];
+  q.opts.forEach((o,i)=>{
+    const b=document.createElement('button');
+    b.className='quiz-opt';
+    b.textContent=`${letters[i]}. ${o}`;
+    b.onclick=()=>{
+      opDiv.querySelectorAll('.quiz-opt').forEach(x=>x.disabled=true);
+      if(i===q.ans){
+        b.classList.add('correct');
+        G.xp+=q.reward.xp;G.credits+=q.reward.credits;G.score+=100;
+        document.getElementById('quiz-reward').textContent=`+${q.reward.xp} XP  +${q.reward.credits} Credits  +100 Score`;
+        document.getElementById('quiz-reward').style.display='block';
+        addLog(`Quiz correct! +${q.reward.xp}XP`,"log-xp");
+        toast("Correct! Bonus rewards!");
+        checkXP();
+      } else {
+        b.classList.add('wrong');
+        opDiv.querySelectorAll('.quiz-opt')[q.ans].classList.add('correct');
+        addLog("Quiz wrong — study up!","log-dmg");
+      }
+      document.getElementById('quiz-fact').textContent='💡 '+q.fact;
+      document.getElementById('quiz-fact').style.display='block';
+      document.getElementById('quiz-next').style.display='block';
+      updateHUD();
+    };
+    opDiv.appendChild(b);
+  });
+}
+
+function closeQuiz(){
+  document.getElementById('quiz-modal').classList.remove('open');
+  G.quizOpen=false;
+  spawnWave();
+}
+
+// ════════════════════════════════════════════
+//  LEVEL UP
+// ════════════════════════════════════════════
+function checkXP(){
+  if(G.xp>=G.xpNext){
+    G.xp-=G.xpNext;G.level++;G.xpNext=Math.round(G.xpNext*1.4);
+    showLevelUp();
+  }
+}
+
+function showLevelUp(){
+  document.getElementById('lu-subtitle').textContent=`Level ${G.level}! Choose an upgrade:`;
+  const grid=document.getElementById('upgrade-grid');
+  grid.innerHTML='';
+  const pool=UPGRADES[Math.min(G.level-2,1)||0];
+  const picks=[...pool].sort(()=>Math.random()-.5).slice(0,4);
+  picks.forEach(up=>{
+    const card=document.createElement('div');
+    card.className='upgrade-card';
+    card.innerHTML=`<div class="uc-icon">${up.icon}</div><div class="uc-name">${up.name}</div><div class="uc-desc">${up.desc}</div>`;
+    card.onclick=()=>{
+      up.effect();
+      document.getElementById('levelup-modal').classList.remove('open');
+      updateHUD();updateStatPanel();
+      addLog(`Upgraded: ${up.name}!`,"log-good");
+      toast("Upgrade: "+up.name+" installed!");
+    };
+    grid.appendChild(card);
+  });
+  document.getElementById('levelup-modal').classList.add('open');
+}
+
+// ════════════════════════════════════════════
+//  GAME OVER
+// ════════════════════════════════════════════
+function triggerGameOver(won){
+  G.gameOver=true;G.won=won;
+  setTimeout(()=>{
+    document.getElementById('result-icon').textContent=won?'🏆':'💥';
+    document.getElementById('result-title').textContent=won?'MISSION COMPLETE!':'MISSION FAILED';
+    document.getElementById('result-title').style.color=won?'var(--gold)':'var(--red)';
+    document.getElementById('result-sub').textContent=won?
+      'Outstanding! You protected all the crops!':
+      'Your drone was disabled. The crops need you!';
+    const elapsed=Math.round((Date.now()-G.startTime)/1000);
+    document.getElementById('result-stats').innerHTML=`
+      <div><span>Score</span><span class="result-stat-val">${G.score.toLocaleString()}</span></div>
+      <div><span>Level</span><span class="result-stat-val">${G.level}</span></div>
+      <div><span>Wave Reached</span><span class="result-stat-val">${G.wave}</span></div>
+      <div><span>Pests Eliminated</span><span class="result-stat-val">${G.pestsKilled}</span></div>
+      <div><span>Crop Yield</span><span class="result-stat-val">${G.yield}kg</span></div>
+      <div><span>Credits Earned</span><span class="result-stat-val">${G.credits}₡</span></div>
+      <div><span>Time</span><span class="result-stat-val">${elapsed}s</span></div>
+    `;
+    document.getElementById('result-btn').textContent=won?'PLAY AGAIN':'RETRY MISSION';
+    document.getElementById('gameover-modal').classList.add('open');
+  },1200);
+}
+
+// ════════════════════════════════════════════
+//  DRAW
+// ════════════════════════════════════════════
+const var_cyan='#00f5ff',var_green='#39ff14',var_gold='#ffd700',var_red='#ff2244';
+
+function draw(){
+  const c=ctx,cw=G.cw,ch=G.ch;
+  c.clearRect(0,0,cw,ch);
+  // BG — farm field
+  drawBackground(c,cw,ch);
+  c.save();
+  c.translate(-G.camX,-G.camY);
+  drawCrops(c);
+  drawBullets(c);
+  drawEnemies(c);
+  drawPlayer(c);
+  drawParticles(c);
+  c.restore();
+}
+
+function drawBackground(c,cw,ch){
+  // Sky
+  c.fillStyle='#020810';
+  c.fillRect(0,0,cw,ch);
+  // Grid (world coords translated)
+  c.save();c.translate(-G.camX%60,-G.camY%60);
+  c.strokeStyle='rgba(0,245,255,0.04)';c.lineWidth=1;
+  for(let x=0;x<cw+60;x+=60){c.beginPath();c.moveTo(x,0);c.lineTo(x,ch+60);c.stroke()}
+  for(let y=0;y<ch+60;y+=60){c.beginPath();c.moveTo(0,y);c.lineTo(cw+60,y);c.stroke()}
+  c.restore();
+  // Field patches
+  const cols=Math.ceil(G.worldW/100),rows=Math.ceil(G.worldH/80);
+  for(let r=0;r<rows;r++){for(let cc2=0;cc2<cols;cc2++){
+    const wx=cc2*100,wy=r*80;
+    const sx=wx-G.camX,sy=wy-G.camY;
+    if(sx>-100&&sx<cw+100&&sy>-80&&sy<ch+80){
+      c.fillStyle=(r+cc2)%2===0?'#030f02':'#060f02';
+      c.fillRect(sx,sy,100,80);
+    }
+  }}
+  // World border
+  c.strokeStyle='rgba(0,245,255,0.2)';c.lineWidth=2;
+  c.strokeRect(-G.camX,-G.camY,G.worldW,G.worldH);
+}
+
+function drawCrops(c){
+  G.crops.forEach(crop=>{
+    const cx=crop.x,cy=crop.y;
+    // plot
+    c.fillStyle=crop.infected?'rgba(200,50,50,0.2)':'rgba(57,255,20,0.06)';
+    c.fillRect(cx-20,cy-20,40,40);
+    c.strokeStyle=crop.infected?'#ff4444':crop.planted?'rgba(57,255,20,0.4)':'rgba(0,245,255,0.2)';
+    c.lineWidth=1;
+    c.strokeRect(cx-20,cy-20,40,40);
+    if(crop.planted){
+      const emoji=['🌱','🌿','🌾','🌾'][crop.stage];
+      c.font=`${12+crop.stage*4}px serif`;
+      c.textAlign='center';c.textBaseline='middle';
+      c.fillText(emoji,cx,cy);
+      // growth bar
+      const pct=crop.timer/crop.growTime;
+      c.fillStyle='#1a3a1a';c.fillRect(cx-16,cy+18,32,4);
+      c.fillStyle=var_green;c.fillRect(cx-16,cy+18,32*pct,4);
+    } else {
+      c.fillStyle='rgba(0,245,255,0.3)';
+      c.font='12px serif';c.textAlign='center';c.textBaseline='middle';
+      c.fillText('⬜',cx,cy);
+    }
+  });
+}
+
+function drawPlayer(c){
+  const p=G.player;
+  const roll=p.roll>0;
+  // Shield ring
+  if(G.shield>0){
+    c.strokeStyle='rgba(0,150,255,0.6)';c.lineWidth=2;
+    c.beginPath();c.arc(p.x,p.y,28,0,Math.PI*2);c.stroke();
+  }
+  // Dodge trail
+  if(roll){
+    c.globalAlpha=0.3;c.fillStyle=var_cyan;
+    c.beginPath();c.arc(p.x,p.y,18,0,Math.PI*2);c.fill();
+    c.globalAlpha=1;
+  }
+  // Drone body
+  c.save();c.translate(p.x,p.y);c.rotate(p.facing);
+  // Arms
+  c.strokeStyle='#4a7a9b';c.lineWidth=3;
+  [[-14,-14],[14,-14],[-14,14],[14,14]].forEach(([ax,ay])=>{
+    c.beginPath();c.moveTo(0,0);c.lineTo(ax,ay);c.stroke();
+    // Propellers
+    c.strokeStyle='rgba(0,245,255,0.6)';c.lineWidth=2;
+    c.beginPath();c.arc(ax,ay,7,0,Math.PI*2);c.stroke();
+    c.strokeStyle='rgba(255,255,255,0.4)';c.lineWidth=1;
+    c.beginPath();c.moveTo(ax-8,ay);c.lineTo(ax+8,ay);c.stroke();
+    c.beginPath();c.moveTo(ax,ay-8);c.lineTo(ax,ay+8);c.stroke();
+  });
+  // Body
+  c.fillStyle='#1a3a5c';
+  c.fillRect(-10,-10,20,20);
+  c.strokeStyle=var_cyan;c.lineWidth=1.5;
+  c.strokeRect(-10,-10,20,20);
+  // Eye
+  c.fillStyle=var_cyan;
+  c.beginPath();c.arc(0,0,5,0,Math.PI*2);c.fill();
+  c.fillStyle='#fff';
+  c.beginPath();c.arc(0,0,2,0,Math.PI*2);c.fill();
+  c.restore();
+}
+
+function drawEnemies(c){
+  G.enemies.forEach(e=>{
+    const sz=e.size;
+    // Shadow
+    c.fillStyle='rgba(0,0,0,0.4)';
+    c.beginPath();c.ellipse(e.x,e.y+sz,sz*.7,4,0,0,Math.PI*2);c.fill();
+    // Stun ring
+    if(e.stunned>0){
+      c.strokeStyle='#ffff00';c.lineWidth=2;
+      c.beginPath();c.arc(e.x,e.y,sz+6+Math.sin(Date.now()*.01)*4,0,Math.PI*2);c.stroke();
+    }
+    // Emoji
+    c.font=`${sz*2}px serif`;
+    c.textAlign='center';c.textBaseline='middle';
+    c.save();c.translate(e.x,e.y);c.rotate(Math.sin(e.angle)*.2);
+    c.fillText(e.emoji,0,0);
+    c.restore();
+    // HP bar
+    const bw=sz*2+8;const hpPct=e.hp/e.maxHp;
+    c.fillStyle='#1a0000';c.fillRect(e.x-bw/2,e.y-sz-10,bw,5);
+    c.fillStyle=hpPct>0.5?var_green:hpPct>0.25?var_gold:var_red;
+    c.fillRect(e.x-bw/2,e.y-sz-10,bw*hpPct,5);
+    if(e.isBoss){
+      // Boss HP sync
+      const bFill=document.getElementById('boss-fill');
+      if(bFill)bFill.style.width=(hpPct*100)+'%';
+    }
+  });
+}
+
+function drawBullets(c){
+  G.bullets.forEach(b=>{
+    c.save();c.translate(b.x,b.y);
+    // Trail
+    c.globalAlpha=0.4;
+    c.strokeStyle=var_cyan;c.lineWidth=2;
+    c.beginPath();c.moveTo(-b.vx*4,-b.vy*4);c.lineTo(0,0);c.stroke();
+    c.globalAlpha=1;
+    // Core
+    c.fillStyle=var_cyan;
+    c.beginPath();c.arc(0,0,4,0,Math.PI*2);c.fill();
+    // Glow
+    c.fillStyle='rgba(0,245,255,0.3)';
+    c.beginPath();c.arc(0,0,8,0,Math.PI*2);c.fill();
+    c.restore();
+  });
+}
+
+function drawParticles(c){
+  G.particles.forEach(p=>{
+    c.globalAlpha=p.life;
+    c.fillStyle=p.color;
+    c.beginPath();c.arc(p.x,p.y,p.r||3,0,Math.PI*2);c.fill();
+  });
+  c.globalAlpha=1;
+}
+
+function spawnParticles(x,y,color,count){
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2,s=Math.random()*2+0.5;
+    G.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-1,color,life:1,r:Math.random()*4+1});
+  }
+}
+
+// ════════════════════════════════════════════
+//  MINIMAP
+// ════════════════════════════════════════════
+function updateMinimap(){
+  const mc=mapCtx,mw=mapCanvas.width,mh=mapCanvas.height;
+  mc.clearRect(0,0,mw,mh);
+  mc.fillStyle='#020810';mc.fillRect(0,0,mw,mh);
+  const sx=mw/G.worldW,sy=mh/G.worldH;
+  // crops
+  G.crops.forEach(c=>{
+    mc.fillStyle=c.planted?'#39ff14':'#1a3a1a';
+    mc.fillRect(c.x*sx-1,c.y*sy-1,3,3);
+  });
+  // enemies
+  G.enemies.forEach(e=>{
+    if(!G.radar&&!G.thermal){
+      const dx=e.x-G.player.x,dy=e.y-G.player.y;
+      if(Math.sqrt(dx*dx+dy*dy)>G.senRange*20&&!e.isBoss)return;
+    }
+    mc.fillStyle=e.isBoss?'#ff2244':'#ff6644';
+    const s=e.isBoss?5:3;
+    mc.fillRect(e.x*sx-s/2,e.y*sy-s/2,s,s);
+  });
+  // player
+  mc.fillStyle='#00f5ff';
+  mc.beginPath();mc.arc(G.player.x*sx,G.player.y*sy,3,0,Math.PI*2);mc.fill();
+  // viewport rect
+  mc.strokeStyle='rgba(0,245,255,0.3)';mc.lineWidth=1;
+  mc.strokeRect(G.camX*sx,G.camY*sy,G.cw*sx,G.ch*sy);
+}
+
+// ════════════════════════════════════════════
+//  HUD
+// ════════════════════════════════════════════
+function updateHUD(){
+  document.getElementById('hp-bar').style.width=(G.hp/G.maxHp*100)+'%';
+  document.getElementById('en-bar').style.width=(G.en/G.maxEn*100)+'%';
+  document.getElementById('xp-bar').style.width=(G.xp/G.xpNext*100)+'%';
+  document.getElementById('hp-val').textContent=`${Math.round(G.hp)}/${G.maxHp}`;
+  document.getElementById('en-val').textContent=`${Math.round(G.en)}/${G.maxEn}`;
+  document.getElementById('lvl-val').textContent=`Lv.${G.level}`;
+  document.getElementById('credits-val').textContent=G.credits+'₡';
+  document.getElementById('yield-val').textContent=G.yield+'kg';
+  document.getElementById('q1-prog').textContent=`${G.sectorsScanned} / ${G.questYield} sectors`;
+  document.getElementById('q2-prog').textContent=`${G.pestsKilled} / ${G.questPest} pests`;
+}
+
+function updateStatPanel(){
+  document.getElementById('s-atk').textContent=G.atk;
+  document.getElementById('s-def').textContent=G.def;
+  document.getElementById('s-spd').textContent=G.spd.toFixed(1);
+  document.getElementById('s-sen').textContent=G.senRange+'m';
+}
+
+function updateSkillUI(){
+  G.skillCD.forEach((cd,i)=>{
+    const el=document.getElementById(`sk${i}-cd`);
+    if(el){
+      if(cd>0){el.style.display='flex';el.textContent=Math.ceil(cd)}
+      else el.style.display='none';
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+//  EFFECTS
+// ════════════════════════════════════════════
+function spawnDmgFloat(x,y,dmg,color){
+  const div=document.createElement('div');
+  div.className='dmg-float';
+  div.textContent='-'+dmg;
+  div.style.cssText=`left:${x}px;top:${y}px;color:${color};font-size:${13+Math.min(dmg/10,8)}px;position:absolute;z-index:10;pointer-events:none`;
+  document.getElementById('canvas-overlay').appendChild(div);
+  setTimeout(()=>div.remove(),1000);
+}
+
+function flashScreen(color){
+  const div=document.createElement('div');
+  div.className='screen-flash';
+  div.style.background=color;
+  document.getElementById('canvas-overlay').appendChild(div);
+  setTimeout(()=>div.remove(),300);
+}
+
+function addLog(msg,cls='log-info'){
+  const log=document.getElementById('battle-log');
+  const d=document.createElement('div');
+  d.className='log-line '+cls;d.textContent=msg;
+  log.appendChild(d);log.scrollTop=log.scrollHeight;
+  if(log.children.length>60)log.removeChild(log.firstChild);
+}
+
+let toastT;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ════════════════════════════════════════════
+//  INVENTORY
+// ════════════════════════════════════════════
+function buildInventory(){
+  const grid=document.getElementById('inv-grid');
+  grid.innerHTML='';
+  G.invItems.forEach((item,i)=>{
+    const slot=document.createElement('div');
+    slot.className='inv-slot';
+    slot.innerHTML=`${item.emoji}<span class="qty">${item.qty>0?item.qty:''}</span>`;
+    slot.title=`${item.name}: ${item.desc}`;
+    slot.onclick=()=>{
+      if(item.use&&item.qty>0){item.use();item.qty--;buildInventory();updateHUD()}
+      else toast(item.qty>0?item.name+': '+item.desc:'No '+item.name+' left!');
+    };
+    grid.appendChild(slot);
+  });
+  // fill empty slots
+  const empty=Math.max(0,8-G.invItems.length);
+  for(let i=0;i<empty;i++){const slot=document.createElement('div');slot.className='inv-slot';grid.appendChild(slot)}
+}
+
+// ════════════════════════════════════════════
+//  TOUCH / MOBILE
+// ════════════════════════════════════════════
+(function(){
+  let lastTx=null,lastTy=null;
+  document.getElementById('canvas-wrap').addEventListener('touchstart',e=>{
+    lastTx=e.touches[0].clientX;lastTy=e.touches[0].clientY;
+    G.keys['KeyQ']=true;setTimeout(()=>G.keys['KeyQ']=false,100);
+  },{passive:true});
+  document.getElementById('canvas-wrap').addEventListener('touchmove',e=>{
+    const tx=e.touches[0].clientX,ty=e.touches[0].clientY;
+    if(lastTx){const dx=tx-lastTx,dy=ty-lastTy;
+      G.player.x=Math.max(10,Math.min(G.worldW-10,G.player.x+dx*2));
+      G.player.y=Math.max(10,Math.min(G.worldH-10,G.player.y+dy*2));
+      if(dx||dy)G.player.facing=Math.atan2(dy,dx);
+    }
+    lastTx=tx;lastTy=ty;
+  },{passive:true});
+})();
+
+// ════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{init();loadingScreen()});
+</script>
+</body>
+</html>

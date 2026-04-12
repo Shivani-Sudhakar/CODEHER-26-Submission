@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ad Campaign Sim</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+#g{font-family:var(--font-sans);background:#1a0533;min-height:640px;border-radius:14px;overflow:hidden;color:#fff;position:relative;}
+.scr{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:640px;padding:20px;text-align:center;}
+.scr.on{display:flex;}
+.logo{font-size:2rem;font-weight:700;color:#f472b6;letter-spacing:1px;}
+.sub{font-size:.9rem;color:#c084fc;margin-top:6px;}
+.btn{background:#7c3aed;border:none;color:#fff;font-size:.95rem;font-weight:700;padding:12px 28px;border-radius:8px;cursor:pointer;margin:6px;transition:transform .15s,background .15s;}
+.btn:hover{transform:translateY(-2px);background:#6d28d9;}
+.btn.pink{background:#db2777;}.btn.pink:hover{background:#be185d;}
+.btn.gold{background:#d97706;}.btn.gold:hover{background:#b45309;}
+.btn.gray{background:#374151;border:1px solid #6b7280;}.btn.gray:hover{background:#4b5563;}
+.lcard{background:#2d1b69;border:1.5px solid #7c3aed55;border-radius:12px;padding:14px 20px;margin:6px;min-width:160px;cursor:pointer;transition:transform .15s,border-color .15s;}
+.lcard:hover{transform:scale(1.04);border-color:#a78bfa;}
+.lcard h3{color:#c084fc;font-size:.95rem;}
+.lcard p{color:#94a3b8;font-size:.75rem;margin-top:3px;}
+#bs{flex-direction:column;justify-content:flex-start;padding:14px;}
+#hud{display:flex;justify-content:space-between;align-items:center;width:100%;background:#2d1b6988;padding:7px 14px;border-radius:8px;margin-bottom:8px;}
+.hstat{font-size:.8rem;display:flex;align-items:center;gap:5px;}
+.hstat span{color:#f472b6;font-weight:700;}
+#tbar{width:100%;height:7px;background:#2d1b69;border-radius:4px;margin-bottom:10px;overflow:hidden;}
+#tfill{height:100%;background:#a78bfa;border-radius:4px;transition:width .35s;}
+#arena{display:flex;gap:12px;width:100%;align-items:flex-start;justify-content:center;}
+.side{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:100px;}
+.cname{font-size:.7rem;color:#c084fc;font-weight:700;letter-spacing:1px;}
+.sprite{font-size:3.5rem;transition:transform .3s;line-height:1;}
+.sprite.atk{animation:atk .35s ease;}
+.sprite.hurt{animation:hurt .35s ease;}
+.hpbar{width:90px;height:9px;background:#1e1b4b;border-radius:5px;overflow:hidden;}
+.hpfill{height:100%;border-radius:5px;transition:width .4s;}
+.hptxt{font-size:.68rem;color:#94a3b8;margin-top:2px;}
+#qzone{flex:1;background:#2d1b6988;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;max-width:340px;}
+#brand-banner{display:flex;align-items:center;gap:8px;background:#1e1b4b;border-radius:8px;padding:8px 14px;margin-bottom:10px;width:100%;}
+#brand-icon{font-size:1.5rem;}
+#brand-info{text-align:left;}
+#brand-name{font-size:.8rem;font-weight:700;color:#f472b6;}
+#brand-type{font-size:.68rem;color:#94a3b8;}
+#q-label{font-size:.68rem;color:#c084fc;font-weight:700;letter-spacing:2px;margin-bottom:5px;}
+#q-text{font-size:.88rem;color:#e2e8f0;margin-bottom:12px;text-align:center;min-height:44px;line-height:1.5;}
+#choices{display:flex;flex-direction:column;gap:6px;width:100%;}
+.choice{background:#1e1b4b;border:1px solid #4c1d9560;border-radius:8px;color:#e2e8f0;font-size:.8rem;padding:9px 12px;cursor:pointer;transition:background .2s,border-color .2s;text-align:left;line-height:1.4;}
+.choice:hover{background:#4c1d95;border-color:#7c3aed;}
+.choice.ok{background:#166534;border-color:#4ade80;}
+.choice.bad{background:#991b1b;border-color:#f87171;}
+#fb{font-size:.82rem;min-height:22px;margin-top:6px;font-weight:700;}
+#tip{font-size:.72rem;color:#94a3b8;margin-top:5px;text-align:center;min-height:30px;font-style:italic;line-height:1.4;}
+#combo-txt{font-size:.85rem;color:#fbbf24;font-weight:700;min-height:20px;}
+#vs{font-size:1.3rem;font-weight:700;color:#f472b6;align-self:center;padding-top:36px;}
+#dmg{position:absolute;pointer-events:none;font-size:1.4rem;font-weight:700;color:#f87171;opacity:0;top:48%;left:50%;}
+#streak{position:absolute;top:28%;left:50%;transform:translate(-50%,-50%);font-size:1.6rem;font-weight:700;color:#fbbf24;pointer-events:none;opacity:0;}
+#pdots{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;}
+.dot{width:12px;height:12px;border-radius:50%;background:#2d1b69;border:1.5px solid #4c1d95;}
+.dot.done{background:#7c3aed;}.dot.cur{background:#f472b6;animation:pulse 1s infinite alternate;}
+.rc{background:#2d1b69;border-radius:16px;padding:22px 28px;max-width:340px;text-align:center;}
+.rc h2{color:#c084fc;margin-bottom:6px;}
+.rc .big{font-size:2.4rem;font-weight:700;color:#fbbf24;}
+.rc p{color:#94a3b8;font-size:.85rem;margin:5px 0;}
+.badge{display:inline-block;background:#4c1d95;color:#c4b5fd;font-size:.68rem;padding:3px 9px;border-radius:20px;margin:2px;}
+#hs-list .hrow{display:flex;justify-content:space-between;padding:7px 12px;background:#2d1b69;border-radius:8px;margin:4px 0;font-size:.85rem;}
+#write-screen{flex-direction:column;padding:20px;}
+#write-screen h2{color:#f472b6;margin-bottom:4px;}
+#write-screen .sub{margin-bottom:12px;}
+#tagline-input{width:100%;max-width:400px;background:#2d1b69;border:1.5px solid #7c3aed;border-radius:8px;color:#fff;font-size:.9rem;padding:10px 14px;margin-bottom:8px;resize:none;outline:none;font-family:var(--font-sans);}
+#tagline-input:focus{border-color:#c084fc;}
+#write-tip{font-size:.78rem;color:#94a3b8;max-width:380px;text-align:center;margin-bottom:14px;line-height:1.5;}
+#write-feedback{background:#1e1b4b;border-radius:10px;padding:14px;max-width:400px;min-height:60px;font-size:.82rem;color:#e2e8f0;text-align:left;line-height:1.5;margin-bottom:12px;}
+.tip-pill{display:inline-block;background:#7c3aed22;border:1px solid #7c3aed44;border-radius:20px;padding:3px 10px;font-size:.7rem;color:#c084fc;margin:2px;}
+@keyframes atk{0%{transform:scale(1)}40%{transform:scale(1.25)rotate(-8deg)}100%{transform:scale(1)}}
+@keyframes hurt{0%{transform:translateX(0)}20%{transform:translateX(-10px)}55%{transform:translateX(8px)}100%{transform:translateX(0)}}
+@keyframes popUp{0%{opacity:1;transform:translate(-50%,-50%)scale(1)}100%{opacity:0;transform:translate(-50%,-130%)scale(1.3)}}
+@keyframes pulse{from{box-shadow:0 0 0 0 #f472b688}to{box-shadow:0 0 0 5px #f472b600}}
+</style>
+</head>
+<body>
+<div id="g">
+
+<div class="scr on" id="title-screen">
+  <div style="font-size:3rem;margin-bottom:8px;">📢</div>
+  <div class="logo">AD COPY BATTLE</div>
+  <div class="sub">Master the art of persuasion — write the winning tagline!</div>
+  <div style="margin:18px 0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:340px;">
+    <span class="tip-pill">🎯 Know your audience</span>
+    <span class="tip-pill">✨ Emotional hooks</span>
+    <span class="tip-pill">📣 Call to action</span>
+    <span class="tip-pill">🔑 Keywords matter</span>
+    <span class="tip-pill">🤔 AIDA formula</span>
+    <span class="tip-pill">💡 Unique value</span>
+  </div>
+  <p style="color:#94a3b8;font-size:.8rem;max-width:310px;margin-bottom:18px;">Pick the best tagline for each brand challenge. Chain correct answers for COMBO bonuses! Learn real ad writing secrets.</p>
+  <button class="btn pink" onclick="showLS()">▶ START GAME</button>
+  <button class="btn gray" onclick="showHS()">🏆 High Scores</button>
+  <button class="btn gray" onclick="showW()">✏️ Write Mode</button>
+</div>
+
+<div class="scr" id="level-screen">
+  <h2 style="color:#f472b6;margin-bottom:4px;">Choose Your Level</h2>
+  <p class="sub" style="margin-bottom:18px;">Each level unlocks harder brand briefs &amp; trickier taglines</p>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
+    <div class="lcard" onclick="startL(1)"><h3>⭐ Level 1</h3><p>Rookie Ad Intern</p><p style="color:#4ade80;font-size:.7rem;margin-top:4px;">20s · 8 rounds</p></div>
+    <div class="lcard" onclick="startL(2)"><h3>⭐⭐ Level 2</h3><p>Junior Copywriter</p><p style="color:#fbbf24;font-size:.7rem;margin-top:4px;">14s · 10 rounds</p></div>
+    <div class="lcard" onclick="startL(3)"><h3>⭐⭐⭐ Level 3</h3><p>Senior Creative</p><p style="color:#f87171;font-size:.7rem;margin-top:4px;">10s · 12 rounds</p></div>
+    <div class="lcard" onclick="startL(4)"><h3>🏆 Level 4</h3><p>Creative Director</p><p style="color:#f472b6;font-size:.7rem;margin-top:4px;">7s · 14 rounds · Boss!</p></div>
+  </div>
+  <button class="btn gray" style="margin-top:16px;" onclick="show('title-screen')">← Back</button>
+</div>
+
+<div class="scr" id="bs">
+  <div id="hud">
+    <div class="hstat">❤️ <div id="lives"></div></div>
+    <div class="hstat" id="llabel">LVL 1</div>
+    <div class="hstat">⚡ <span id="cval">x1</span></div>
+    <div class="hstat">🏅 <span id="sc">0</span></div>
+  </div>
+  <div id="tbar"><div id="tfill" style="width:100%"></div></div>
+  <div id="pdots"></div>
+  <div id="arena">
+    <div class="side">
+      <div class="cname">YOU</div>
+      <div class="sprite" id="psprite">🧑💼</div>
+      <div class="hpbar"><div class="hpfill" id="php" style="width:100%;background:#4ade80;"></div></div>
+      <div class="hptxt" id="phtxt">3/3</div>
+    </div>
+    <div id="qzone">
+      <div id="brand-banner">
+        <div id="brand-icon">🛍️</div>
+        <div id="brand-info">
+          <div id="brand-name">BRAND NAME</div>
+          <div id="brand-type">Product Category</div>
+        </div>
+      </div>
+      <div id="q-label">PICK THE BEST TAGLINE</div>
+      <div id="q-text">Loading...</div>
+      <div id="choices"></div>
+      <div id="fb"></div>
+      <div id="tip"></div>
+      <div id="combo-txt"></div>
+    </div>
+    <div id="vs">VS</div>
+    <div class="side">
+      <div class="cname" id="ename">RIVAL</div>
+      <div class="sprite" id="esprite">😤</div>
+      <div class="hpbar"><div class="hpfill" id="ehp" style="width:100%;background:#f87171;"></div></div>
+      <div class="hptxt" id="ehtxt">10/10</div>
+    </div>
+  </div>
+  <div id="dmg">-❤️</div>
+  <div id="streak"></div>
+</div>
+
+<div class="scr" id="results-screen">
+  <div class="rc">
+    <div style="font-size:2.2rem;" id="rico">🎉</div>
+    <h2 id="rtitle">Victory!</h2>
+    <div class="big" id="rscore">0</div>
+    <p id="rmsg"></p>
+    <div id="racc" style="color:#c084fc;font-size:.8rem;margin:6px 0;"></div>
+    <div id="rcats" style="margin:10px 0;"></div>
+    <button class="btn pink" onclick="showLS()" style="margin-top:10px;">▶ Play Again</button>
+    <button class="btn gray" onclick="show('title-screen')" style="margin-top:4px;">🏠 Home</button>
+  </div>
+</div>
+
+<div class="scr" id="hs-screen">
+  <h2 style="color:#fbbf24;margin-bottom:4px;">🏆 High Scores</h2>
+  <div id="hs-list" style="width:100%;max-width:300px;margin:14px 0;"></div>
+  <button class="btn gray" onclick="show('title-screen')">← Back</button>
+</div>
+
+<div class="scr" id="write-screen">
+  <div style="font-size:2rem;margin-bottom:4px;">✏️</div>
+  <h2 style="color:#f472b6;">Write Mode</h2>
+  <p class="sub" style="margin-bottom:14px;">Practice writing your own taglines &amp; get AI-style tips</p>
+  <div id="write-tip">Pick a brand below, then write a tagline using the ad principles you've learned!</div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:12px;" id="wbrands"></div>
+  <textarea id="tagline-input" rows="2" placeholder="Type your tagline here..."></textarea>
+  <button class="btn pink" onclick="evalTagline()">📊 Evaluate My Tagline</button>
+  <div id="write-feedback" style="display:none;"></div>
+  <button class="btn gray" onclick="show('title-screen')" style="margin-top:8px;">← Back</button>
+</div>
+
+</div>
+
+<script>
+const BRANDS=[
+  {name:"SparkJuice",icon:"🥤",type:"Healthy drink",color:"#16a34a"},
+  {name:"RunRocket",icon:"👟",type:"Sports shoes",color:"#2563eb"},
+  {name:"PawPal",icon:"🐾",type:"Pet care app",color:"#d97706"},
+  {name:"GreenEarth",icon:"🌿",type:"Eco products",color:"#059669"},
+  {name:"BrainByte",icon:"🧠",type:"Study app",color:"#7c3aed"},
+  {name:"SunSmile",icon:"😄",type:"Sunscreen",color:"#f59e0b"},
+  {name:"ZoomFit",icon:"🏋️",type:"Fitness brand",color:"#dc2626"},
+  {name:"CloudNotes",icon:"📝",type:"Notebook brand",color:"#0891b2"},
+  {name:"TasteQuest",icon:"🍕",type:"Food delivery",color:"#ea580c"},
+  {name:"NightOwl",icon:"🦉",type:"Study lamp",color:"#4f46e5"},
+  {name:"FreshBrew",icon:"☕",type:"Coffee brand",color:"#92400e"},
+  {name:"PixelPro",icon:"📸",type:"Photo editing",color:"#be185d"},
+];
+
+const QS=[
+  {brand:0,brief:"SparkJuice wants teens to feel energized and healthy.",concept:"Emotional benefit",
+   q:"Which tagline best uses an emotional benefit to connect with teens?",
+   a:"Feel alive with every sip.",
+   w:["SparkJuice: 100ml per bottle.","Now in 3 flavors!","Our juice uses real fruit."],
+   tip:"Great taglines sell a FEELING, not a feature. 'Feel alive' triggers emotion; '100ml' is just a fact."},
+  {brand:1,brief:"RunRocket needs a tagline for their fastest-ever shoe.",concept:"Power words",
+   q:"Which tagline uses 'power words' to create excitement?",
+   a:"Outrun everything. Outlast everyone.",
+   w:["RunRocket shoes, now available.","Comfortable and durable footwear.","Good shoes for running fast."],
+   tip:"Power words like 'Outrun' and 'Outlast' create energy. Parallel structure (same pattern twice) makes it memorable."},
+  {brand:2,brief:"PawPal is an app that reminds you when to feed/walk your pet.",concept:"Problem → Solution",
+   q:"Which tagline best shows a problem being solved?",
+   a:"Never forget your furry best friend again.",
+   w:["PawPal: An app for pets.","Download PawPal today.","Features include reminders and tips."],
+   tip:"Problem→Solution taglines remind the audience of a pain point, then imply your product fixes it."},
+  {brand:3,brief:"GreenEarth sells reusable bags and bottles for eco-conscious buyers.",concept:"Audience identity",
+   q:"Which tagline makes the buyer feel like a hero?",
+   a:"Shop like the planet depends on it.",
+   w:["Reusable products from GreenEarth.","We sell eco-friendly goods.","Green products at fair prices."],
+   tip:"Making the buyer the HERO ('Shop like...') gives them an identity. People buy products that reflect who they want to be."},
+  {brand:4,brief:"BrainByte helps students study smarter with flashcards and AI quizzes.",concept:"Unique value",
+   q:"Which tagline communicates what makes BrainByte unique?",
+   a:"Study less. Remember more.",
+   w:["BrainByte: A study app.","Download for free today!","Flashcards on your phone."],
+   tip:"'Study less. Remember more.' uses contrast (less vs. more) to highlight a unique promise — efficiency."},
+  {brand:5,brief:"SunSmile is a sunscreen brand targeting kids and parents.",concept:"Reassurance & trust",
+   q:"Which tagline builds the most trust with worried parents?",
+   a:"Protect what matters most.",
+   w:["SPF 50 sunscreen lotion.","Apply before going outside.","SunSmile — buy one get one!"],
+   tip:"Parents respond to safety language. 'Protect what matters most' speaks to their deepest value — their child."},
+  {brand:6,brief:"ZoomFit wants people who've never exercised to start working out.",concept:"Removing fear",
+   q:"Which tagline best removes the fear of starting?",
+   a:"Your first rep starts today.",
+   w:["ZoomFit gym equipment.","Professional-grade workout gear.","Used by athletes worldwide."],
+   tip:"Beginners feel intimidated. 'Your first rep starts today' meets them where they are — at zero — and makes it feel possible."},
+  {brand:7,brief:"CloudNotes makes colorful notebooks for creative students.",concept:"Sensory language",
+   q:"Which tagline uses sensory/vivid language best?",
+   a:"Where your brightest ideas live.",
+   w:["Notebooks in 10 colors.","CloudNotes: quality paper.","Buy 3, get 1 free."],
+   tip:"Sensory language ('brightest') creates a mental image. It connects creativity with the product naturally."},
+  {brand:8,brief:"TasteQuest delivers restaurant-quality food to your door in under 30 mins.",concept:"Speed & promise",
+   q:"Which tagline makes the BEST specific promise?",
+   a:"Restaurant quality. Front door speed.",
+   w:["Order food from TasteQuest.","Fast food delivery service.","We deliver. You enjoy."],
+   tip:"Specific promises beat vague ones. 'Restaurant quality' + 'Front door speed' gives two concrete benefits in 6 words."},
+  {brand:9,brief:"NightOwl is a study lamp for teens who study late at night.",concept:"Storytelling",
+   q:"Which tagline tells the best mini story?",
+   a:"Midnight cramming? We've got your back.",
+   w:["LED desk lamp, bright light.","NightOwl: Energy saving bulb.","Good for long study hours."],
+   tip:"'Midnight cramming? We've got your back.' paints a scene (late night), acknowledges struggle, and promises support. That's a 6-word story."},
+  {brand:10,brief:"FreshBrew coffee brand targets people who hate boring mornings.",concept:"Attitude & voice",
+   q:"Which tagline has the most memorable brand ATTITUDE?",
+   a:"Boring mornings are for quitters.",
+   w:["FreshBrew: Hot coffee delivered.","100% arabica coffee beans.","Start your morning with us."],
+   tip:"Bold attitude creates brand personality. Brands with attitude feel human — and humans trust other humans more than corporations."},
+  {brand:11,brief:"PixelPro helps beginners edit photos easily on their phone.",concept:"Empowerment",
+   q:"Which tagline best empowers a beginner?",
+   a:"Pro photos. Zero experience needed.",
+   w:["Photo editing software app.","Lots of filters and tools.","PixelPro — download now."],
+   tip:"Empowerment taglines flip the script: instead of 'our product is great', say 'YOU can do great things with it'."},
+  {brand:0,brief:"SparkJuice is launching a new mango flavor and wants buzz.",concept:"FOMO & urgency",
+   q:"Which tagline creates the most FOMO (fear of missing out)?",
+   a:"The mango everyone's talking about.",
+   w:["New mango juice now available.","SparkJuice Mango: 250ml bottle.","Contains vitamins and minerals."],
+   tip:"FOMO works by implying social proof — 'everyone's talking about it' makes you feel left out if you haven't tried it."},
+  {brand:3,brief:"GreenEarth is running a campaign on Earth Day.",concept:"Shared mission",
+   q:"Which tagline best creates a sense of shared mission?",
+   a:"Together, we turn green.",
+   w:["Buy eco-friendly products today.","GreenEarth: Earth Day sale.","Reusable bags on discount."],
+   tip:"'Together' is a magic word in marketing. It makes customers feel like partners in a cause, not just shoppers."},
+];
+
+const RIVALS=[
+  {n:"Ad Intern Gary",s:"😏",hp:8,col:"#f87171"},
+  {n:"Copycat Carl",s:"😤",hp:10,col:"#fb923c"},
+  {n:"Slogan Steve",s:"😠",hp:12,col:"#f472b6"},
+  {n:"Creative Director Boss",s:"😈",hp:14,col:"#e879f9"},
+];
+const LVLS=[
+  {n:1,qs:8,tmax:20},{n:2,qs:10,tmax:14},{n:3,qs:12,tmax:10},{n:4,qs:14,tmax:7}
+];
+
+let G={};
+
+function show(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');}
+function showLS(){show('level-screen');}
+function showHS(){
+  show('hs-screen');
+  let hs=[];try{hs=JSON.parse(localStorage.getItem('adBattleHS')||'[]');}catch(e){}
+  let el=document.getElementById('hs-list');
+  if(!hs.length){el.innerHTML='<p style="color:#94a3b8;text-align:center;">No scores yet!</p>';return;}
+  el.innerHTML=hs.map((h,i)=>`<div class="hrow"><span>${['🥇','🥈','🥉'][i]||'·'} Lvl ${h.lv}</span><span style="color:#fbbf24;font-weight:700;">${h.sc}</span></div>`).join('');
+}
+function showW(){
+  show('write-screen');
+  document.getElementById('write-feedback').style.display='none';
+  document.getElementById('tagline-input').value='';
+  let wb=document.getElementById('wbrands');
+  let sel=BRANDS.slice(0,6);
+  wb.innerHTML=sel.map((b,i)=>`<button onclick="selectBrand(${i})" class="btn gray" style="font-size:.75rem;padding:6px 12px;">${b.icon} ${b.name}</button>`).join('');
+  G.writeBrand=0;
+  document.getElementById('write-tip').textContent=`Brand: ${sel[0].icon} ${sel[0].name} — ${sel[0].type}. Write a tagline that captures their vibe!`;
+}
+function selectBrand(i){
+  G.writeBrand=i;
+  let b=BRANDS[i];
+  document.getElementById('write-tip').textContent=`Brand: ${b.icon} ${b.name} — ${b.type}. Write a tagline that captures their vibe!`;
+  document.getElementById('write-feedback').style.display='none';
+}
+function evalTagline(){
+  let txt=document.getElementById('tagline-input').value.trim();
+  let fb=document.getElementById('write-feedback');
+  if(!txt){fb.style.display='block';fb.innerHTML='<span style="color:#f87171">Please type a tagline first!</span>';return;}
+  let b=BRANDS[G.writeBrand||0];
+  let score=0;let tips=[];
+  if(txt.length<=40)score+=20,tips.push('✅ Great length — short and punchy!');
+  else tips.push('⚠️ Try to keep it under 40 characters — shorter is stronger.');
+  let qwords=['?','!'];let hasQ=qwords.some(q=>txt.includes(q));
+  if(hasQ)score+=15,tips.push('✅ Punctuation adds energy!');
+  let power=['you','your','now','never','every','best','more','less','today','free','new','real'];
+  let pw=power.filter(w=>txt.toLowerCase().includes(w));
+  if(pw.length>0)score+=25,tips.push(`✅ Power word detected: "${pw[0]}" — nice!`);
+  else tips.push('💡 Try adding a power word: you, now, never, every, best...');
+  let wc=txt.split(' ').length;
+  if(wc>=3&&wc<=8)score+=20,tips.push('✅ Perfect word count (3–8 words)!');
+  else if(wc<3)tips.push('⚠️ Too short — try adding a bit more.');
+  else tips.push('⚠️ A bit long — try cutting some words.');
+  if(/[A-Z]/.test(txt.charAt(0)))score+=10,tips.push('✅ Starts with a capital letter!');
+  let rhyme=checkRhyme(txt);
+  if(rhyme)score+=10,tips.push('✅ Possible rhyme or rhythm detected — very catchy!');
+  let grade=score>=80?'🌟 Amazing tagline!':score>=60?'👍 Good tagline!':score>=40?'🤔 Decent start — keep refining!':'💪 Keep practicing — every great copywriter started here!';
+  fb.style.display='block';
+  fb.innerHTML=`<div style="font-weight:700;color:#f472b6;margin-bottom:8px;">${grade} Score: ${score}/100</div>`+tips.map(t=>`<div style="margin:3px 0;">${t}</div>`).join('')+`<div style="margin-top:8px;color:#94a3b8;font-size:.72rem;">Brand: ${b.icon} ${b.name}</div>`;
+}
+function checkRhyme(s){
+  let words=s.toLowerCase().replace(/[^a-z\s]/g,'').split(' ').filter(w=>w.length>2);
+  for(let i=0;i<words.length;i++)for(let j=i+1;j<words.length;j++){
+    let a=words[i],b=words[j];
+    if(a.slice(-2)===b.slice(-2)&&a!==b)return true;
+  }
+  return false;
+}
+
+function shuffle(a){return a.sort(()=>Math.random()-.5);}
+
+function startL(lv){
+  let cfg=LVLS[lv-1];let rv=RIVALS[lv-1];
+  let qpool=shuffle([...QS]).slice(0,cfg.qs);
+  G={lv,lives:3,score:0,combo:1,qi:0,qs:qpool,eHp:rv.hp,eMx:rv.hp,tmax:cfg.tmax,tv:cfg.tmax,ti:null,answered:false,cor:0,wrg:0};
+  document.getElementById('esprite').textContent=rv.s;
+  document.getElementById('ename').textContent=rv.n;
+  document.getElementById('llabel').textContent='LVL '+lv;
+  updateHUD();buildDots();show('bs');nextQ();
+}
+
+function buildDots(){
+  let r=document.getElementById('pdots');
+  r.innerHTML=G.qs.map((_,i)=>`<div class="dot${i===0?' cur':''}" id="d${i}"></div>`).join('');
+}
+function updDots(){
+  G.qs.forEach((_,i)=>{
+    let d=document.getElementById('d'+i);
+    if(d)d.className='dot'+(i<G.qi?' done':i===G.qi?' cur':'');
+  });
+}
+
+function updateHUD(){
+  let lv=document.getElementById('lives');lv.innerHTML='';
+  for(let i=0;i<3;i++){let h=document.createElement('span');h.style.fontSize='1rem';h.textContent=i<G.lives?'❤️':'🖤';lv.appendChild(h);}
+  document.getElementById('cval').textContent='x'+G.combo;
+  document.getElementById('sc').textContent=G.score;
+  let pp=(G.lives/3)*100;
+  document.getElementById('php').style.width=pp+'%';
+  document.getElementById('phtxt').textContent=G.lives+'/3';
+  let ep=(G.eHp/G.eMx)*100;
+  document.getElementById('ehp').style.width=ep+'%';
+  document.getElementById('ehtxt').textContent=G.eHp+'/'+G.eMx;
+}
+
+function nextQ(){
+  if(G.qi>=G.qs.length){endGame(true);return;}
+  G.answered=false;
+  let q=G.qs[G.qi];let b=BRANDS[q.brand];
+  document.getElementById('brand-icon').textContent=b.icon;
+  document.getElementById('brand-name').textContent=b.name;
+  document.getElementById('brand-type').textContent=b.type+' · '+q.concept;
+  document.getElementById('q-label').textContent='PICK THE BEST TAGLINE';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('fb').textContent='';
+  document.getElementById('tip').textContent='';
+  document.getElementById('combo-txt').textContent='';
+  let opts=shuffle([q.a,...q.w]);
+  let ch=document.getElementById('choices');ch.innerHTML='';
+  opts.forEach(o=>{
+    let b2=document.createElement('button');b2.className='choice';b2.textContent=o;
+    b2.onclick=()=>ans(b2,o,q);ch.appendChild(b2);
+  });
+  updDots();startTimer();
+}
+
+function startTimer(){
+  clearInterval(G.ti);G.tv=G.tmax;updTimer();
+  G.ti=setInterval(()=>{G.tv--;updTimer();if(G.tv<=0){clearInterval(G.ti);timeUp();}},1000);
+}
+function updTimer(){
+  let p=(G.tv/G.tmax)*100;
+  let f=document.getElementById('tfill');f.style.width=p+'%';
+  f.style.background=p>55?'#a78bfa':p>28?'#fbbf24':'#f87171';
+}
+function timeUp(){
+  if(G.answered)return;G.answered=true;
+  let q=G.qs[G.qi];
+  document.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.a)b.classList.add('ok');});
+  document.getElementById('fb').textContent='⏰ Too slow!';
+  document.getElementById('fb').style.color='#f87171';
+  document.getElementById('tip').textContent='💡 '+q.tip;
+  G.combo=1;G.wrg++;loseL();
+  if(G.lives<=0){setTimeout(()=>endGame(false),1600);return;}
+  setTimeout(()=>{G.qi++;nextQ();},2400);
+}
+
+function ans(btn,opt,q){
+  if(G.answered)return;G.answered=true;clearInterval(G.ti);
+  let ok=opt===q.a;
+  if(ok){
+    btn.classList.add('ok');
+    let dmg=Math.ceil(G.combo*1.5);
+    G.eHp=Math.max(0,G.eHp-dmg);
+    let pts=100*G.combo+(G.tv*6);G.score+=pts;
+    G.combo=Math.min(G.combo+1,5);G.cor++;
+    document.getElementById('fb').textContent='✅ Correct! +'+pts+' pts';
+    document.getElementById('fb').style.color='#4ade80';
+    document.getElementById('tip').textContent='💡 '+q.tip;
+    if(G.combo>1)document.getElementById('combo-txt').textContent='🔥 COMBO x'+G.combo+'!';
+    if(G.combo>=3)flashStreak('🔥 COMBO x'+G.combo+'!');
+    showDmg('-'+dmg+'💥','#fbbf24',false);
+    anim('psprite','atk');anim('esprite','hurt');
+    updateHUD();
+    if(G.eHp<=0){setTimeout(()=>endGame(true),1400);return;}
+  }else{
+    btn.classList.add('bad');
+    document.querySelectorAll('.choice').forEach(b=>{if(b.textContent===q.a)b.classList.add('ok');});
+    G.combo=1;G.wrg++;
+    document.getElementById('fb').textContent='❌ Not quite!';
+    document.getElementById('fb').style.color='#f87171';
+    document.getElementById('tip').textContent='💡 '+q.tip;
+    showDmg('-❤️','#f87171',true);
+    anim('esprite','atk');anim('psprite','hurt');
+    loseL();updateHUD();
+    if(G.lives<=0){setTimeout(()=>endGame(false),1600);return;}
+  }
+  setTimeout(()=>{G.qi++;nextQ();},2600);
+}
+
+function loseL(){G.lives=Math.max(0,G.lives-1);updateHUD();}
+function anim(id,cls){let e=document.getElementById(id);e.classList.remove('atk','hurt');void e.offsetWidth;e.classList.add(cls);setTimeout(()=>e.classList.remove(cls),400);}
+function showDmg(txt,col,isP){
+  let p=document.getElementById('dmg');p.style.animation='none';
+  p.textContent=txt;p.style.color=col;p.style.left=isP?'16%':'70%';p.style.top='38%';
+  void p.offsetWidth;p.style.animation='popUp 0.8s ease forwards';
+}
+function flashStreak(msg){
+  let e=document.getElementById('streak');e.textContent=msg;e.style.animation='none';
+  void e.offsetWidth;e.style.animation='popUp 1s ease forwards';
+}
+
+function endGame(won){
+  clearInterval(G.ti);
+  let tot=G.cor+G.wrg;let acc=tot>0?Math.round(G.cor/tot*100):0;
+  document.getElementById('rico').textContent=won?'🎉':'📉';
+  document.getElementById('rtitle').textContent=won?'Campaign Won!':'Back to the Briefing Room';
+  document.getElementById('rscore').textContent=G.score;
+  document.getElementById('rmsg').textContent=won?'The client loves it!':'Keep studying those ad principles!';
+  document.getElementById('racc').textContent='Accuracy: '+acc+'% · '+G.cor+' correct · '+G.wrg+' wrong';
+  let concepts=[...new Set(G.qs.slice(0,G.qi).map(q=>q.concept))];
+  document.getElementById('rcats').innerHTML='<div style="font-size:.72rem;color:#94a3b8;margin-bottom:5px;">Concepts covered:</div>'+concepts.map(c=>`<span class="badge">${c}</span>`).join('');
+  if(won){
+    let hs=[];try{hs=JSON.parse(localStorage.getItem('adBattleHS')||'[]');}catch(e){}
+    hs.push({lv:G.lv,sc:G.score});hs.sort((a,b)=>b.sc-a.sc);hs=hs.slice(0,5);
+    try{localStorage.setItem('adBattleHS',JSON.stringify(hs));}catch(e){}
+  }
+  show('results-screen');
+}
+</script>
+</body>
+</html>

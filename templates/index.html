@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Career Quest</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* Chatbot Markdown Structure Styles */
+        .markdown-wrapper p { margin-bottom: 12px; line-height: 1.6; }
+        .markdown-wrapper ul, .markdown-wrapper ol { margin-left: 20px; margin-bottom: 12px; }
+        .markdown-wrapper li { margin-bottom: 6px; line-height: 1.5; }
+        .markdown-wrapper strong { color: #8be09b; }
+        .markdown-wrapper pre { background: rgba(0,0,0,0.5); padding: 12px; border-radius: 8px; margin-bottom: 12px; overflow-x: auto; }
+        .markdown-wrapper code { background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        .markdown-wrapper h1, .markdown-wrapper h2, .markdown-wrapper h3 { margin-top: 16px; margin-bottom: 10px; color: #ffd859; font-size: 1.1em; }
+        #chatContainer { scrollbar-width: none; -ms-overflow-style: none; }
+        #chatContainer::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- ========== GLOBAL USER HEADER ========== -->
+        <header class="user-header" id="userHeader" style="display: none;">
+            <div class="user-header-left">
+                <div class="user-avatar" id="userAvatar">🎮</div>
+                <div class="user-info-header">
+                    <span class="user-name-header" id="headerPlayerName">Hero</span>
+                    <span class="user-level-badge" id="headerLevel">Lv. 1</span>
+                </div>
+            </div>
+            <div class="user-header-right">
+                <div class="header-coins" id="headerCoinsWrap">
+                    <i class="fa-solid fa-coins" style="color: #ffd859;"></i>
+                    <span id="headerCoins">50</span>
+                </div>
+                <button class="logout-btn" id="logoutBtn" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- ========== ONBOARDING VIEW (First-time users) ========== -->
+        <main class="main-content" id="onboardingView" style="display: none;">
+            <div class="header">
+                <div class="logo-icon"><i class="fa-solid fa-gamepad"></i></div>
+                <h1 data-key="app_title">Career Quest</h1>
+                <p data-key="enter_name">Enter your player name</p>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="playerName" placeholder="Player Name" data-placeholder-key="player_name_placeholder">
+            </div>
+
+            <div class="section-title">
+                <h2 data-key="select_skills">Select your skills</h2>
+            </div>
+            
+            <div class="skills-grid" id="skillsGrid">
+                <!-- Skills populated via JS -->
+            </div>
+
+            <div class="info-banner">
+                <p data-key="learn_english_go">Learn english as you go</p>
+            </div>
+
+            <div class="language-section">
+                <p data-key="choose_language">Choose a language</p>
+                <div class="custom-select-wrapper" id="customLanguageSelect">
+                    <div class="custom-select-trigger">
+                        <span id="selectedLanguageText">English</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div class="custom-options" id="languageOptions">
+                        <!-- Languages populated via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-section">
+                <button id="continueBtn" class="continue-btn" disabled data-key="continue_journey">Continue Journey</button>
+            </div>
+        </main>
+
+        <!-- ========== DASHBOARD VIEW (Returning users) ========== -->
+        <main class="main-content" id="dashboardView" style="display: none;">
+            
+            <!-- Streak Banner -->
+            <div class="streak-banner" id="streakBanner">
+                <div class="streak-fire-wrap">
+                    <span class="streak-fire-emoji">🔥</span>
+                    <div class="streak-fire-glow"></div>
+                </div>
+                <div class="streak-info">
+                    <h2><span id="streakCount">0</span> <span data-key="day_streak_lbl">Day Streak!</span></h2>
+                    <p data-key="streak_msg">Keep playing daily to grow your streak</p>
+                </div>
+                <div class="streak-badge" id="streakBadge">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card stat-level">
+                    <div class="stat-icon-wrap"><span>⚔️</span></div>
+                    <div class="stat-value" id="dashLevel">1</div>
+                    <div class="stat-label" data-key="stat_level">Level</div>
+                </div>
+                <div class="stat-card stat-xp">
+                    <div class="stat-icon-wrap"><span>✨</span></div>
+                    <div class="stat-value" id="dashXp">0</div>
+                    <div class="stat-label" data-key="stat_xp">XP</div>
+                    <div class="stat-xp-bar">
+                        <div class="stat-xp-fill" id="dashXpFill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="stat-card stat-coins">
+                    <div class="stat-icon-wrap"><span>💰</span></div>
+                    <div class="stat-value" id="dashCoins">50</div>
+                    <div class="stat-label" data-key="stat_coins">Coins</div>
+                </div>
+            </div>
+
+            <!-- Welcome Card -->
+            <div class="welcome-card">
+                <div class="welcome-text">
+                    <h3><span data-key="welcome_back">Welcome back,</span> <span id="dashPlayerName">Hero</span>! 👋</h3>
+                    <p data-key="continue_quest">Continue your career quest and level up your skills.</p>
+                </div>
+                <div class="welcome-avatar" id="welcomeAvatar">🎮</div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3 class="dash-section-heading" data-key="quick_actions">Quick Actions</h3>
+                <div class="action-cards">
+                    <div class="action-card action-skills" id="goToSkills">
+                        <div class="action-card-icon">⚒️</div>
+                        <div class="action-card-info">
+                            <h4 data-key="sf_title">Skill Forge</h4>
+                            <p data-key="sf_desc">Train & level up your skills</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right action-arrow"></i>
+                    </div>
+                    <div class="action-card action-rewards" id="goToRewards">
+                        <div class="action-card-icon">🎁</div>
+                        <div class="action-card-info">
+                            <h4 data-key="ls_title">Loot Shop</h4>
+                            <p data-key="ls_desc">Spend coins on real rewards</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right action-arrow"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Skills Summary -->
+            <div class="skills-summary" id="skillsSummary">
+                <h3 class="dash-section-heading" data-key="your_skills">Your Skills</h3>
+                <div class="skills-pills" id="skillsPills">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Daily Tip -->
+            <div class="daily-tip">
+                <div class="tip-icon-wrap">💡</div>
+                <div class="tip-content">
+                    <h4 data-key="tip_title">Tip of the Day</h4>
+                    <p id="dailyTip">Complete daily quests to earn bonus XP and coins!</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- ========== REWARDS VIEW ========== -->
+        <main class="main-content" id="rewardsView" style="display: none; padding-top: 20px;">
+            <div class="rewards-header">
+                <h1 class="rewards-main-title" data-key="reward_main">🎁 REWARD 🎁</h1>
+                <h3 class="rewards-title" data-key="reward_sub">Real-world loot shop — earn coins, get real rewards</h3>
+                <div class="coins-display-wrapper">
+                    <div class="coins-display glowing-border">
+                        <h2><span data-key="my_coins">My Coins:</span> <span id="coinCount">50</span> <i class="fa-solid fa-copyright" style="color: #ffd859; background: #b48600; border-radius: 50%;"></i></h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rewards-list">
+                <!-- Card 1 -->
+                <div class="reward-card locked tooltip-container" data-reward-id="data_pack" data-cost="600">
+                    <div class="reward-icon" style="background-color: #1a3644;">
+                        <img src="/static/images/data_pack.png" alt="logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                    </div>
+                    <div class="reward-info">
+                        <h4 data-key="data_pack">1GB Data Pack</h4>
+                        <p class="price">600 <span data-key="stat_coins">coins</span></p>
+                        <p class="sponsor" data-key="sponsor_1">Powered by: Jio - BSNL - Airtel</p>
+                    </div>
+                    <div class="reward-action">
+                        <i class="fa-solid fa-lock" style="color: #ffd859;"></i> <span data-key="reward_locked">Locked</span>
+                    </div>
+                    <div class="locked-tooltip">600 <span data-key="coins_needed">coins needed</span></div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="reward-card locked tooltip-container" data-reward-id="course_voucher" data-cost="800">
+                    <div class="reward-icon" style="background-color: #1e3a24; color: #aadeab;"><i class="fa-solid fa-graduation-cap"></i> <i class="fa-solid fa-certificate"></i></div>
+                    <div class="reward-info">
+                        <h4 data-key="course_voucher">Udemy Course Voucher</h4>
+                        <p class="price">800 <span data-key="stat_coins">coins</span></p>
+                        <p class="sponsor" data-key="sponsor_2">Sponsored by: Vedantu - NIIT - Skill India</p>
+                    </div>
+                    <div class="reward-action">
+                        <i class="fa-solid fa-lock" style="color: #ffd859;"></i> <span data-key="reward_locked">Locked</span>
+                    </div>
+                    <div class="locked-tooltip">800 <span data-key="coins_needed">coins needed</span></div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="reward-card locked tooltip-container" data-reward-id="coding_workshop" data-cost="1000">
+                    <div class="reward-icon" style="background-color: #2a2244; color: #ffd859;"><i class="fa-regular fa-lightbulb"></i></div>
+                    <div class="reward-info">
+                        <h4 data-key="coding_workshop">Coding Workshop Access</h4>
+                        <p class="price">1000 <span data-key="stat_coins">coins</span></p>
+                        <p class="sponsor" data-key="sponsor_3">Presented by Tech Guild</p>
+                    </div>
+                    <div class="reward-action">
+                        <i class="fa-solid fa-lock" style="color: #ffd859;"></i> <span data-key="reward_locked">Locked</span>
+                    </div>
+                    <div class="locked-tooltip">1000 <span data-key="coins_needed">coins needed</span></div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="reward-card locked tooltip-container" data-reward-id="mentorship" data-cost="1500">
+                    <div class="reward-icon" style="background-color: #3b2a1a; color: #7ab9e3;"><i class="fa-solid fa-handshake-angle"></i></div>
+                    <div class="reward-info">
+                        <h4 data-key="mentorship">30-min Mentorship Session</h4>
+                        <p class="price">1500 <span data-key="stat_coins">coins</span></p>
+                        <p class="sponsor" data-key="sponsor_4">Supported by Top Founders Network</p>
+                    </div>
+                    <div class="reward-action">
+                        <i class="fa-solid fa-lock" style="color: #ffd859;"></i> <span data-key="reward_locked">Locked</span>
+                    </div>
+                    <div class="locked-tooltip">1500 <span data-key="coins_needed">coins needed</span></div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="reward-card locked tooltip-container" data-reward-id="gift_card" data-cost="2000">
+                    <div class="reward-icon" style="background-color: #3b301a; color: #4f8ab9;"><i class="fa-solid fa-gift"></i> <i class="fa-solid fa-star" style="color: #ffd859; font-size: 10px;"></i></div>
+                    <div class="reward-info">
+                        <h4 data-key="gift_card">$10 Gift Card</h4>
+                        <p class="price">2000 <span data-key="stat_coins">coins</span></p>
+                        <p class="sponsor" data-key="sponsor_5">Sponsored by Infosys Foundation</p>
+                    </div>
+                    <div class="reward-action">
+                        <i class="fa-solid fa-lock" style="color: #ffd859;"></i> <span data-key="reward_locked">Locked</span>
+                    </div>
+                    <div class="locked-tooltip">2000 <span data-key="coins_needed">coins needed</span></div>
+                </div>
+
+                <!-- Card 6 — Stationery Kit (claimable at 50 coins) -->
+                <div class="reward-card claimable" data-reward-id="stationery_kit" data-cost="50">
+                    <div class="reward-icon" style="background-color: #1a2c1f; color: #aadeab; position: relative;">
+                        <i class="fa-solid fa-pen" style="position: absolute; top: 4px; left: 4px; font-size: 10px; color: #8ec5fc;"></i>
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <div class="reward-info">
+                        <h4 data-key="stat_kit">Stationery Kit</h4>
+                        <p class="price claim-price">50 <span data-key="stat_coins">coins</span> - <span data-key="claimable">CLAIMABLE</span></p>
+                        <p class="sponsor" data-key="sponsor_6">Sponsored by Tata CSR</p>
+                    </div>
+                    <div class="reward-action claim-btn-wrapper">
+                        <button class="claim-btn" data-reward-id="stationery_kit" data-cost="50"><span data-key="claim_btn">CLAIM</span> <i class="fa-solid fa-check"></i></button>
+                    </div>
+                </div>
+
+                <!-- Card 7 — Mystery Chest -->
+                <div class="reward-card special">
+                    <div class="reward-icon" style="background-color: #3a2215; color: #dbab81;"><i class="fa-solid fa-box"></i> <i class="fa-solid fa-question" style="font-size:12px; color:white; position:absolute;"></i></div>
+                    <div class="reward-info">
+                        <h4 data-key="mystery_chest">Mystery Chest</h4>
+                        <p class="price" style="color: #ffd859;" data-key="random_drop">Random drop on level-up</p>
+                    </div>
+                    <div class="reward-action">
+                        <button class="level-up-btn" id="levelUpBtn"><span data-key="level_up_btn">LEVEL UP</span></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claim Success Fullscreen Banner -->
+            <div id="claimSuccessBanner" class="claim-success-banner" style="display: none;">
+                <canvas id="confettiCanvas"></canvas>
+                <div class="claim-success-box" data-key="hooray_won">
+                    🎉 HOORAY You won a reward 🎉
+                </div>
+            </div>
+        </main>
+
+        <!-- ========== SKILL FORGE VIEW ========== -->
+        <main class="main-content" id="skillsView" style="display: none;">
+            
+            <!-- Top Bar -->
+            <div class="sf-topbar">
+                <button class="sf-back-btn" id="sfBackBtn"><i class="fa-solid fa-arrow-left"></i> <span data-key="sf_home">Home</span></button>
+                <div class="sf-title-area">
+                    <h2 class="sf-title" data-key="sf_title">⚒️ Skill Forge</h2>
+                    <p class="sf-subtitle" id="sfZoneSubtitle" data-key="sf_subtitle">Choose your career path</p>
+                </div>
+                <div class="sf-coins-badge"><i class="fa-solid fa-coins" style="color:#ffd859"></i> <span id="sfCoinCount">0</span></div>
+            </div>
+
+            <!-- Stepper -->
+            <div class="sf-stepper" id="sfStepper">
+                <div class="sf-step active" data-step="1"><div class="sf-step-num">1</div><span data-key="step_path">Path</span></div>
+                <div class="sf-step-line"></div>
+                <div class="sf-step" data-step="2"><div class="sf-step-num">2</div><span data-key="step_assess">Assess</span></div>
+                <div class="sf-step-line"></div>
+                <div class="sf-step" data-step="3"><div class="sf-step-num">3</div><span data-key="step_results">Results</span></div>
+                <div class="sf-step-line"></div>
+                <div class="sf-step" data-step="4"><div class="sf-step-num">4</div><span data-key="step_courses">Courses</span></div>
+                <div class="sf-step-line"></div>
+                <div class="sf-step" data-step="5"><div class="sf-step-num">5</div><span data-key="step_quests">Quests</span></div>
+            </div>
+
+            <!-- Hero Card (hidden until path selected) -->
+            <div class="sf-hero-card" id="sfHeroCard" style="display:none">
+                <div class="sf-hero-avatar">
+                    <div class="sf-avatar-ring">
+                        <div class="sf-avatar-inner" id="sfAvatarInner">🔮</div>
+                    </div>
+                    <div class="sf-hero-particles"><span></span><span></span><span></span><span></span><span></span></div>
+                </div>
+                <div class="sf-hero-info">
+                    <h3 class="sf-hero-name" id="sfHeroName"></h3>
+                    <p class="sf-hero-meta" id="sfHeroMeta"></p>
+                    <div class="sf-xp-bar-wrap">
+                        <div class="sf-xp-bar"><div class="sf-xp-fill" id="sfXpFill" style="width:0%"></div><div class="sf-xp-sparkle"></div></div>
+                        <span class="sf-xp-text" id="sfXpText">0 / 500 XP</span>
+                    </div>
+                </div>
+                <div class="sf-zone-badge" id="sfZoneBadge">
+                    <div class="sf-zone-icon" id="sfZoneIcon">🏰</div>
+                    <div><strong id="sfZoneName">Tech Citadel</strong><small>Your chosen career path</small></div>
+                </div>
+            </div>
+
+            <!-- STEP 1: PATH SELECTION -->
+            <div class="sf-section" id="sfStep1">
+                <div class="sf-section-header">
+                    <div class="sf-section-icon">🗺️</div>
+                    <div>
+                        <h3 data-key="step1_title">Step 1 — Choose your career path</h3>
+                        <p class="sf-section-desc" data-key="step1_desc">Pick the career zone that excites you. This decides what skills you need.</p>
+                    </div>
+                </div>
+                <div class="sf-path-grid" id="sfPathGrid"><!-- Generated by JS --></div>
+                <div id="sfCaseStudy"><!-- Case study card rendered by JS --></div>
+            </div>
+
+            <!-- STEP 2: SKILL ASSESSMENT -->
+            <div class="sf-section" id="sfStep2" style="display:none">
+                <div class="sf-section-header">
+                    <div class="sf-section-icon">🎯</div>
+                    <div>
+                        <h3 data-key="step2_title">Step 2 — Skill Assessment</h3>
+                        <p class="sf-section-desc" id="sfAssessDesc" data-key="step2_desc">Rate your proficiency in each required skill. Be honest!</p>
+                    </div>
+                    <div class="sf-xp-reward" data-key="xp_scan">+50 XP for scanning</div>
+                </div>
+                <div class="sf-skill-tiles" id="sfSkillTiles"><!-- Generated by JS --></div>
+                <div class="sf-scan-summary" id="sfScanSummary" style="display:none">
+                    <div class="sf-scan-dot green"></div>
+                    <span id="sfScanText"></span>
+                </div>
+                <button class="sf-analyze-btn" id="sfAnalyzeBtn" style="display:none"><span data-key="analyze_btn">Analyze My Skills</span> ⚡</button>
+            </div>
+
+            <!-- STEP 3: RESULTS -->
+            <div class="sf-section" id="sfStep3" style="display:none">
+                <div class="sf-section-header">
+                    <div class="sf-section-icon">📡</div>
+                    <div>
+                        <h3 data-key="step3_title">Step 3 — Skill Gap Radar</h3>
+                        <p class="sf-section-desc" data-key="step3_desc">Purple = your level. Red dashed = what's needed. Close the gap!</p>
+                    </div>
+                </div>
+                <div class="sf-radar-container">
+                    <div class="sf-radar-chart-wrap">
+                        <h4 class="sf-radar-label" data-key="radar_label">SKILL RADAR</h4>
+                        <canvas id="sfRadarCanvas" width="280" height="280"></canvas>
+                        <div class="sf-radar-legend">
+                            <span><span class="sf-legend-dot purple"></span> <span data-key="your_skills_leg">Your skills</span></span>
+                            <span><span class="sf-legend-dot red"></span> <span data-key="target_leg">Target</span></span>
+                        </div>
+                    </div>
+                    <div class="sf-gap-breakdown" id="sfGapBreakdown"><!-- Generated by JS --></div>
+                </div>
+                <div class="sf-readiness" id="sfReadiness">
+                    <div class="sf-readiness-header">
+                        <span>⭐ <strong data-key="readiness">Career readiness score</strong></span>
+                        <span class="sf-readiness-pct" id="sfReadinessPct">0%</span>
+                    </div>
+                    <div class="sf-readiness-bars" id="sfReadinessBars"><!-- Generated by JS --></div>
+                    <p class="sf-readiness-hint" data-key="hint_boss">Complete all quests — reach 100% → unlock boss battle</p>
+                </div>
+            </div>
+
+            <!-- STEP 4: COURSES -->
+            <div class="sf-section" id="sfStep4" style="display:none">
+                <div class="sf-section-header">
+                    <div class="sf-section-icon">🎓</div>
+                    <div>
+                        <h3 data-key="step4_title">Step 4 — Recommended Courses</h3>
+                        <p class="sf-section-desc" data-key="step4_desc">These free courses close your exact skill gaps. Click to visit the official website.</p>
+                    </div>
+                    <div class="sf-xp-reward" style="background:rgba(170,222,171,0.12); border-color:rgba(170,222,171,0.25); color:#aadeab" data-key="enrol_xp">Enrol = earn XP</div>
+                </div>
+                <div class="sf-course-grid" id="sfCourseGrid"><!-- Generated by JS --></div>
+            </div>
+
+            <!-- STEP 5: QUESTS -->
+            <div class="sf-section" id="sfStep5" style="display:none">
+                <div class="sf-section-header">
+                    <div class="sf-section-icon">⚔️</div>
+                    <div>
+                        <h3 data-key="step5_title">Step 5 — Skill Quests</h3>
+                        <p class="sf-section-desc" data-key="step5_desc">Complete these quests to power up and close your skill gaps.</p>
+                    </div>
+                </div>
+                <div class="sf-quest-list" id="sfQuestList"><!-- Generated by JS --></div>
+            </div>
+
+            <!-- BOSS BANNER -->
+            <div class="sf-boss-banner" id="sfBossBanner" style="display:none">
+                <div class="sf-boss-icon">⭐</div>
+                <div class="sf-boss-content" id="sfBossContent"><!-- Generated by JS --></div>
+            </div>
+        </main>
+
+        <!-- ========== CHATBOT VIEW ========== -->
+        <main class="main-content" id="chatbotView" style="display: none; padding-top: 20px; flex-direction: column; height: calc(100vh - 110px);">
+            <div class="sf-topbar" style="flex-shrink: 0; position: static; margin-bottom: 0px; margin-top: -20px; border-radius: 20px 20px 0 0;">
+                <div class="sf-title-area">
+                    <h2 class="sf-title">🤖 AI Tutor</h2>
+                    <p class="sf-subtitle" style="margin-left: 0;">Ask me anything!</p>
+                </div>
+            </div>
+            
+            <div class="chat-container" id="chatContainer" style="flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+            </div>
+            
+            <div class="chat-input-area" style="flex-shrink: 0; padding: 15px; background: rgba(0,0,0,0.2); display: flex; gap: 10px; margin-bottom: 60px; border-radius: 12px; align-items: center;">
+                <input type="text" id="chatInput" placeholder="Type your question..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; outline: none; font-size: 16px;">
+                <button id="chatMicBtn" class="continue-btn" style="width: auto; padding: 0; background: #2a2244; color: #ffd859; border-radius: 50%; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; opacity: 1; flex-shrink: 0; transition: all 0.3s;" title="Click to speak"><i class="fa-solid fa-microphone" style="font-size: 18px;"></i></button>
+                <button id="chatSendBtn" class="continue-btn" style="width: auto; padding: 0 20px; margin-top: 0; opacity: 1;">Send</button>
+            </div>
+        </main>
+
+        <!-- ========== EXPLORE VIEW ========== -->
+        <main class="main-content" id="exploreView" style="display: none; padding: 0 0 110px 0;">
+            <div id="xp-container" style="width: 100%; height: 100%; position: relative;">
+                <!-- Explore states will be managed by explore.js -->
+            </div>
+        </main>
+
+        <!-- ========== BOTTOM NAVIGATION ========== -->
+        <nav class="bottom-nav" id="bottomNav" style="display: none;">
+            <a href="#" class="nav-item active" data-view="home">
+                <div class="nav-icon" style="color: #6fb2ff;"><i class="fa-solid fa-house"></i></div>
+                <span data-key="nav_home">Home</span>
+            </a>
+            <a href="#" class="nav-item" data-view="skills">
+                <div class="nav-icon" style="color: #8be09b;"><i class="fa-solid fa-handshake"></i></div>
+                <span data-key="nav_skills">Skills</span>
+            </a>
+            <a href="#" class="nav-item" data-view="explore">
+                <div class="nav-icon" style="color: #c08be0;"><i class="fa-solid fa-compass"></i></div>
+                <span data-key="nav_explore">Explore</span>
+            </a>
+            <a href="#" class="nav-item" data-view="rewards">
+                <div class="nav-icon" style="color: #ffd859;"><i class="fa-solid fa-trophy"></i></div>
+                <span data-key="nav_rewards">Rewards</span>
+            </a>
+            <a href="#" class="nav-item" data-view="chatbot">
+                <div class="nav-icon" style="color: #8be0e0;"><i class="fa-solid fa-robot"></i></div>
+                <span data-key="nav_chatbot">ChatBot</span>
+            </a>
+        </nav>
+
+        <!-- Arcade Scanline Overlay -->
+        <div class="arcade-scanline"></div>
+
+        <!-- Floating Particles -->
+        <canvas class="arcade-particles" id="arcadeParticles"></canvas>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/translations.js"></script>
+    <script src="/static/script.js"></script>
+    <script src="/static/skillforge.js"></script>
+    <script src="/static/questgame.js"></script>
+    <script src="/static/explore.js"></script>
+</body>
+</html>

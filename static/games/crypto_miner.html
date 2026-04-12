@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Miner</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #0b0f19; color: #fff; overflow: hidden; touch-action: none; user-select: none; }
+        #app { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; cursor: none; }
+        .screen { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: rgba(11, 15, 25, 0.9); z-index: 50; }
+        .screen.on { display: flex; }
+        
+        .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: linear-gradient(180deg, rgba(0,0,0,0.8), transparent); z-index: 10; pointer-events: none; }
+        .hud-item { display: flex; flex-direction: column; align-items: center; }
+        .hud-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .hud-val { font-size: 20px; font-weight: 900; }
+        .hud-val.gold { color: #fbbf24; }
+        .hud-val.red { color: #f87171; }
+        .hud-val.blue { color: #60a5fa; }
+        
+        .btn { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; border: none; padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; margin-top: 20px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6); }
+        .btn:active { transform: translateY(1px); }
+        
+        .card { background: #1e293b; border: 2px solid #334155; border-radius: 16px; padding: 24px; text-align: center; max-width: 400px; width: 100%; }
+        .title { font-size: 32px; font-weight: 900; margin-bottom: 8px; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .desc { font-size: 14px; color: #cbd5e1; margin-bottom: 16px; line-height: 1.5; }
+        
+        .timeline-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 400px; height: 12px; background: #334155; border-radius: 6px; overflow: hidden; border: 2px solid #1e293b; z-index: 10; pointer-events: none;}
+        .timeline-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #3b82f6, #2dd4bf); transition: width 0.2s linear; }
+        .timeline-text { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 800; color: #e2e8f0; pointer-events: none; z-index: 10;}
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+        .stat-box { background: #0f172a; padding: 12px; border-radius: 8px; }
+        .stat-box .lbl { font-size: 11px; color: #94a3b8; }
+        .stat-box .val { font-size: 24px; font-weight: 900; margin-top: 4px; }
+        
+        #toast { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: #fbbf24; color: #000; padding: 8px 16px; border-radius: 20px; font-weight: 800; font-size: 14px; opacity: 0; transition: opacity 0.3s; z-index: 60; pointer-events: none; }
+        
+        /* Particle effects overlay */
+        #fx { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Main Game HUD -->
+        <div class="hud" id="hud" style="display:none;">
+            <div class="hud-item">
+                <span class="hud-label">Level</span>
+                <span class="hud-val blue" id="h-lvl">1</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">Score</span>
+                <span class="hud-val gold" id="h-score">0</span>
+            </div>
+            <div class="hud-item" style="opacity: 0;">
+                <span class="hud-label">Target</span>
+                <span class="hud-val" id="h-target">100</span>
+            </div>
+            <div class="hud-item">
+                <span class="hud-label">Lives</span>
+                <span class="hud-val red" id="h-lives">❤️❤️❤️</span>
+            </div>
+        </div>
+        
+        <div class="timeline-text" id="t-text" style="display:none;">Time Left: 30s</div>
+        <div class="timeline-container" id="t-bar" style="display:none;">
+            <div class="timeline-fill" id="t-fill"></div>
+        </div>
+        
+        <div id="toast">Message</div>
+        
+        <!-- Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Screens -->
+        <div class="screen on" id="s-title">
+            <div class="card">
+                <div style="font-size: 48px; margin-bottom: 12px; animation: float 2s infinite ease-in-out;">⛏️</div>
+                <h1 class="title">CRYPTO MINER</h1>
+                <p class="desc">Catch the falling Crypto Coins (🪙).<br>Dodge the Market Viruses (👾).<br>Reach the target score before the timeline ends!</p>
+                
+                <div style="display: flex; justify-content: center; gap: 12px; margin-top: 16px;">
+                    <div style="background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;">🪙 = +10 pts</div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px;">👾 = -1 ❤️</div>
+                </div>
+                
+                <button class="btn" onclick="startGame()">START MINING</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-level">
+            <div class="card">
+                <div style="font-size: 48px; margin-bottom: 12px;" id="lvl-icon">🚀</div>
+                <h1 class="title" id="lvl-title">Level 1</h1>
+                <p class="desc" id="lvl-desc">Get ready to mine!</p>
+                <div style="font-size: 24px; font-weight: 800; color: #fbbf24; margin: 16px 0;" id="lvl-target">Target: 100 pt</div>
+                <button class="btn" id="lvl-btn" onclick="startLevel()">GO</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-end">
+            <div class="card">
+                <div style="font-size: 56px; margin-bottom: 12px;" id="end-icon">🏆</div>
+                <h1 class="title" id="end-title">GAME OVER</h1>
+                <p class="desc" id="end-desc">You mined like a pro!</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="lbl">Total Score</div>
+                        <div class="val gold" id="end-score">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="lbl">Level Reached</div>
+                        <div class="val blue" id="end-lvl">1</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="lbl">XP Earned</div>
+                        <div class="val" style="color: #a78bfa;" id="end-xp">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="lbl">Coins Earned</div>
+                        <div class="val gold" id="end-coins">0</div>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="finishGameExternal()">Claim Rewards</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const GAME_LIFES = 3;
+        const MAX_LEVELS = 5;
+        
+        let state = {
+            playing: false,
+            level: 1,
+            score: 0,
+            lives: 3,
+            timeLimit: 30,
+            timeLeft: 30,
+            targetScore: 0,
+            currentScore: 0,
+            player: { x: 0, y: 0, w: 60, h: 40, emoji: '⛏️', targetX: 0 },
+            items: [],
+            particles: [],
+            lastTime: 0,
+            timerStarted: false
+        };
+        
+        // Resize
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            state.player.y = canvas.height - 80;
+            if(!state.playing) {
+                state.player.x = canvas.width / 2;
+                state.player.targetX = state.player.x;
+            }
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Input
+        function setPlayerTarget(clientX) {
+            if(!state.playing) return;
+            state.player.targetX = Math.max(state.player.w/2, Math.min(canvas.width - state.player.w/2, clientX));
+        }
+        window.addEventListener('mousemove', e => setPlayerTarget(e.clientX));
+        window.addEventListener('touchmove', e => setPlayerTarget(e.touches[0].clientX), {passive: true});
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+            if(id) document.getElementById(id).classList.add('on');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 1500);
+        }
+
+        function getLevelConfig(lvl) {
+            return {
+                time: Math.max(20, 35 - lvl * 3),
+                target: lvl * 150,
+                speedMult: 1 + (lvl * 0.2),
+                spawnRate: Math.max(20, 60 - lvl * 8),
+                virusChance: Math.min(0.35, 0.1 + lvl * 0.05)
+            };
+        }
+
+        function startGame() {
+            state.level = 1;
+            state.score = 0;
+            state.lives = GAME_LIFES;
+            prepareLevel();
+        }
+
+        function prepareLevel() {
+            const cfg = getLevelConfig(state.level);
+            state.targetScore = cfg.target;
+            state.timeLimit = cfg.time;
+            state.timeLeft = cfg.time;
+            state.currentScore = 0;
+            
+            document.getElementById('lvl-title').textContent = `Level ${state.level}`;
+            document.getElementById('lvl-target').textContent = `Target: ${cfg.target} pts`;
+            document.getElementById('lvl-icon').textContent = state.level === MAX_LEVELS ? '🔥' : '🚀';
+            document.getElementById('lvl-desc').textContent = state.level === MAX_LEVELS ? 'Final Challenge!' : 'Faster falling! Stay sharp!';
+            
+            showScreen('s-level');
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('t-bar').style.display = 'none';
+            document.getElementById('t-text').style.display = 'none';
+        }
+
+        function startLevel() {
+            showScreen('');
+            document.getElementById('hud').style.display = 'flex';
+            document.getElementById('t-bar').style.display = 'block';
+            document.getElementById('t-text').style.display = 'block';
+            
+            state.items = [];
+            state.particles = [];
+            state.playing = true;
+            state.timerStarted = true;
+            state.lastTime = performance.now();
+            
+            updateHUD();
+            requestAnimationFrame(loop);
+        }
+
+        function updateHUD() {
+            document.getElementById('h-lvl').textContent = state.level;
+            document.getElementById('h-score').textContent = state.score;
+            document.getElementById('h-target').textContent = state.targetScore;
+            document.getElementById('h-lives').textContent = '❤️'.repeat(Math.max(0, state.lives));
+        }
+
+        function spawnItem() {
+            const cfg = getLevelConfig(state.level);
+            const isVirus = Math.random() < cfg.virusChance;
+            state.items.push({
+                x: 30 + Math.random() * (canvas.width - 60),
+                y: -40,
+                type: isVirus ? 'virus' : 'coin',
+                emoji: isVirus ? '👾' : '🪙',
+                speed: (3 + Math.random() * 4) * cfg.speedMult,
+                size: 32 + Math.random() * 8,
+                rot: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.1
+            });
+        }
+        
+        function createParticles(x, y, color) {
+            for(let i=0; i<10; i++){
+                state.particles.push({
+                    x, y,
+                    vx: (Math.random()-0.5)*10,
+                    vy: (Math.random()-0.5)*10,
+                    size: 4 + Math.random()*4,
+                    color,
+                    life: 1,
+                    decay: 0.02 + Math.random()*0.03
+                });
+            }
+        }
+
+        let spawnTimer = 0;
+        function loop(timestamp) {
+            if(!state.playing) return;
+            const dt = (timestamp - state.lastTime) / 1000;
+            state.lastTime = timestamp;
+
+            // Timer
+            if (state.timerStarted) {
+                state.timeLeft -= dt;
+                const pct = Math.max(0, state.timeLeft / state.timeLimit);
+                document.getElementById('t-fill').style.width = `${pct * 100}%`;
+                document.getElementById('t-text').textContent = `Time Left: ${Math.ceil(state.timeLeft)}s`;
+                
+                if (pct < 0.2) document.getElementById('t-fill').style.background = '#ef4444';
+                else if (pct < 0.5) document.getElementById('t-fill').style.background = '#fbbf24';
+                else document.getElementById('t-fill').style.background = 'linear-gradient(90deg, #3b82f6, #2dd4bf)';
+
+                if (state.timeLeft <= 0) {
+                    endLevel();
+                    return;
+                }
+            }
+
+            // Update Player
+            state.player.x += (state.player.targetX - state.player.x) * 0.15; // Smooth follow
+
+            // Spawning
+            const cfg = getLevelConfig(state.level);
+            spawnTimer += dt * 60;
+            if (spawnTimer > cfg.spawnRate) {
+                spawnItem();
+                spawnTimer = 0;
+            }
+
+            // Draw Background
+            ctx.fillStyle = '#0b0f19';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid overlay
+            ctx.strokeStyle = 'rgba(51, 65, 85, 0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let i=0; i<canvas.width; i+=40) { ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); }
+            for(let i=0; i<canvas.height; i+=40) { ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); }
+            ctx.stroke();
+
+            // Draw Player
+            ctx.font = '50px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Basket/Rig effect
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(state.player.x, state.player.y + 20, 40, 10, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillText(state.player.emoji, state.player.x, state.player.y);
+
+            // Update & Draw Items
+            for (let i = state.items.length - 1; i >= 0; i--) {
+                let item = state.items[i];
+                item.y += item.speed;
+                item.rot += item.rotSpeed;
+
+                ctx.save();
+                ctx.translate(item.x, item.y);
+                ctx.rotate(item.rot);
+                ctx.font = `${item.size}px sans-serif`;
+                ctx.fillText(item.emoji, 0, 0);
+                ctx.restore();
+
+                // Collision
+                const dx = item.x - state.player.x;
+                const dy = item.y - state.player.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 40) {
+                    if (item.type === 'coin') {
+                        state.score += 15;
+                        state.currentScore += 15;
+                        createParticles(item.x, item.y, '#fbbf24');
+                    } else {
+                        state.lives--;
+                        showToast('Ouch! -1 ❤️');
+                        createParticles(item.x, item.y, '#ef4444');
+                        if (state.lives <= 0) {
+                            gameOver();
+                            return;
+                        }
+                    }
+                    updateHUD();
+                    state.items.splice(i, 1);
+                } else if (item.y > canvas.height + 40) {
+                    state.items.splice(i, 1);
+                }
+            }
+
+            // Particles
+            for(let i=state.particles.length-1; i>=0; i--){
+                let p = state.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                if(p.life <= 0) {
+                    state.particles.splice(i, 1);
+                    continue;
+                }
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        function endLevel() {
+            state.playing = false;
+            
+            if (state.currentScore >= state.targetScore) {
+                // Pass level
+                state.level++;
+                if (state.level > MAX_LEVELS) {
+                    gameOver(true); // Won everything
+                } else {
+                    prepareLevel();
+                }
+            } else {
+                // Failed level target
+                state.lives--;
+                if (state.lives <= 0) {
+                    gameOver(false);
+                } else {
+                    document.getElementById('lvl-title').textContent = `Time's Up!`;
+                    document.getElementById('lvl-desc').textContent = `You missed the target score. Lost 1 ❤️`;
+                    document.getElementById('lvl-btn').textContent = `RETRY LEVEL ${state.level}`;
+                    showScreen('s-level');
+                    document.getElementById('hud').style.display = 'flex';
+                    updateHUD();
+                }
+            }
+        }
+
+        function gameOver(win = false) {
+            state.playing = false;
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('t-bar').style.display = 'none';
+            document.getElementById('t-text').style.display = 'none';
+            
+            const xp = state.lives > 0 ? 500 + state.score : Math.floor(state.score * 0.5);
+            const coins = state.lives > 0 ? 300 + Math.floor(state.score / 10) : Math.floor(state.score / 20);
+            
+            state.finalXP = xp;
+            state.finalCoins = coins;
+            
+            document.getElementById('end-icon').textContent = win ? '🏆' : '💀';
+            document.getElementById('end-title').textContent = win ? 'MINER ELITE!' : 'SYSTEM CRASH';
+            document.getElementById('end-desc').textContent = win ? 'You reached MAX LEVEL!' : 'You ran out of lives or missed targets.';
+            
+            document.getElementById('end-score').textContent = state.score;
+            document.getElementById('end-lvl').textContent = Math.min(state.level, MAX_LEVELS);
+            document.getElementById('end-xp').textContent = `+${xp}`;
+            document.getElementById('end-coins').textContent = `+${coins}`;
+            
+            showScreen('s-end');
+            
+            // Attempt auto save
+            if(window.parent && window.parent.currentUser) {
+                fetch('/api/save-gamestate', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ xp: xp, coins: coins })
+                }).catch(e=>console.log(e));
+            }
+        }
+        
+        function finishGameExternal() {
+            if(window.parent && window.parent.expFinishGame) {
+                window.parent.expFinishGame();
+            } else {
+                showToast("Stats saved. Close game manually.");
+            }
+        }
+    </script>
+</body>
+</html>

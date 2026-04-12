@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+    <title>Network Defender</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; user-select: none; -webkit-user-select: none; }
+        body { background: #070a13; color: #fff; overflow: hidden; touch-action: none; }
+        #app { width: 100vw; height: 100vh; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+        .screen { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: rgba(7, 10, 19, 0.92); z-index: 50; }
+        .screen.on { display: flex; }
+        
+        .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: linear-gradient(180deg, rgba(0,0,0,0.9), transparent); z-index: 10; pointer-events: none; }
+        .hud-item { display: flex; flex-direction: column; align-items: center; }
+        .hud-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .hud-val { font-size: 18px; font-weight: 900; }
+        .hud-val.gold { color: #fbbf24; }
+        .hud-val.red { color: #ef4444; }
+        .hud-val.blue { color: #3b82f6; }
+        
+        .btn { background: linear-gradient(135deg, #2563eb, #6366f1); color: #fff; border: 2px solid #818cf8; padding: 12px 28px; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; margin-top: 16px; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6); }
+        .btn:active { transform: scale(0.96); }
+        .btn.green { background: linear-gradient(135deg, #059669, #10b981); border-color: #34d399; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+        
+        .card { background: #111827; border: 2px solid #374151; border-radius: 16px; padding: 24px; text-align: center; max-width: 420px; width: 100%; position: relative; overflow: hidden; }
+        .title { font-size: 28px; font-weight: 900; margin-bottom: 6px; background: linear-gradient(90deg, #60a5fa, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .desc { font-size: 13px; color: #94a3b8; margin-bottom: 12px; line-height: 1.5; }
+        
+        .edu-box { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 12px; font-size: 12px; color: #bfdbfe; margin: 12px 0; text-align: left; }
+        .edu-box strong { color: #60a5fa; display: block; margin-bottom: 4px; font-size: 13px;}
+        
+        .timeline-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 400px; height: 10px; background: #1e293b; border-radius: 5px; overflow: hidden; border: 1px solid #334155; z-index: 10; pointer-events: none;}
+        .timeline-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #3b82f6, #818cf8); transition: width 0.2s linear, background 0.3s; }
+        .timeline-text { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: #cbd5e1; pointer-events: none; z-index: 10;}
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+        .stat-box { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;}
+        .stat-box .lbl { font-size: 10px; color: #64748b; text-transform: uppercase;}
+        .stat-box .val { font-size: 20px; font-weight: 900; margin-top: 2px; }
+        
+        #toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: #fbbf24; color: #1c1917; padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 12px; opacity: 0; transition: opacity 0.3s; z-index: 60; pointer-events: none; }
+        
+        .char-anim { font-size: 44px; display: inline-block; animation: float 2s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        
+        @keyframes pulseAlert { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.6; } }
+        #alert-overlay { position: absolute; inset: 0; background: radial-gradient(circle, transparent 50%, rgba(239, 68, 68, 0.4)); z-index: 5; pointer-events: none; display: none; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="alert-overlay"></div>
+        
+        <!-- HUD -->
+        <div class="hud" id="hud" style="display:none;">
+            <div class="hud-item"><span class="hud-label">Level</span><span class="hud-val blue" id="h-lvl">1</span></div>
+            <div class="hud-item"><span class="hud-label">Score</span><span class="hud-val gold" id="h-score">0</span></div>
+            <div class="hud-item"><span class="hud-label">Target</span><span class="hud-val" id="h-target">100</span></div>
+            <div class="hud-item"><span class="hud-label">Server Health</span><span class="hud-val red" id="h-lives">❤️❤️❤️</span></div>
+        </div>
+        
+        <div class="timeline-text" id="t-text" style="display:none;">30s remaining</div>
+        <div class="timeline-container" id="t-bar" style="display:none;"><div class="timeline-fill" id="t-fill"></div></div>
+        <div id="toast">Message</div>
+        
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Screens -->
+        <div class="screen on" id="s-title">
+            <div class="card">
+                <div class="char-anim" style="margin-bottom:8px">🖥️</div>
+                <h1 class="title">Network Defender</h1>
+                <p class="desc">Hostile malware is attacking the Tech Citadel mainframe! Deploy firewalls by tapping viruses before they infect the server.</p>
+                <div class="edu-box">
+                    <strong>Cybersecurity 101</strong>
+                    Tap bugs (🐛, 🦠, 👾) to quarantine them. Protect the main server on the left side of the screen!
+                </div>
+                <button class="btn" onclick="startGame()">INITIALIZE DEFENSE</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-level">
+            <div class="card">
+                <div class="char-anim" id="lvl-icon" style="margin-bottom:8px">🔒</div>
+                <h1 class="title" id="lvl-title">Level 1</h1>
+                <div class="edu-box" id="lvl-edu"></div>
+                <div style="font-size: 16px; font-weight: 800; color: #fbbf24; margin: 12px 0;" id="lvl-target">Target: 100 pts</div>
+                <button class="btn green" id="lvl-btn" onclick="startLevel()">DEPLOY FIREWALL</button>
+            </div>
+        </div>
+
+        <div class="screen" id="s-end">
+            <div class="card">
+                <div class="char-anim" id="end-icon" style="margin-bottom:8px">🏆</div>
+                <h1 class="title" id="end-title">SYSTEM SECURED</h1>
+                <p class="desc" id="end-desc">You successfully defended the mainframe!</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-box"><div class="lbl">Final Score</div><div class="val gold" id="end-score">0</div></div>
+                    <div class="stat-box"><div class="lbl">Threat Level</div><div class="val blue" id="end-lvl">1</div></div>
+                    <div class="stat-box"><div class="lbl">XP Earned</div><div class="val" style="color:#a78bfa;" id="end-xp">0</div></div>
+                    <div class="stat-box"><div class="lbl">Coins</div><div class="val gold" id="end-coins">0</div></div>
+                </div>
+                
+                <button class="btn" onclick="finishGameExternal()">Complete Mission</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_LEVELS = 5;
+        
+        const EDU_FACTS = [
+            "A Firewall acts as a barrier between a trusted network and an untrusted network, blocking malicious traffic.",
+            "Malware (Malicious Software) includes viruses, worms, and trojans designed to damage or gain unauthorized access to computer systems.",
+            "Encryption scrambles data into a secret code. Only people with the right key (password) can unlock and read it.",
+            "Phishing is a cyber attack where hackers trick you into revealing personal information by pretending to be a trusted source.",
+            "DDoS attacks (Distributed Denial of Service) flood a server with traffic to overwhelm it and take it offline. Strong infrastructure is required to survive it!"
+        ];
+        
+        let state = {
+            playing: false, level: 1, score: 0, lives: 3, timeLimit: 30, timeLeft: 30, targetScore: 0, currentScore: 0,
+            server: { x: 60, y: 0, r: 45, emoji: '🖥️' }, enemies: [], particles: [], lastTime: 0, timerStarted: false
+        };
+        
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            state.server.y = canvas.height / 2;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Tap/Click handling
+        function handleTap(x, y) {
+            if(!state.playing) return;
+            let hit = false;
+            for(let i = state.enemies.length-1; i>=0; i--) {
+                let e = state.enemies[i];
+                let dist = Math.hypot(e.x - x, e.y - y);
+                // Hitbox slightly larger than visual
+                if(dist < e.size * 1.5) {
+                    state.score += e.pts;
+                    state.currentScore += e.pts;
+                    createParticles(e.x, e.y, e.color, '💥');
+                    state.enemies.splice(i, 1);
+                    hit = true;
+                    updateHUD();
+                    break;
+                }
+            }
+            if(!hit) createParticles(x, y, '#60a5fa', '❌', 3); // Miss 
+        }
+        
+        canvas.addEventListener('mousedown', e => handleTap(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); handleTap(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+            if(id) document.getElementById(id).classList.add('on');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 1500);
+        }
+
+        function getLevelConfig(lvl) {
+            return {
+                time: 30,
+                target: lvl * 150 + 50,
+                speedMult: 1 + (lvl * 0.25),
+                spawnRate: Math.max(0.4, 1.2 - lvl * 0.15) // seconds between spawn
+            };
+        }
+
+        function startGame() { state.level = 1; state.score = 0; state.lives = 3; prepareLevel(); }
+
+        function prepareLevel() {
+            const cfg = getLevelConfig(state.level);
+            state.targetScore = cfg.target; state.timeLimit = cfg.time; state.timeLeft = cfg.time; state.currentScore = 0;
+            
+            document.getElementById('lvl-title').textContent = `Security Level ${state.level}`;
+            document.getElementById('lvl-target').textContent = `Target: ${cfg.target} pts`;
+            document.getElementById('lvl-icon').textContent = state.level === MAX_LEVELS ? '🚨' : '🛡️';
+            
+            let eduHtml = `<strong>Prior Fact:</strong> ${EDU_FACTS[state.level-1]}`;
+            if(state.level === 1) eduHtml = `<strong>Mission:</strong> Tap the incoming packets before they reach the mainframe!`;
+            document.getElementById('lvl-edu').innerHTML = eduHtml;
+            
+            showScreen('s-level');
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('t-bar').style.display = 'none';
+            document.getElementById('t-text').style.display = 'none';
+        }
+
+        function startLevel() {
+            showScreen('');
+            document.getElementById('hud').style.display = 'flex';
+            document.getElementById('t-bar').style.display = 'block';
+            document.getElementById('t-text').style.display = 'block';
+            document.getElementById('alert-overlay').style.display = 'none';
+            
+            state.enemies = []; state.particles = []; state.playing = true; state.timerStarted = true; state.lastTime = performance.now();
+            updateHUD();
+            requestAnimationFrame(loop);
+        }
+
+        function updateHUD() {
+            document.getElementById('h-lvl').textContent = state.level;
+            document.getElementById('h-score').textContent = state.score;
+            document.getElementById('h-target').textContent = state.targetScore;
+            document.getElementById('h-lives').textContent = '❤️'.repeat(Math.max(0, state.lives));
+        }
+
+        function spawnEnemy() {
+            const cfg = getLevelConfig(state.level);
+            // Types: Bug (normal), Virus (fast), Trojan (wiggly)
+            const r = Math.random();
+            let type = 'bug', emoji = '🐛', color = '#a3e635', pts = 10, speed = (80 + Math.random()*40) * cfg.speedMult, size = 32;
+            
+            if(r > 0.8 && state.level > 1) { type = 'virus'; emoji = '🦠'; color = '#ef4444'; pts = 25; speed *= 1.5; size = 28; }
+            else if(r > 0.5 && state.level > 2) { type = 'trojan'; emoji = '👾'; color = '#c084fc'; pts = 30; speed *= 0.8; size = 38; }
+
+            state.enemies.push({ x: canvas.width + 40, y: 50 + Math.random() * (canvas.height - 100), baseY: 0, type, emoji, color, pts, speed, size, time: Math.random()*100 });
+        }
+        
+        function createParticles(x, y, color, emojiStr='', count=8) {
+            for(let i=0; i<count; i++) {
+                state.particles.push({
+                    x, y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12,
+                    size: emojiStr ? 16 + Math.random()*8 : 4+Math.random()*4, color, life: 1, decay: 0.03 + Math.random()*0.02, emoji: emojiStr
+                });
+            }
+        }
+
+        let spawnTimer = 0;
+        function loop(timestamp) {
+            if(!state.playing) return;
+            const dt = Math.min(0.05, (timestamp - state.lastTime) / 1000); // cap dt
+            state.lastTime = timestamp;
+
+            if (state.timerStarted) {
+                state.timeLeft -= dt;
+                const pct = Math.max(0, state.timeLeft / state.timeLimit);
+                document.getElementById('t-fill').style.width = `${pct * 100}%`;
+                document.getElementById('t-text').textContent = `${Math.ceil(state.timeLeft)}s remaining`;
+                
+                if (pct < 0.2) document.getElementById('t-fill').style.background = '#ef4444';
+                else document.getElementById('t-fill').style.background = 'linear-gradient(90deg, #3b82f6, #818cf8)';
+
+                if (state.timeLeft <= 0) {
+                    endLevel();
+                    return;
+                }
+            }
+
+            spawnTimer += dt;
+            const cfg = getLevelConfig(state.level);
+            if (spawnTimer > cfg.spawnRate) { spawnEnemy(); spawnTimer = 0; }
+
+            // Render BG
+            ctx.fillStyle = '#070a13'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Grid
+            ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+            for(let i=(performance.now()*0.02)%40; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+            for(let i=0; i<canvas.height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
+
+            // Pulse connection lines from server
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.2)'; ctx.lineWidth = 2;
+            for(let i=0; i<5; i++) {
+                let y = (canvas.height/5)*i + (canvas.height/10);
+                ctx.beginPath(); ctx.moveTo(state.server.x, state.server.y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // Render Server
+            const serverStress = state.enemies.some(e => e.x < canvas.width/2) ? Math.sin(timestamp*0.01)*5 : Math.sin(timestamp*0.003)*2;
+            ctx.font = '70px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            
+            // Shield aura
+            let shieldRadius = state.server.r + 20 + Math.abs(serverStress);
+            ctx.fillStyle = `rgba(59, 130, 246, ${0.1 + state.lives*0.05})`;
+            ctx.beginPath(); ctx.arc(state.server.x, state.server.y, shieldRadius, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = `rgba(59, 130, 246, ${0.4 + state.lives*0.1})`; ctx.stroke();
+
+            ctx.fillText(state.server.emoji, state.server.x + serverStress, state.server.y);
+
+            // Enemies
+            let alarm = false;
+            for (let i = state.enemies.length - 1; i >= 0; i--) {
+                let e = state.enemies[i];
+                e.time += dt * 5;
+                e.x -= e.speed * dt;
+                
+                if(e.type === 'trojan') e.baseY = Math.sin(e.time) * 40;
+                
+                let drawY = e.y + e.baseY;
+
+                ctx.font = `${e.size}px sans-serif`;
+                ctx.fillText(e.emoji, e.x, drawY);
+
+                if(e.x < state.server.x + 80) alarm = true;
+
+                // Hit Server
+                if (e.x < state.server.x + state.server.r) {
+                    state.lives--;
+                    showToast('Server Corrupted! -1 ❤️');
+                    createParticles(state.server.x, state.server.y, '#ef4444', '💥', 15);
+                    state.enemies.splice(i, 1);
+                    updateHUD();
+                    
+                    if (state.lives <= 0) { gameOver(); return; }
+                }
+            }
+            
+            document.getElementById('alert-overlay').style.display = alarm ? 'block' : 'none';
+            document.getElementById('alert-overlay').style.animation = alarm ? 'pulseAlert 1s infinite' : '';
+
+            // Particles
+            for(let i=state.particles.length-1; i>=0; i--) {
+                let p = state.particles[i];
+                p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+                if(p.life <= 0) { state.particles.splice(i, 1); continue; }
+                
+                ctx.globalAlpha = p.life;
+                if(p.emoji) {
+                    ctx.font = `${p.size}px sans-serif`; ctx.fillText(p.emoji, p.x, p.y);
+                } else {
+                    ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.globalAlpha = 1.0;
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        function endLevel() {
+            state.playing = false;
+            document.getElementById('alert-overlay').style.display = 'none';
+            if (state.currentScore >= state.targetScore) {
+                state.level++;
+                if (state.level > MAX_LEVELS) gameOver(true); else prepareLevel();
+            } else {
+                state.lives--; updateHUD();
+                if (state.lives <= 0) {
+                    gameOver(false);
+                } else {
+                    document.getElementById('lvl-title').textContent = `Time's Up!`;
+                    document.getElementById('lvl-edu').innerHTML = `Failed to meet target score. You lost a life!`;
+                    document.getElementById('lvl-btn').textContent = `RETRY LEVEL ${state.level}`;
+                    showScreen('s-level');
+                    document.getElementById('hud').style.display = 'flex';
+                }
+            }
+        }
+
+        function gameOver(win = false) {
+            state.playing = false;
+            document.getElementById('hud').style.display = 'none'; document.getElementById('t-bar').style.display = 'none'; document.getElementById('t-text').style.display = 'none';
+            document.getElementById('alert-overlay').style.display = 'none';
+            
+            const xp = state.lives > 0 ? 500 + state.score : Math.floor(state.score * 0.5);
+            const coins = state.lives > 0 ? 300 + Math.floor(state.score / 10) : Math.floor(state.score / 20);
+            
+            document.getElementById('end-icon').textContent = win ? '🛡️' : '💀';
+            document.getElementById('end-title').textContent = win ? 'CYBER COMMANDER!' : 'SYSTEM BREACHED';
+            document.getElementById('end-desc').textContent = win ? 'You defended the Citadel perfectly!' : 'Malware overtook the mainframe.';
+            document.getElementById('end-score').textContent = state.score;
+            document.getElementById('end-lvl').textContent = Math.min(state.level, MAX_LEVELS);
+            document.getElementById('end-xp').textContent = `+${xp}`;
+            document.getElementById('end-coins').textContent = `+${coins}`;
+            
+            showScreen('s-end');
+            
+            if(window.parent && window.parent.currentUser) {
+                fetch('/api/save-gamestate', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ xp: xp, coins: coins })
+                }).catch(e=>console.log(e));
+            }
+        }
+        
+        function finishGameExternal() {
+            if(window.parent && window.parent.expFinishGame) window.parent.expFinishGame();
+            else showToast("Stats saved. Close game manually.");
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pathogen Defense - Career Quest</title>
+<style>
+/* CSS Reset + dark theme */
+body { margin: 0; background: #0f172a; color: #fff; font-family: system-ui, sans-serif; overflow: hidden; touch-action: none; }
+#game { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+#ui { padding: 10px 20px; display: flex; justify-content: space-between; background: rgba(0,0,0,0.5); z-index: 10; border-bottom: 2px solid #334155; }
+canvas { flex: 1; display: block; }
+.panel { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; text-align: center; }
+.hidden { display: none !important; }
+button { background: #3b82f6; color: white; border: none; padding: 12px 24px; font-size: 1.2rem; border-radius: 8px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 14px rgba(59,130,246,0.3); transition: 0.2s;}
+button:hover { background: #2563eb; transform: translateY(-2px);}
+h1 { font-size: 3rem; margin: 0 0 10px 0; color: #38bdf8; text-shadow: 0 0 10px #38bdf888;}
+p { font-size: 1.2rem; color: #94a3b8; text-align: center; max-width: 450px; line-height: 1.5; margin-bottom: 20px; }
+.stat-box { font-weight: bold; color: #cbd5e1; }
+.v-val { color: #f8fafc; margin-left: 5px;}
+</style>
+</head>
+<body>
+<div id="game">
+    <div id="ui">
+        <div class="stat-box">❤️ Lives: <span id="lives" class="v-val">3</span></div>
+        <div class="stat-box">🌟 Level: <span id="level" class="v-val">1</span> / 5</div>
+        <div class="stat-box">⏱ Time: <span id="time" class="v-val">30</span>s</div>
+        <div class="stat-box">🏆 Score: <span id="score" class="v-val">0</span></div>
+    </div>
+    <canvas id="canvas"></canvas>
+    
+    <div id="startScreen" class="panel">
+        <h1 style="font-size: 4rem; margin-bottom: 0;">🛡️</h1>
+        <h1>Pathogen Defense</h1>
+        <p>Defend the body from invading pathogens! Move your mouse or finger to aim. Click or tap to shoot antibodies. Survive the timer and don't let them pass your defenses!</p>
+        <button onclick="startGame()">Commence Defense</button>
+    </div>
+    
+    <div id="winScreen" class="panel hidden">
+        <h1 style="font-size: 4rem; margin-bottom: 0;">🎉</h1>
+        <h1 style="color: #4ade80; text-shadow: 0 0 10px rgba(74,222,128,0.5);">Body Secured!</h1>
+        <p>All pathogens eradicated. Your immune system holds strong.</p>
+        <h2 style="color: #fbbf24; font-size: 2rem;">Final Score: <span id="finalScoreWin"></span></h2>
+        <button onclick="quitGame(true)" style="background: #10b981; margin-top: 10px;">Claim Rewards & Exit</button>
+    </div>
+    
+    <div id="loseScreen" class="panel hidden">
+        <h1 style="font-size: 4rem; margin-bottom: 0;">💀</h1>
+        <h1 style="color: #f87171; text-shadow: 0 0 10px rgba(248,113,113,0.5);">Defense Breached!</h1>
+        <p>The infection has spread too far. Better luck next time.</p>
+        <h2 style="color: #fbbf24; font-size: 2rem;">Final Score: <span id="finalScoreLose"></span></h2>
+        <button onclick="quitGame(false)">Claim Consolation XP</button>
+        <button style="background: #64748b; margin-top: 15px;" onclick="location.reload()">↺ Retry</button>
+    </div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let width, height;
+function resize() { 
+    width = canvas.width = window.innerWidth; 
+    height = canvas.height = window.innerHeight - 45; // Minus UI header height
+} 
+window.addEventListener('resize', resize);
+resize();
+
+let state = {
+    lives: 3, level: 1, score: 0, time: 30, isPlaying: false, maxLevels: 5
+};
+
+let player = { x: width/2, y: height - 60, size: 25, color: '#f8fafc' };
+let bullets = [];
+let enemies = [];
+let particles = [];
+let lastTime = 0;
+let spawnTimer = 0;
+let levelTimer = null;
+
+canvas.addEventListener('mousemove', e => player.x = e.clientX);
+canvas.addEventListener('touchmove', e => { 
+    player.x = e.touches[0].clientX; 
+    e.preventDefault(); 
+}, {passive: false});
+
+function shoot() {
+    if(!state.isPlaying) return;
+    bullets.push({ x: player.x, y: player.y - player.size, speed: 12, radius: 5, color: '#60a5fa' });
+}
+canvas.addEventListener('mousedown', shoot);
+canvas.addEventListener('touchstart', (e) => { shoot(); e.preventDefault(); }, {passive: false});
+
+function startGame() {
+    document.getElementById('startScreen').classList.add('hidden');
+    state = { lives: 3, level: 1, score: 0, time: 30, isPlaying: true, maxLevels: 5 };
+    bullets = []; enemies = []; particles = [];
+    player.y = height - 60;
+    updateUI();
+    startLevelTimer();
+    requestAnimationFrame(update);
+}
+
+function startLevelTimer() {
+    clearInterval(levelTimer);
+    levelTimer = setInterval(() => {
+        if(!state.isPlaying) { clearInterval(levelTimer); return; }
+        state.time--;
+        document.getElementById('time').innerText = state.time;
+        if(state.time <= 0) {
+            // Level Complete
+            state.level++;
+            if(state.level > state.maxLevels) {
+                state.score += (state.lives * 500); // Life bonus
+                updateUI();
+                endGame(true);
+            } else {
+                state.score += 200; // Level completion bonus
+                state.time = 30 + (state.level * 5); // Time scales slightly
+                enemies = [];
+                updateUI();
+                createParticles(width/2, height/2, '#4ade80', 50); // level beat explosion
+            }
+        }
+    }, 1000);
+}
+
+function updateUI() {
+    document.getElementById('lives').innerText = Math.max(0, state.lives);
+    document.getElementById('level').innerText = state.level;
+    document.getElementById('score').innerText = state.score;
+    document.getElementById('time').innerText = Math.max(0, state.time);
+}
+
+function endGame(won) {
+    state.isPlaying = false;
+    clearInterval(levelTimer);
+    if(won) {
+        document.getElementById('winScreen').classList.remove('hidden');
+        document.getElementById('finalScoreWin').innerText = state.score;
+    } else {
+        document.getElementById('loseScreen').classList.remove('hidden');
+        document.getElementById('finalScoreLose').innerText = state.score;
+    }
+}
+
+function spawnEnemy() {
+    let radius = 15 + Math.random() * 15;
+    let x = Math.random() * (width - radius*2) + radius;
+    // Sped scales with level
+    let speed = 1.2 + (state.level * 0.6) + Math.random();
+    // HP occasionally scales
+    let hp = Math.ceil(state.level / 2.5);
+    // Enemy faces
+    let faces = ['🦠', '👾', '🧟', '🧫'];
+    let type = faces[Math.floor(Math.random() * faces.length)];
+    enemies.push({ x, y: -radius, radius, speed, hp, maxHp: hp, type });
+}
+
+function drawPlayer() {
+    // Glow effect
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#e2e8f0';
+    ctx.fillStyle = player.color;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.size, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🛡️', player.x, player.y);
+}
+
+function update(time) {
+    if(!state.isPlaying) return;
+    let dt = time - lastTime;
+    lastTime = time;
+    if(dt > 100) dt = 16; // prevent giant leaps on lag
+    
+    ctx.clearRect(0,0,width,height);
+    
+    // Spawning logic
+    spawnTimer += dt;
+    // Spawning becomes faster as level increases
+    let spawnRate = Math.max(400, 1800 - (state.level * 250));
+    if(spawnTimer > spawnRate) {
+        spawnEnemy();
+        spawnTimer = 0;
+    }
+    
+    // Update Bullets
+    for(let i=bullets.length-1; i>=0; i--) {
+        let b = bullets[i];
+        b.y -= (b.speed * (dt/16)); // Normalize speed
+        ctx.fillStyle = b.color;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 10; ctx.shadowColor = b.color;
+        ctx.shadowBlur = 0;
+        
+        if(b.y < -10) { bullets.splice(i, 1); continue; }
+        
+        // collision
+        for(let j=enemies.length-1; j>=0; j--) {
+            let e = enemies[j];
+            let dist = Math.hypot(b.x - e.x, b.y - e.y);
+            if(dist < b.radius + e.radius - 2) { // smaller hitbox tolerance
+                e.hp--;
+                bullets.splice(i, 1);
+                createParticles(e.x, e.y, '#e2e8f0', 4);
+                if(e.hp <= 0) {
+                    enemies.splice(j, 1);
+                    state.score += 15 * state.level;
+                    updateUI();
+                    createParticles(e.x, e.y, '#f43f5e', 12);
+                }
+                break; // bullet destroyed
+            }
+        }
+    }
+    
+    // Update Enemies
+    for(let i=enemies.length-1; i>=0; i--) {
+        let e = enemies[i];
+        e.y += (e.speed * (dt/16));
+        
+        // Sway enemies slightly for richer movement
+        e.x += Math.sin(time/200 + i) * 0.5 * (dt/16);
+        
+        ctx.font = `${e.radius*2.2}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(e.type, e.x, e.y);
+        
+        // health bar if hp > 1
+        if(e.maxHp > 1) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+            ctx.fillRect(e.x - e.radius, e.y - e.radius - 12, e.radius*2, 5);
+            ctx.fillStyle = '#4ade80';
+            ctx.fillRect(e.x - e.radius, e.y - e.radius - 12, (e.radius*2) * (e.hp/e.maxHp), 5);
+        }
+        
+        if(e.y > height + e.radius) {
+            enemies.splice(i, 1);
+            state.lives--;
+            updateUI();
+            createParticles(player.x, player.y, '#ef4444', 20);
+            
+            // Screen Shake Effect
+            document.body.animate([
+                { transform: 'translate(5px, 5px)' },
+                { transform: 'translate(-5px, -5px)' },
+                { transform: 'translate(0px, 0px)' }
+            ], { duration: 150 });
+            
+            if(state.lives <= 0) {
+                endGame(false);
+            }
+        }
+    }
+    
+    // Update Particles
+    for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.x += (p.vx * (dt/16)); 
+        p.y += (p.vy * (dt/16)); 
+        p.life -= (0.03 * (dt/16));
+        if(p.life <= 0) { particles.splice(i,1); continue; }
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI*2); ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+    
+    drawPlayer();
+
+    if(state.isPlaying) requestAnimationFrame(update);
+}
+
+function createParticles(x, y, color, count) {
+    for(let i=0; i<count; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+            life: 1, size: Math.random() * 5 + 2, color: color
+        });
+    }
+}
+
+function quitGame(won) {
+    if(window.parent && window.parent.currentUser) {
+        let xp = won ? 500 + state.score : state.score;
+        let coins = won ? 300 + Math.floor(state.score/10) : Math.floor(state.score/20);
+        fetch('/api/save-gamestate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ xp: xp, coins: coins })
+        }).then(() => {
+            if(window.parent.closeGame) window.parent.closeGame(true);
+        });
+    } else if (window.parent && window.parent.closeGame) {
+        window.parent.closeGame(won);
+    }
+}
+</script>
+</body>
+</html>

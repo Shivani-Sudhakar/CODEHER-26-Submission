@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,maximum-scale=1">
+<title>Startup Pitch — Career Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;font-family:'Nunito',sans-serif;background:#07060f;color:#e8e4f4}
+#app{width:100%;max-width:500px;height:100%;margin:0 auto;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.scr{display:none;position:absolute;inset:0;overflow-y:auto;flex-direction:column;scrollbar-width:none;-ms-overflow-style:none}.scr::-webkit-scrollbar{display:none;width:0;height:0}.scr.on{display:flex}
+
+/* TITLE */
+#title{align-items:center;justify-content:center;text-align:center;padding:18px;gap:8px;background:radial-gradient(ellipse at 50% 30%,#14102a,#07060f)}
+.ti{font-size:56px;animation:fl 3s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.th{font-size:24px;font-weight:900;background:linear-gradient(90deg,#f472b6,#c084fc,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.tsub{font-size:11px;color:#6b6185;letter-spacing:1px}
+.how{background:#0f0d1e;border:1px solid #1e1a36;border-radius:12px;padding:12px 14px;width:100%;max-width:360px;text-align:left;margin-top:4px}
+.how h3{font-size:10px;color:#818cf8;letter-spacing:1px;margin-bottom:6px;font-weight:800}
+.how p{font-size:10px;color:#8b82a8;padding:2px 0;line-height:1.3}.how b{color:#e8e4f4}
+.drow{display:flex;gap:6px;width:100%;max-width:360px;margin-top:4px}
+.db{flex:1;padding:8px 4px;border-radius:10px;border:2px solid transparent;cursor:pointer;text-align:center;transition:all .2s;background:#0f0d1e}
+.db .di{font-size:18px;display:block}.db .dn{font-size:11px;font-weight:800}.db .dd{font-size:8px;color:#6b6185;margin-top:1px;line-height:1.2}
+.db[data-d=easy] .dn{color:#34d399}.db[data-d=med] .dn{color:#fbbf24}.db[data-d=hard] .dn{color:#f43f5e}
+.db.sel[data-d=easy]{border-color:#34d399;background:#052e1c}.db.sel[data-d=med]{border-color:#fbbf24;background:#3a2a06}.db.sel[data-d=hard]{border-color:#f43f5e;background:#3a0a12}
+.sbtn{padding:13px 36px;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:900;cursor:pointer;background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;box-shadow:0 4px 18px rgba(192,132,252,.25);transition:transform .2s;margin-top:6px;letter-spacing:1px}
+.sbtn:active{transform:scale(.96)}
+
+/* HUD */
+.hud{display:flex;align-items:center;padding:6px 10px;background:#0f0d1e;border-bottom:1px solid #1e1a36;gap:5px;flex-wrap:wrap;z-index:20;flex-shrink:0}
+.hi{font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;background:rgba(0,0,0,.3);white-space:nowrap}
+.hi.lv{color:#c084fc}.hi.sc{color:#fbbf24}.hi.tm{color:#818cf8}
+.hi.tm.dng{color:#f43f5e;animation:tp .4s infinite}
+@keyframes tp{50%{opacity:.3}}
+.hlv{display:flex;gap:1px;margin-left:auto}.hlv span{font-size:11px;transition:all .3s}.hlv span.x{opacity:.12;transform:scale(.5)}
+
+/* PROGRESS */
+.pbar{height:4px;background:#1e1a36;flex-shrink:0}.pfill{height:100%;background:linear-gradient(90deg,#7c3aed,#c084fc);transition:width .5s;width:0}
+
+/* GAME AREA */
+.garea{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,#0a0918,#07060f);scrollbar-width:none;-ms-overflow-style:none}.garea::-webkit-scrollbar{display:none;width:0;height:0}
+
+/* PHASE HEADER */
+.phase-hdr{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.phase-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;flex-shrink:0}
+.phase-info h2{font-size:14px;font-weight:800;color:#e8e4f4}.phase-info p{font-size:10px;color:#6b6185;margin-top:1px}
+
+/* SCENARIO CARD */
+.scenario{background:#0f0d1e;border:1px solid #1e1a36;border-radius:12px;padding:14px;position:relative;overflow:hidden}
+.scenario::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7c3aed,#c084fc,#818cf8)}
+.sc-emoji{font-size:36px;text-align:center;margin-bottom:6px;display:block}
+.sc-title{font-size:14px;font-weight:800;text-align:center;margin-bottom:4px}
+.sc-desc{font-size:11px;color:#8b82a8;text-align:center;line-height:1.4;margin-bottom:10px}
+
+/* CHARACTER */
+.investor{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);border-radius:10px;padding:10px;margin-bottom:10px}
+.inv-avatar{font-size:32px;flex-shrink:0;animation:invBob 2s ease-in-out infinite}
+@keyframes invBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.inv-name{font-size:12px;font-weight:800;color:#c084fc}.inv-role{font-size:9px;color:#6b6185}.inv-speech{font-size:10px;color:#a09abc;margin-top:3px;line-height:1.3;font-style:italic}
+
+/* CHOICES */
+.choices{display:flex;flex-direction:column;gap:6px}
+.choice{padding:12px;border:2px solid #1e1a36;border-radius:10px;cursor:pointer;transition:all .2s;background:rgba(0,0,0,.15);position:relative;overflow:hidden}
+.choice:active{transform:scale(.98)}
+.choice:hover{border-color:#c084fc;background:rgba(192,132,252,.04)}
+.choice-letter{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#1e1a36;font-size:10px;font-weight:900;color:#c084fc;margin-right:8px;flex-shrink:0;vertical-align:middle}
+.choice-text{font-size:11px;font-weight:700;color:#e8e4f4;display:inline;line-height:1.4}
+.choice.correct{border-color:#34d399!important;background:rgba(52,211,153,.08)!important}
+.choice.correct .choice-letter{background:#052e1c;color:#34d399}
+.choice.wrong{border-color:#f43f5e!important;background:rgba(244,63,94,.08)!important}
+.choice.wrong .choice-letter{background:#3a0a12;color:#f43f5e}
+.choice.disabled{pointer-events:none;opacity:.5}
+
+/* RESULT */
+.result{padding:12px;border-radius:10px;display:none;animation:rIn .3s ease}
+.result.on{display:block}
+@keyframes rIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.result.good{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2)}
+.result.bad{background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.2)}
+.result h4{font-size:12px;font-weight:800;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.result.good h4{color:#34d399}.result.bad h4{color:#f43f5e}
+.result p{font-size:10px;color:#8b82a8;line-height:1.4}
+.result .learn{margin-top:6px;padding:8px 10px;background:rgba(129,140,248,.06);border:1px solid rgba(129,140,248,.15);border-radius:8px;font-size:10px;color:#818cf8;line-height:1.4}
+.result .learn b{color:#c084fc;display:block;margin-bottom:2px;font-size:11px}
+
+/* METRICS */
+.metrics{display:flex;gap:6px;flex-wrap:wrap}
+.metric{flex:1;min-width:70px;background:#0f0d1e;border:1px solid #1e1a36;border-radius:8px;padding:8px;text-align:center}
+.met-icon{font-size:16px;display:block;margin-bottom:2px}
+.met-val{font-size:16px;font-weight:900;display:block}
+.met-name{font-size:7px;color:#6b6185;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.met-val.money{color:#34d399}.met-val.rep{color:#fbbf24}.met-val.prod{color:#818cf8}.met-val.team{color:#f472b6}
+.met-change{font-size:9px;font-weight:800;display:block;margin-top:1px}
+.met-change.up{color:#34d399}.met-change.down{color:#f43f5e}
+
+/* NEXT BUTTON */
+.nxt{padding:12px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;width:100%;display:none;transition:transform .2s;letter-spacing:.5px;box-shadow:0 3px 14px rgba(192,132,252,.2)}
+.nxt.on{display:block}.nxt:active{transform:scale(.97)}
+
+/* PITCH METER (for pitch levels) */
+.pitch-meter{margin:8px 0}
+.pm-label{font-size:9px;color:#6b6185;font-weight:700;margin-bottom:3px;display:flex;justify-content:space-between}
+.pm-bar{height:10px;background:#1e1a36;border-radius:5px;overflow:hidden}
+.pm-fill{height:100%;border-radius:5px;transition:width .6s ease;background:linear-gradient(90deg,#f43f5e,#fbbf24,#34d399)}
+
+/* LEVEL OVERLAY */
+.lov{position:absolute;inset:0;z-index:50;background:rgba(7,6,15,.94);display:flex;align-items:center;justify-content:center}
+.lov-b{text-align:center;animation:si .4s cubic-bezier(.2,.8,.3,1.2)}
+@keyframes si{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.lov-s{font-size:9px;color:#6b6185;letter-spacing:3px;font-weight:700}.lov-n{font-size:48px;font-weight:900;color:#fbbf24;line-height:1}
+.lov-t{font-size:14px;font-weight:800;margin:4px 0;color:#e8e4f4}.lov-e{font-size:11px;color:#c084fc;font-weight:700;margin-top:3px}
+.lov-ch{font-size:32px;display:block;margin-bottom:6px;animation:invBob 1.5s ease-in-out infinite}
+
+/* END */
+.end{align-items:center;justify-content:center;text-align:center;padding:20px;gap:6px;background:radial-gradient(ellipse at 50% 30%,#14102a,#07060f)}
+.end-i{font-size:56px;margin-bottom:4px}
+#win .end-i{animation:fl 1s ease-in-out infinite}#lose .end-i{animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.end h2{font-size:22px;font-weight:900}#win h2{color:#34d399}#lose h2{color:#f43f5e}
+.end-sub{font-size:11px;color:#6b6185;max-width:280px;line-height:1.3}
+.end-g{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;max-width:240px}
+.es{background:#0f0d1e;border:1px solid #1e1a36;border-radius:8px;padding:7px;text-align:center}
+.ev{font-size:18px;font-weight:900;display:block}.el{font-size:7px;color:#6b6185;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.es.xp .ev{color:#34d399}.es.co .ev{color:#fbbf24}.es.ac .ev{color:#c084fc}.es.tm .ev{color:#818cf8}
+.end-bd{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.end-bd span{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.18);border-radius:12px;padding:3px 9px;font-size:9px;color:#34d399;font-weight:700}
+.end-bt{display:flex;gap:6px}
+.eb{padding:9px 20px;border:none;border-radius:8px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:all .2s}
+.eb.p{background:linear-gradient(135deg,#c084fc,#7c3aed);color:#fff;box-shadow:0 3px 12px rgba(192,132,252,.2)}
+.eb.s{background:#1e1a36;color:#6b6185}.eb:active{transform:scale(.95)}
+
+/* STARTUP NAME DISPLAY */
+.startup-banner{background:linear-gradient(135deg,#1e1a36,#14102a);border:1px solid #2a2548;border-radius:10px;padding:10px 14px;text-align:center;margin-bottom:4px}
+.startup-banner .sb-emoji{font-size:24px;display:block;margin-bottom:2px}
+.startup-banner .sb-name{font-size:16px;font-weight:900;color:#c084fc}
+.startup-banner .sb-tagline{font-size:9px;color:#6b6185;margin-top:1px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TITLE -->
+<div class="scr on" id="title">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:8px;padding:18px">
+    <div class="ti">🚀</div>
+    <div class="th">STARTUP PITCH</div>
+    <div class="tsub">Pitch ideas to investors</div>
+    <div class="how">
+      <h3>🎮 HOW TO PLAY</h3>
+      <p>🔍 <b>Spot real problems</b> that need solving</p>
+      <p>💡 <b>Build your startup</b> step by step — from idea to pitch</p>
+      <p>👔 <b>Face investors</b> who ask tough questions</p>
+      <p>📊 <b>Manage 4 resources:</b> Money, Reputation, Product, Team</p>
+      <p>🎯 <b>Make smart decisions</b> — every choice changes your startup's future</p>
+      <p>🏆 <b>Final goal:</b> Deliver a winning pitch and get funded!</p>
+    </div>
+    <div class="drow">
+      <div class="db sel" data-d="easy"><span class="di">🌱</span><div class="dn">Seed</div><div class="dd">Forgiving<br>5 lives · hints</div></div>
+      <div class="db" data-d="med"><span class="di">📈</span><div class="dn">Series A</div><div class="dd">Balanced<br>3 lives</div></div>
+      <div class="db" data-d="hard"><span class="di">🦄</span><div class="dn">Unicorn</div><div class="dd">Brutal<br>2 lives</div></div>
+    </div>
+    <button class="sbtn" onclick="startGame()">🚀 LAUNCH STARTUP</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="scr" id="game">
+  <div class="hud">
+    <span class="hi lv" id="hLv">Phase 1</span>
+    <span class="hi sc" id="hSc">⭐ 0</span>
+    <span class="hi tm" id="hTm">⏱ 45</span>
+    <div class="hlv" id="hLi"></div>
+  </div>
+  <div class="pbar"><div class="pfill" id="pf"></div></div>
+  <div class="garea" id="garea"></div>
+</div>
+
+<!-- WIN -->
+<div class="scr end" id="win">
+  <div class="end-i">🦄</div><h2>STARTUP FUNDED!</h2><div class="end-sub">Your pitch won over the investors. You're the next big thing!</div>
+  <div class="end-g"><div class="es xp"><span class="ev" id="wXp">0</span><span class="el">XP Earned</span></div><div class="es co"><span class="ev" id="wCo">0</span><span class="el">Coins</span></div><div class="es ac"><span class="ev" id="wAc">0</span><span class="el">Accuracy</span></div><div class="es tm"><span class="ev" id="wTm">0</span><span class="el">Time</span></div></div>
+  <div class="end-bd" id="wBd"></div>
+  <div class="end-bt"><button class="eb p" onclick="startGame()">Play Again 🚀</button><button class="eb s" onclick="showScr('title')">Menu</button></div>
+</div>
+
+<!-- LOSE -->
+<div class="scr end" id="lose">
+  <div class="end-i">📉</div><h2>STARTUP FAILED!</h2><div class="end-sub">The investors passed. Learn from it and try again!</div>
+  <div class="end-g"><div class="es xp"><span class="ev" id="lXp">0</span><span class="el">XP</span></div><div class="es co"><span class="ev" id="lCo">0</span><span class="el">Coins</span></div><div class="es ac"><span class="ev" id="lAc">0</span><span class="el">Accuracy</span></div><div class="es tm"><span class="ev" id="lTm">0</span><span class="el">Reached</span></div></div>
+  <div class="end-bt"><button class="eb p" onclick="startGame()">Retry 🚀</button><button class="eb s" onclick="showScr('title')">Menu</button></div>
+</div>
+</div>
+
+<script>
+var $=function(i){return document.getElementById(i)};
+function showScr(id){document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on')});$(id).classList.add('on')}
+document.querySelectorAll('.db').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.db').forEach(function(x){x.classList.remove('sel')});b.classList.add('sel');G.diff=b.dataset.d})});
+
+var CFG={easy:{lives:5,timer:60,scoreMul:1},med:{lives:3,timer:45,scoreMul:1.5},hard:{lives:2,timer:35,scoreMul:2}};
+
+// STARTUP SCENARIOS — each scenario is a startup idea the player builds through
+var STARTUPS=[
+  {name:'EduBuddy',emoji:'📚',tagline:'AI homework helper for rural students',problem:'Students in small villages have no tutors and struggle with homework after school.'},
+  {name:'FarmLink',emoji:'🌾',tagline:'Connect farmers directly to city buyers',problem:'Farmers sell produce to middlemen at low prices, while city buyers pay high prices.'},
+  {name:'MediScan',emoji:'🏥',tagline:'Health checkup app for remote areas',problem:'People in remote areas travel hours to see a doctor for basic health questions.'},
+  {name:'SkillSwap',emoji:'🤝',tagline:'Trade skills with people in your neighbourhood',problem:'People have skills (cooking, coding, fixing bikes) but no way to trade them locally.'},
+  {name:'GreenRoute',emoji:'♻️',tagline:'Smart waste sorting for schools',problem:'Schools generate lots of waste but students don\'t know how to sort recyclables properly.'}
+];
+
+// 10 PHASES — each phase teaches a real startup concept
+var PHASES=[
+  // PHASE 1: Find the Problem
+  {num:1,title:'Find the Problem',desc:'Every great startup begins by spotting a real problem people face.',icon:'🔍',
+   gen:function(su){return{
+     investor:{emoji:'👩🏫',name:'Ms. Priya',role:'Startup Mentor',speech:'Before building anything, you need to find a REAL problem. Which of these is the strongest problem to solve?'},
+     choices:[
+      {text:'\"'+su.problem+'\"',correct:true,
+       why:'This is a real problem affecting many people. Great startups solve real pain points!',
+       learn:'💡 Startup Lesson: The best businesses solve REAL problems that many people face. This is called "product-market fit" — your product fits what the market actually needs.'},
+      {text:'\"I want to build a cool app because apps are trendy right now.\"',correct:false,
+       why:'Building something just because it\'s trendy isn\'t a strong foundation. You need a real problem first!',
+       learn:'💡 Startup Lesson: Many startups fail because they build solutions for problems nobody has. Always start by talking to real people about their real struggles.'},
+      {text:'\"I want to become rich and famous quickly.\"',correct:false,
+       why:'Getting rich isn\'t a problem to solve — it\'s a personal goal. Startups must solve OTHER people\'s problems.',
+       learn:'💡 Startup Lesson: The most successful founders focus on helping others first. The money follows when you create real value for people.'}
+     ],
+     metChange:{correct:{money:0,rep:10,prod:5,team:0},wrong:{money:0,rep:-5,prod:0,team:0}}
+   }}},
+
+  // PHASE 2: Know Your Customer
+  {num:2,title:'Know Your Customer',desc:'Who exactly will use your product? You need a clear target audience.',icon:'🎯',
+   gen:function(su){return{
+     investor:{emoji:'👨💼',name:'Mr. Arjun',role:'Market Research Expert',speech:'Who is your target customer? Be specific — "everyone" is not an answer!'},
+     choices:[
+      {text:'A specific group of people who face this problem daily and would pay to solve it.',correct:true,
+       why:'Exactly! A focused target audience lets you build something they truly love.',
+       learn:'💡 Startup Lesson: This is called your "target market." Successful startups start narrow — serve one group extremely well, then expand. Facebook started with just Harvard students!'},
+      {text:'Everyone in the world — the bigger the audience, the more money we make!',correct:false,
+       why:'Trying to serve everyone means you serve nobody well. Focus is key!',
+       learn:'💡 Startup Lesson: "If you\'re selling to everyone, you\'re selling to no one." Start with a small, specific group (called a "niche") and grow from there.'},
+      {text:'Rich people, because they can pay more for our product.',correct:false,
+       why:'Your target customer should be whoever has the problem — not just whoever has money.',
+       learn:'💡 Startup Lesson: The best customers are those who urgently need your solution. Price comes later. First, find people who would be disappointed if your product disappeared.'}
+     ],
+     metChange:{correct:{money:5,rep:10,prod:5,team:0},wrong:{money:0,rep:-5,prod:0,team:0}}
+   }}},
+
+  // PHASE 3: Name & Brand
+  {num:3,title:'Name Your Startup',desc:'A great name is memorable, simple, and tells people what you do.',icon:'✨',
+   gen:function(su){return{
+     investor:{emoji:'👩🎨',name:'Meena',role:'Branding Expert',speech:'Time to name your startup! The name should be easy to remember and hint at what you do.'},
+     choices:[
+      {text:'\"'+su.name+'\" — short, memorable, and hints at what we do.',correct:true,
+       why:'Perfect! Short, clear, and connected to your mission. People will remember this!',
+       learn:'💡 Startup Lesson: Great startup names are usually short (1-2 words), easy to spell, and connected to what the company does. Think: YouTube (you + tube/TV), Instagram (instant + telegram), WhatsApp (what\'s up).'},
+      {text:'\"Advanced Integrated Technology Solutions Pvt. Ltd.\" — sounds professional!',correct:false,
+       why:'Too long and corporate! Nobody will remember this, and it doesn\'t tell people what you actually do.',
+       learn:'💡 Startup Lesson: Avoid long, generic names. Your name is your first impression. If people can\'t remember it or spell it, they can\'t tell their friends about you. Word-of-mouth is crucial for startups!'},
+      {text:'\"xyz123app\" — it was the only domain name available.',correct:false,
+       why:'Random characters are forgettable and look unprofessional. Your name builds trust.',
+       learn:'💡 Startup Lesson: Your brand name builds trust. Would you give your credit card to a company called "xyz123app"? Probably not. A good name signals that you\'re serious and professional.'}
+     ],
+     metChange:{correct:{money:0,rep:15,prod:5,team:5},wrong:{money:0,rep:-10,prod:0,team:0}}
+   }}},
+
+  // PHASE 4: Build Your Team
+  {num:4,title:'Build Your Team',desc:'You can\'t do everything alone. Who do you need on your team?',icon:'👥',
+   gen:function(su){return{
+     investor:{emoji:'🧑💻',name:'Raju',role:'CTO & Co-founder Coach',speech:'A startup is only as strong as its team. Who should you hire first?'},
+     choices:[
+      {text:'People with different skills — a builder (tech), a seller (business), and a designer (product).',correct:true,
+       why:'A diverse team covers all your needs. This is the dream startup founding team!',
+       learn:'💡 Startup Lesson: The ideal founding team has complementary skills: someone who can BUILD the product, someone who can SELL it, and someone who can DESIGN it. Investors look at the team before the idea!'},
+      {text:'Only my best friends — we get along great and it\'ll be fun!',correct:false,
+       why:'Friendship matters, but you need diverse SKILLS more than you need people you agree with.',
+       learn:'💡 Startup Lesson: Many friend-founded startups fail because everyone has the same skills and nobody wants to disagree. Healthy debate makes better decisions. Hire for skills, not just friendship.'},
+      {text:'Nobody — I\'ll do everything myself to save money.',correct:false,
+       why:'A solo founder gets burned out fast. Plus, investors rarely fund one-person teams.',
+       learn:'💡 Startup Lesson: Statistics show that startups with 2-3 co-founders are more successful than solo founders. You move faster, cover more ground, and investors see it as lower risk.'}
+     ],
+     metChange:{correct:{money:-5,rep:5,prod:10,team:20},wrong:{money:0,rep:0,prod:0,team:-10}}
+   }}},
+
+  // PHASE 5: MVP
+  {num:5,title:'Build Your MVP',desc:'An MVP (Minimum Viable Product) is the simplest version of your product that works.',icon:'🛠️',
+   gen:function(su){return{
+     investor:{emoji:'👩💻',name:'Kavitha',role:'Product Manager',speech:'You need to build an MVP. What\'s the smartest approach?'},
+     choices:[
+      {text:'Build the simplest version that solves the core problem. Test it with 10 real users and get feedback.',correct:true,
+       why:'This is exactly what an MVP is about — learn fast, spend little, improve quickly!',
+       learn:'💡 Startup Lesson: MVP stands for "Minimum Viable Product." Build the smallest thing that works, test it with real users, learn what they actually want, then improve. Instagram\'s MVP was just photo filters — no stories, no reels, no shopping!'},
+      {text:'Spend 2 years building a perfect product with every possible feature before showing anyone.',correct:false,
+       why:'You\'ll waste time and money building features nobody wants. Launch small, learn fast!',
+       learn:'💡 Startup Lesson: This is the #1 startup mistake — building in secret for too long. The market changes, and you might build the wrong thing. "If you\'re not embarrassed by the first version of your product, you\'ve launched too late." — Reid Hoffman (LinkedIn founder)'},
+      {text:'Just make a flashy website with no actual product and see if people sign up.',correct:false,
+       why:'Some testing is fine, but you need a real product that actually solves the problem.',
+       learn:'💡 Startup Lesson: A landing page test can validate interest, but eventually you need a working product. Users who sign up but find nothing will lose trust. Balance speed with substance.'}
+     ],
+     metChange:{correct:{money:-10,rep:10,prod:20,team:5},wrong:{money:-15,rep:-5,prod:-5,team:0}}
+   }}},
+
+  // PHASE 6: Revenue Model
+  {num:6,title:'How Will You Make Money?',desc:'Even great products need a business model to survive.',icon:'💰',
+   gen:function(su){return{
+     investor:{emoji:'🤵',name:'Mr. Venkat',role:'Angel Investor',speech:'I love the product! But how will you actually make money? What\'s your revenue model?'},
+     choices:[
+      {text:'Freemium — basic features free, premium features paid. Users try it risk-free, then upgrade when they see value.',correct:true,
+       why:'The freemium model is proven! It removes the barrier to try your product and builds trust.',
+       learn:'💡 Startup Lesson: "Freemium" means free + premium. Spotify, Canva, and Zoom all use this model. Free users spread the word, a percentage convert to paid. Typically 2-5% of free users become paying customers — but that\'s enough if you have millions of users!'},
+      {text:'Everything completely free forever — we\'ll figure out money later.',correct:false,
+       why:'A startup without a revenue plan will eventually run out of money and die.',
+       learn:'💡 Startup Lesson: "We\'ll figure it out later" is not a business model. Even if you start free, you need a PLAN for making money eventually. Investors won\'t fund you without one. Twitter struggled for years because they didn\'t have a clear revenue model early.'},
+      {text:'Charge ₹10,000/month from day one — premium pricing shows quality!',correct:false,
+       why:'High prices before you\'ve proven value will scare away early users.',
+       learn:'💡 Startup Lesson: Early-stage startups need USERS more than revenue. If you charge too much too soon, nobody will try your unproven product. Build trust first, then monetize. Amazon was unprofitable for 9 years while building its customer base!'}
+     ],
+     metChange:{correct:{money:20,rep:10,prod:0,team:0},wrong:{money:-10,rep:-5,prod:0,team:0}}
+   }}},
+
+  // PHASE 7: Handle Competition
+  {num:7,title:'Face the Competition',desc:'Someone asks: "What if Google builds this?" How do you respond?',icon:'🥊',
+   gen:function(su){return{
+     investor:{emoji:'👴',name:'Mr. Sharma',role:'Venture Capitalist',speech:'Interesting idea. But what if a big company copies you? What\'s your competitive advantage?'},
+     choices:[
+      {text:'We have deep understanding of our users\' specific needs. Big companies can\'t move as fast or care as much about this niche.',correct:true,
+       why:'Knowing your users better than anyone else is the strongest competitive advantage!',
+       learn:'💡 Startup Lesson: Your "moat" (competitive advantage) can be: deep user knowledge, network effects (more users = more value), unique technology, or speed. WhatsApp beat Google\'s messaging apps because they understood what users wanted — simplicity. Big companies are slow and distracted.'},
+      {text:'We don\'t have any competition — our idea is completely unique!',correct:false,
+       why:'Saying "no competition" is a red flag for investors. It means you haven\'t researched the market.',
+       learn:'💡 Startup Lesson: EVERY product has competition — even if it\'s "doing nothing" or "using a spreadsheet." Investors want to see that you understand your market. Saying "no competition" tells them you haven\'t done your homework.'},
+      {text:'We\'ll just copy whatever the big companies do, but cheaper.',correct:false,
+       why:'Competing on price alone is a race to the bottom. You need unique value.',
+       learn:'💡 Startup Lesson: Competing only on price is dangerous — someone can always go cheaper. Instead, compete on VALUE. Be better at solving the specific problem for your specific users. That\'s sustainable.'}
+     ],
+     metChange:{correct:{money:5,rep:15,prod:10,team:5},wrong:{money:0,rep:-10,prod:0,team:-5}}
+   }}},
+
+  // PHASE 8: Handle Failure
+  {num:8,title:'Things Go Wrong!',desc:'Your first version has bugs, users complain, and a teammate wants to quit. What do you do?',icon:'🔥',
+   gen:function(su){return{
+     investor:{emoji:'👩🔬',name:'Dr. Anita',role:'Startup Psychologist',speech:'Every startup faces crisis. This is where most founders give up. What will YOU do?'},
+     choices:[
+      {text:'Listen to user complaints carefully, fix the top 3 issues fast, and have an honest conversation with the teammate about their concerns.',correct:true,
+       why:'This shows maturity, leadership, and the grit investors look for!',
+       learn:'💡 Startup Lesson: EVERY successful startup went through crises. Airbnb was rejected by 7 investors. Slack pivoted from a failed video game. The difference between success and failure is how you RESPOND to problems. Listen, adapt, persist.'},
+      {text:'Ignore the complaints — users don\'t know what they want. The teammate can leave if they want.',correct:false,
+       why:'Ignoring feedback kills startups. Your users and team are your most valuable assets.',
+       learn:'💡 Startup Lesson: "Your most unhappy customers are your greatest source of learning." — Bill Gates. User complaints are FREE product research. And losing team members early creates instability that can sink a startup.'},
+      {text:'Shut everything down — if it\'s not working perfectly, it\'s not worth continuing.',correct:false,
+       why:'Giving up at the first sign of trouble means you\'ll never succeed at anything.',
+       learn:'💡 Startup Lesson: The word for this is "resilience" or "grit." Studies show grit is a better predictor of success than IQ or talent. Problems are normal — they\'re data points telling you what to fix, not signals to quit.'}
+     ],
+     metChange:{correct:{money:-5,rep:15,prod:15,team:15},wrong:{money:-10,rep:-10,prod:-10,team:-15}}
+   }}},
+
+  // PHASE 9: Pitch Preparation
+  {num:9,title:'Prepare Your Pitch',desc:'You have 60 seconds to convince an investor. What do you lead with?',icon:'🎤',
+   gen:function(su){return{
+     investor:{emoji:'💼',name:'Ms. Deepa',role:'Shark Tank Judge',speech:'You have ONE MINUTE. I hear 50 pitches a week. Make me remember yours. Go!'},
+     choices:[
+      {text:'Start with the PROBLEM (a relatable story), then your SOLUTION, then show TRACTION (real users/numbers), and end with THE ASK (how much money, what for).',correct:true,
+       why:'This is the classic winning pitch structure! Problem → Solution → Traction → Ask.',
+       learn:'💡 Startup Lesson: The perfect pitch structure is: 1) HOOK — a story showing the problem, 2) SOLUTION — your product, 3) TRACTION — proof it works (users, revenue), 4) TEAM — why you can do this, 5) ASK — what you need. This is used by every successful startup on Shark Tank!'},
+      {text:'Start with technical details about how the code works and which programming languages you used.',correct:false,
+       why:'Investors don\'t care about code! They care about the PROBLEM and the BUSINESS.',
+       learn:'💡 Startup Lesson: Never start a pitch with technology details. Investors invest in businesses, not code. They want to know: Is this a big problem? Do people want this? Can you make money? Technology is just the tool — not the point.'},
+      {text:'Start by asking for money — tell them you need ₹50 lakhs and you\'ll figure out the rest.',correct:false,
+       why:'Leading with money before showing value is the fastest way to get rejected.',
+       learn:'💡 Startup Lesson: EARN the right to ask for money by first proving your idea has value. Show the problem, show your solution works, show people want it — THEN ask for investment. The "ask" always comes last in a pitch.'}
+     ],
+     metChange:{correct:{money:0,rep:20,prod:5,team:5},wrong:{money:0,rep:-15,prod:0,team:-5}}
+   }}},
+
+  // PHASE 10: THE FINAL PITCH
+  {num:10,title:'⚔️ THE FINAL PITCH',desc:'This is it. The investor panel is ready. Deliver your pitch!',icon:'🏆',
+   gen:function(su){return{
+     investor:{emoji:'🦈',name:'The Investor Panel',role:'Final Judges',speech:'We\'ve seen your journey. Now convince us: why should we invest ₹1 crore in '+su.name+'?'},
+     choices:[
+      {text:'\"We solve [problem] for [specific users]. We have [X users] already. With ₹1 crore, we\'ll grow 10x in 12 months. Here\'s exactly how.\"',correct:true,
+       why:'Clear, confident, data-driven. You showed the problem, traction, and plan. FUNDED! 🎉',
+       learn:'💡 Final Lesson: The best pitches are CLEAR and CONFIDENT. State the problem, your solution, proof it works, and a specific plan for the money. Investors fund founders who know their numbers and have a clear vision. Congratulations — you think like a real entrepreneur!'},
+      {text:'\"Please invest because we really need the money and we\'ve been working very hard on this.\"',correct:false,
+       why:'Hard work alone doesn\'t get funding. Investors need to see business potential, not just effort.',
+       learn:'💡 Final Lesson: Investors aren\'t charities — they need to see RETURN potential. "We worked hard" is not a reason to invest. Show them the market size, your growth rate, and how they\'ll make their money back 10x. Business is about value creation.'},
+      {text:'\"Trust us, this will definitely work. We don\'t have users yet but we\'re sure people will love it.\"',correct:false,
+       why:'\"Trust me\" without proof is the weakest pitch possible. Show evidence, not promises.',
+       learn:'💡 Final Lesson: In business, DATA beats opinions. "I think people will love it" means nothing without evidence. Even a small number of real users or survey responses is better than empty promises. Investors call this "traction" — proof that your idea works in the real world.'}
+     ],
+     metChange:{correct:{money:30,rep:25,prod:10,team:10},wrong:{money:0,rep:-20,prod:0,team:-10}}
+   }}}
+];
+
+// GAME STATE
+var G={diff:'easy',lv:0,score:0,lives:5,mxL:5,timer:45,tT:0,ok:0,bad:0,playing:false,
+  money:50,rep:50,prod:30,team:20,startup:null,clI:null,answered:false};
+
+function stopAll(){G.playing=false;clearInterval(G.clI)}
+
+function startGame(){
+  stopAll();
+  var c=CFG[G.diff];
+  G.lv=0;G.score=0;G.lives=c.lives;G.mxL=c.lives;G.tT=0;G.ok=0;G.bad=0;
+  G.money=50;G.rep=50;G.prod=30;G.team=20;
+  G.startup=STARTUPS[Math.floor(Math.random()*STARTUPS.length)];
+  G.playing=true;
+  showScr('game');
+  showLevelTrans();
+}
+
+function showLevelTrans(){
+  stopAll();
+  var ph=PHASES[G.lv];
+  var ga=$('garea');
+  ga.innerHTML='';
+  var ov=document.createElement('div');
+  ov.className='lov';
+  var isBoss=ph.title.indexOf('⚔️')>=0;
+  ov.innerHTML='<div class="lov-b"><div class="lov-ch">'+ph.icon+'</div><div class="lov-s">'+(isBoss?'⚔️ FINAL ROUND':'PHASE')+'</div><div class="lov-n">'+(G.lv+1)+'</div><div class="lov-t">'+ph.title+'</div><div class="lov-e">'+ph.desc+'</div></div>';
+  ga.appendChild(ov);
+  setTimeout(function(){ov.style.transition='opacity .3s';ov.style.opacity='0';setTimeout(function(){ov.remove();loadPhase()},300)},1800);
+}
+
+function loadPhase(){
+  G.playing=true;G.answered=false;
+  var c=CFG[G.diff];G.timer=c.timer;
+  var ph=PHASES[G.lv];
+  var data=ph.gen(G.startup);
+  G.currentData=data;
+
+  // HUD
+  $('hLv').textContent='Phase '+(G.lv+1);
+  $('hSc').textContent='⭐ '+G.score;
+  $('hTm').textContent='⏱ '+G.timer;
+  $('hTm').className='hi tm';
+  updateLives();
+  $('pf').style.width=(G.lv/PHASES.length*100)+'%';
+
+  // Build the phase UI
+  var ga=$('garea');
+  ga.innerHTML='';
+  ga.scrollTop=0;
+
+  // Startup banner
+  if(G.lv>=2){
+    ga.innerHTML+='<div class="startup-banner"><span class="sb-emoji">'+G.startup.emoji+'</span><span class="sb-name">'+G.startup.name+'</span><span class="sb-tagline">'+G.startup.tagline+'</span></div>';
+  }
+
+  // Metrics
+  ga.innerHTML+='<div class="metrics" id="metrics">'+buildMetrics()+'</div>';
+
+  // Phase header
+  ga.innerHTML+='<div class="phase-hdr"><div class="phase-num">'+(G.lv+1)+'</div><div class="phase-info"><h2>'+ph.title+'</h2><p>'+ph.desc+'</p></div></div>';
+
+  // Scenario
+  var inv=data.investor;
+  var sc='<div class="scenario"><span class="sc-emoji">'+ph.icon+'</span>';
+  sc+='<div class="investor"><div class="inv-avatar">'+inv.emoji+'</div><div><div class="inv-name">'+inv.name+'</div><div class="inv-role">'+inv.role+'</div><div class="inv-speech">"'+inv.speech+'"</div></div></div>';
+
+  // Shuffle choices
+  var shuffled=data.choices.slice();
+  for(var i=shuffled.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=shuffled[i];shuffled[i]=shuffled[j];shuffled[j]=t}
+  G.shuffledChoices=shuffled;
+
+  sc+='<div class="choices" id="choices">';
+  var letters=['A','B','C'];
+  shuffled.forEach(function(ch,idx){
+    sc+='<div class="choice" data-idx="'+idx+'" onclick="pickChoice('+idx+')"><span class="choice-letter">'+letters[idx]+'</span><span class="choice-text">'+ch.text+'</span></div>';
+  });
+  sc+='</div></div>';
+  ga.innerHTML+=sc;
+
+  // Result area
+  ga.innerHTML+='<div class="result" id="result"><h4 id="rh"></h4><p id="rp"></p><div class="learn" id="rl"></div></div>';
+
+  // Next button
+  ga.innerHTML+='<button class="nxt" id="nxtBtn" onclick="nextPhase()">Next Phase →</button>';
+
+  // Start timer
+  startClock();
+}
+
+function buildMetrics(){
+  return '<div class="metric"><span class="met-icon">💰</span><span class="met-val money" id="mMoney">'+G.money+'</span><span class="met-name">Funds</span><span class="met-change" id="mcMoney"></span></div>'+
+    '<div class="metric"><span class="met-icon">⭐</span><span class="met-val rep" id="mRep">'+G.rep+'</span><span class="met-name">Reputation</span><span class="met-change" id="mcRep"></span></div>'+
+    '<div class="metric"><span class="met-icon">🛠️</span><span class="met-val prod" id="mProd">'+G.prod+'</span><span class="met-name">Product</span><span class="met-change" id="mcProd"></span></div>'+
+    '<div class="metric"><span class="met-icon">👥</span><span class="met-val team" id="mTeam">'+G.team+'</span><span class="met-name">Team</span><span class="met-change" id="mcTeam"></span></div>';
+}
+
+function pickChoice(idx){
+  if(!G.playing||G.answered)return;
+  G.answered=true;
+  clearInterval(G.clI);
+
+  var ch=G.shuffledChoices[idx];
+  var data=G.currentData;
+  var allC=document.querySelectorAll('.choice');
+  allC.forEach(function(c){c.classList.add('disabled')});
+
+  var picked=allC[idx];
+  var res=$('result');
+  var rh=$('rh');var rp=$('rp');var rl=$('rl');
+
+  if(ch.correct){
+    G.ok++;
+    var pts=Math.floor((50+G.timer*2)*CFG[G.diff].scoreMul);
+    G.score+=pts;
+    $('hSc').textContent='⭐ '+G.score;
+    picked.classList.add('correct');
+    res.className='result good on';
+    rh.innerHTML='✅ Great decision! +'+pts+' pts';
+    rp.textContent=ch.why;
+    rl.innerHTML='<b>📘 What you learned:</b>'+ch.learn.replace('💡 Startup Lesson: ','');
+
+    // Update metrics
+    applyMetrics(data.metChange.correct);
+  } else {
+    G.bad++;G.lives--;updateLives();
+    picked.classList.add('wrong');
+    // Show correct one
+    G.shuffledChoices.forEach(function(c2,i2){if(c2.correct)allC[i2].classList.add('correct')});
+    res.className='result bad on';
+    rh.innerHTML='❌ Not the best choice! -1 ❤️';
+    rp.textContent=ch.why;
+    rl.innerHTML='<b>📘 What you learned:</b>'+ch.learn.replace('💡 Startup Lesson: ','').replace('💡 Final Lesson: ','');
+
+    applyMetrics(data.metChange.wrong);
+
+    if(G.lives<=0){
+      setTimeout(function(){endGame(false)},1500);
+      return;
+    }
+  }
+
+  $('nxtBtn').classList.add('on');
+  // Scroll to result
+  setTimeout(function(){res.scrollIntoView({behavior:'smooth',block:'start'})},200);
+}
+
+function applyMetrics(changes){
+  var keys=['money','rep','prod','team'];
+  var ids=['Money','Rep','Prod','Team'];
+  keys.forEach(function(k,i){
+    var delta=changes[k]||0;
+    G[k]=Math.max(0,Math.min(100,G[k]+delta));
+    var valEl=document.getElementById('m'+ids[i]);
+    var chgEl=document.getElementById('mc'+ids[i]);
+    if(valEl)valEl.textContent=G[k];
+    if(chgEl&&delta!==0){
+      chgEl.textContent=(delta>0?'+':'')+delta;
+      chgEl.className='met-change '+(delta>0?'up':'down');
+    }
+  });
+}
+
+function nextPhase(){
+  G.lv++;
+  if(G.lv>=PHASES.length){endGame(true)}
+  else{showLevelTrans()}
+}
+
+function startClock(){
+  clearInterval(G.clI);
+  G.clI=setInterval(function(){
+    if(!G.playing)return;
+    G.timer--;G.tT++;
+    $('hTm').textContent='⏱ '+G.timer;
+    if(G.timer<=10)$('hTm').classList.add('dng');
+    if(G.timer<=0){
+      clearInterval(G.clI);
+      if(!G.answered){
+        G.lives--;G.bad++;updateLives();G.answered=true;
+        var allC=document.querySelectorAll('.choice');
+        allC.forEach(function(c){c.classList.add('disabled')});
+        G.shuffledChoices.forEach(function(c2,i2){if(c2.correct)allC[i2].classList.add('correct')});
+        var res=$('result');res.className='result bad on';
+        $('rh').innerHTML='⏰ Time\'s up! -1 ❤️';
+        $('rp').textContent='You ran out of time. Quick decisions matter in startups!';
+        $('rl').innerHTML='<b>📘 Lesson:</b> In the startup world, indecision is worse than a wrong decision. Act fast, learn, adapt.';
+        applyMetrics(G.currentData.metChange.wrong);
+        $('nxtBtn').classList.add('on');
+        if(G.lives<=0)setTimeout(function(){endGame(false)},1500);
+      }
+    }
+  },1000);
+}
+
+function updateLives(){var h='';for(var i=0;i<G.mxL;i++)h+='<span'+(i>=G.lives?' class="x"':'')+'>❤️</span>';$('hLi').innerHTML=h}
+
+function endGame(won){
+  stopAll();
+  var acc=G.ok+G.bad>0?Math.round(G.ok/(G.ok+G.bad)*100):0;
+  var xp=won?500+G.score:Math.floor(G.score*.3);
+  var co=won?300+Math.floor(G.score/10):Math.floor(G.score/20);
+
+  if (window.parent && window.parent.currentUser) {
+       fetch('/api/save-gamestate', {
+           method: 'POST',
+           headers: {'Content-Type': 'application/json'},
+           body: JSON.stringify({ xp: xp, coins: co })
+       }).catch(e => console.log(e));
+  }
+
+  if(won){
+    showScr('win');
+    $('wXp').textContent='+'+xp;$('wCo').textContent='+'+co;$('wAc').textContent=acc+'%';$('wTm').textContent=G.tT+'s';
+    var b='<span>🚀 Startup Founder</span>';
+    if(acc>=80)b+='<span>🎯 Sharp Thinker</span>';
+    if(G.diff==='hard')b+='<span>🦄 Unicorn Builder</span>';
+    if(G.money>=70)b+='<span>💰 Money Smart</span>';
+    if(G.rep>=80)b+='<span>⭐ Reputation King</span>';
+    $('wBd').innerHTML=b;
+  } else {
+    showScr('lose');
+    $('lXp').textContent='+'+xp;$('lCo').textContent='+'+co;$('lAc').textContent=acc+'%';$('lTm').textContent='Phase '+(G.lv+1);
+  }
+}
+</script>
+</body>
+</html>
