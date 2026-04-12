@@ -680,6 +680,7 @@
             emptyMsg.textContent = `No ${courseFilter} courses for your current skill gaps.`;
             grid.appendChild(emptyMsg);
         } else {
+<<<<<<< HEAD
             // Render all courses directly without grouping
             relevantCourses.forEach((course, index) => {
                 const skill = pathData.skills.find(s => s.id === course.skill);
@@ -715,6 +716,72 @@
                     </a>
                 `;
                 grid.appendChild(card);
+=======
+            // Group by skill
+            const grouped = {};
+            relevantCourses.forEach(course => {
+                const skill = pathData.skills.find(s => s.id === course.skill);
+                const skillName = skill ? skill.name : 'Other';
+                const skillIcon = skill ? skill.icon : '📦';
+                if (!grouped[course.skill]) {
+                    grouped[course.skill] = { name: skillName, icon: skillIcon, courses: [] };
+                }
+                grouped[course.skill].courses.push(course);
+            });
+
+            // Render grouped
+            Object.entries(grouped).forEach(([skillId, group], gIdx) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'sf-skill-group';
+                groupDiv.style.animationDelay = (gIdx * 0.1) + 's';
+
+                const header = document.createElement('div');
+                header.className = 'sf-skill-group-header';
+                header.innerHTML = `<span class="sg-icon">${group.icon}</span> ${group.name} <span class="sg-count">${group.courses.length} course${group.courses.length > 1 ? 's' : ''}</span>`;
+                groupDiv.appendChild(header);
+
+                const groupGrid = document.createElement('div');
+                groupGrid.className = 'sf-skill-group-grid';
+
+                group.courses.forEach(course => {
+                    const skill = pathData.skills.find(s => s.id === course.skill);
+                    const userLevel = userSkillScores[course.skill] || 'none';
+                    let priority, priorityClass;
+                    if (userLevel === 'none') { priority = 'CRITICAL GAP'; priorityClass = 'critical-gap'; }
+                    else { priority = 'IMPROVE'; priorityClass = 'high-priority'; }
+
+                    const isFree = course.type === 'free';
+                    const priceBadge = isFree
+                        ? '<span class="sf-price-badge free">🆓 FREE</span>'
+                        : '<span class="sf-price-badge paid">💳 PAID</span>';
+
+                    const card = document.createElement('div');
+                    card.className = `sf-course-card ${priorityClass}`;
+                    card.innerHTML = `
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div class="sf-course-priority">${priority}</div>
+                            ${priceBadge}
+                        </div>
+                        <div class="sf-course-provider">
+                            <div class="sf-provider-logo" style="background:${course.logoBg}">${course.logo}</div>
+                            <span style="font-size:11px; color:var(--text-muted)">${course.provider}</span>
+                        </div>
+                        <div class="sf-course-name">${course.name}</div>
+                        <div class="sf-course-tags">
+                            <span class="sf-course-tag gap">${skill ? skill.name : ''}</span>
+                            <span class="sf-course-tag xp">+${course.xp} XP</span>
+                        </div>
+                        <div class="sf-course-price">${isFree ? 'FREE' : 'PAID'} <small>${isFree ? 'Official course' : 'Premium content'}</small></div>
+                        <a href="${course.url}" target="_blank" rel="noopener noreferrer" class="sf-enroll-btn" onclick="event.stopPropagation()">
+                            Visit Course ↗
+                        </a>
+                    `;
+                    groupGrid.appendChild(card);
+                });
+
+                groupDiv.appendChild(groupGrid);
+                grid.appendChild(groupDiv);
+>>>>>>> 845b11af742768d84d19180945ec94fedcc7650f
             });
         }
 

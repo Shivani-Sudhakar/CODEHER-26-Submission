@@ -411,6 +411,7 @@
       "quest_progress": {},
       "enrolled_courses": []
     }
+<<<<<<< HEAD
   },
   "test run": {
     "email": "test@gmail.com",
@@ -439,5 +440,7 @@
       "quest_progress": {},
       "enrolled_courses": []
     }
+=======
+>>>>>>> 845b11af742768d84d19180945ec94fedcc7650f
   }
 }

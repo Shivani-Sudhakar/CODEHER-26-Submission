@@ -19,7 +19,11 @@ CORS(app)
 app.secret_key = secrets.token_hex(32)
 
 # API key configuration
+<<<<<<< HEAD
 _GEMINI_API_KEY = "AIzaSyAe2N4j4O1ESJtRDbtcJjbA7CE1gGXc908"
+=======
+_GEMINI_API_KEY = "AIzaSyAuipEKY5eGOje7TdMVaXzCJ2odXGS33b8"
+>>>>>>> 845b11af742768d84d19180945ec94fedcc7650f
 genai.configure(api_key=_GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
