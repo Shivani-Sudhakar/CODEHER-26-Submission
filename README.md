@@ -1,4 +1,4 @@
-# CODEHER 26 Submission 🚀
+<img width="708" height="622" alt="image" src="https://github.com/user-attachments/assets/306c986b-74f9-45b8-ba8f-9720b70f0e3e" /># CODEHER 26 Submission 🚀
 
 ## 📌 Overview
 
@@ -25,13 +25,6 @@ To make the experience engaging, the application also includes a **reward-based 
 * HTML
 * CSS
 * JavaScript
-
----
-
-## 📷 Screenshots
-
-(Add screenshots of your project here)
-
 ---
 
 ## 🚀 How to Run the Project
@@ -42,9 +35,11 @@ To make the experience engaging, the application also includes a **reward-based 
    git clone https://github.com/Shivani-Sudhakar/CODEHER-26-Submission.git
    ```
 
-2. Open the project folder
+2. Open the project folder in VS code
 
-3. Open `index.html` in your browser
+3. Enter "python app.py" in terminal
+   
+4. open the link
 
 ---
 
@@ -71,8 +66,8 @@ This project aims to bridge that gap in a simple and interactive way.
 
 ## 👩‍💻 Author
 
-Shivani Sudhakar
-Nethra Balaji
+-Shivani Sudhakar
+-Nethra Balaji
 
 ---
 
