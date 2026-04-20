@@ -1,4 +1,3 @@
-<img width="708" height="622" alt="image" src="https://github.com/user-attachments/assets/306c986b-74f9-45b8-ba8f-9720b70f0e3e" /># CODEHER 26 Submission 🚀
 
 ## 📌 Overview
 
@@ -60,8 +59,17 @@ This project aims to bridge that gap in a simple and interactive way.
 * Personalized career recommendations
 * Better UI/UX design
 * Mentor connectivity
-* Backend integration for user data and rewards
+* Government collaboration
 
+---
+
+## Screenshots
+<img width="603" height="632" alt="image" src="https://github.com/user-attachments/assets/65258f84-d07f-4b6b-b7af-4f8dcda040af" />
+<img width="603" height="632" alt="image" src="https://github.com/user-attachments/assets/0647fbe3-1bc0-4f01-9449-6a93151add55" />
+<img width="603" height="632" alt="image" src="https://github.com/user-attachments/assets/91b86651-527a-480d-8896-6475ac06f3ec" />
+<img width="603" height="632" alt="image" src="https://github.com/user-attachments/assets/5b7825c1-2eb1-4524-a503-ffcf00b8fc3b" />
+<img width="603" height="632" alt="image" src="https://github.com/user-attachments/assets/c7e28b1c-52ea-4b8d-aa39-fd503a4480dc" />
+<img width="603" height="632" alt="image" src="https://github.com/user-attachments/assets/66afdc94-43f6-49d3-a483-0bf99b4d260d" />
 ---
 
 ## 👩‍💻 Author
